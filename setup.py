@@ -8,7 +8,7 @@ VERSION='1.13.0'
 RELEASE='0'
 
 class sdist(_sdist):
-    ''' custom sdist command, to prep pycdlib.spec file for inclusion '''
+    """Custom sdist command, to prep pycdlib.spec file for inclusion."""
 
     def run(self):
         global VERSION

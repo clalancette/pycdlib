@@ -14,9 +14,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'''
-PyCdlib Inode class.
-'''
+"""PyCdlib Inode class."""
 
 from __future__ import absolute_import
 
@@ -32,10 +30,10 @@ if False:  # pylint: disable=using-constant-test
 
 
 class Inode(object):
-    '''
+    """
     A class that represents an inode, the pointer to a piece of data
     (not metadata) on an ISO.
-    '''
+    """
     __slots__ = ('_initialized', 'new_extent_loc', 'orig_extent_loc',
                  'linked_records', 'data_length', 'manage_fp', 'data_fp',
                  'original_data_location', 'fp_offset', 'boot_info_table',
@@ -55,14 +53,14 @@ class Inode(object):
 
     def new(self, length, fp, manage_fp, offset):
         # type: (int, Union[BinaryIO, str], bool, int) -> None
-        '''
+        """
         Initialize a new Inode.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is already initialized')
 
@@ -77,14 +75,14 @@ class Inode(object):
 
     def parse(self, extent, length, fp, log_block_size):
         # type: (int, int, BinaryIO, int) -> None
-        '''
+        """
         Parse an existing Inode.  This just saves off the extent for later use.
 
         Parameters:
          extent - The original extent that the data lives at.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is already initialized')
 
@@ -101,14 +99,14 @@ class Inode(object):
 
     def extent_location(self):
         # type: () -> int
-        '''
+        """
         Get the current location of this Inode on the ISO.
 
         Parameters:
          None.
         Returns:
          The extent location of this Inode on the ISO.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
 
@@ -118,14 +116,14 @@ class Inode(object):
 
     def set_extent_location(self, extent):
         # type: (int) -> None
-        '''
+        """
         Set the current location of this Inode on the ISO.
 
         Parameters:
          extent - The new extent location for this Inode.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
 
@@ -133,14 +131,14 @@ class Inode(object):
 
     def get_data_length(self):
         # type: () -> int
-        '''
+        """
         Get the length of the data pointed to by this Inode.
 
         Parameters:
          None.
         Returns:
          The length of the data pointed to by this Inode.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
 
@@ -148,14 +146,14 @@ class Inode(object):
 
     def add_boot_info_table(self, boot_info_table):
         # type: (eltorito.EltoritoBootInfoTable) -> None
-        '''
+        """
         Add a boot info table to this Inode.
 
         Parameters:
          boot_info_table - The Boot Info Table object to add to this Inode.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
 
@@ -163,7 +161,7 @@ class Inode(object):
 
     def update_fp(self, fp, length):
         # type: (BinaryIO, int) -> None
-        '''
+        """
         Update the Inode to use a different file object and length.
 
         Parameters:
@@ -171,7 +169,7 @@ class Inode(object):
          length - The length of the data.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
 
@@ -182,9 +180,7 @@ class Inode(object):
 
 
 class InodeOpenData(object):
-    '''
-    A class to be a contextmanager for opening data on a DirectoryRecord object.
-    '''
+    """A class to be a contextmanager for opening data on a DirectoryRecord object."""
     __slots__ = ('ino', 'logical_block_size', 'data_fp')
 
     def __init__(self, ino, logical_block_size):

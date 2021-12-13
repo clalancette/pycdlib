@@ -14,9 +14,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'''
-Implementation of header Volume Descriptors for Ecma-119/ISO9660.
-'''
+"""Implementation of header Volume Descriptors for Ecma-119/ISO9660."""
 
 from __future__ import absolute_import
 
@@ -43,11 +41,11 @@ allzero = b'\x00' * 2048
 
 
 class PrimaryOrSupplementaryVD(object):
-    '''
+    """
     A class representing a Primary or Supplementary Volume Descriptor on this
     ISO.  These are the first things on the ISO that are parsed, and contain all
     of the basic information about the ISO.
-    '''
+    """
     __slots__ = ('rr_ce_blocks', 'system_identifier', 'volume_identifier',
                  'path_table_location_le', 'optional_path_table_location_le',
                  'path_table_location_be', 'optional_path_table_location_be',
@@ -82,7 +80,7 @@ class PrimaryOrSupplementaryVD(object):
 
     def parse(self, vd, extent_loc):
         # type: (bytes, int) -> None
-        '''
+        """
         Parse a Volume Descriptor out of a string.
 
         Parameters:
@@ -90,7 +88,7 @@ class PrimaryOrSupplementaryVD(object):
          extent_loc - The location on the ISO of this Volume Descriptor.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is already initialized')
 
@@ -206,7 +204,7 @@ class PrimaryOrSupplementaryVD(object):
             copyright_file, abstract_file, bibli_file, vol_expire_date,
             app_use, xa, version, escape_sequence):
         # type: (int, bytes, bytes, int, int, int, bytes, bytes, bytes, bytes, bytes, bytes, bytes, float, bytes, bool, int, bytes) -> None
-        '''
+        """
         Create a new Volume Descriptor.
 
         Parameters:
@@ -242,7 +240,7 @@ class PrimaryOrSupplementaryVD(object):
                            valid Joliet escape sequence for an SVD).
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is already initialized')
 
@@ -342,14 +340,14 @@ class PrimaryOrSupplementaryVD(object):
 
     def copy(self, orig):
         # type: (PrimaryOrSupplementaryVD) -> None
-        '''
+        """
         Populate and initialize this VD object from the contents of an old VD.
 
         Parameters:
          orig_pvd - The original VD to copy data from.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is already initialized')
 
@@ -400,14 +398,14 @@ class PrimaryOrSupplementaryVD(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate the string representing this Volume Descriptor.
 
         Parameters:
          None.
         Returns:
          A string representing this Volume Descriptor.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
 
@@ -454,7 +452,7 @@ class PrimaryOrSupplementaryVD(object):
 
     def track_rr_ce_entry(self, extent, offset, length):
         # type: (int, int, int) -> rockridge.RockRidgeContinuationBlock
-        '''
+        """
         Start tracking a new Rock Ridge Continuation Entry entry in this Volume
         Descriptor, at the extent, offset, and length provided.  Since Rock
         Ridge Continuation Blocks are shared across multiple Rock Ridge
@@ -470,7 +468,7 @@ class PrimaryOrSupplementaryVD(object):
         Returns:
          The object representing the block in which the Continuation Entry was
          placed in.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is not initialized')
 
@@ -488,7 +486,7 @@ class PrimaryOrSupplementaryVD(object):
 
     def add_rr_ce_entry(self, length):
         # type: (int) -> Tuple[bool, rockridge.RockRidgeContinuationBlock, int]
-        '''
+        """
         Add a new Rock Ridge Continuation Entry to this PVD; see
         track_rr_ce_entry() above for why we track these in the PVD.  This
         method is used to add a new Continuation Entry anywhere it fits in the
@@ -501,7 +499,7 @@ class PrimaryOrSupplementaryVD(object):
          A 3-tuple consisting of whether we added a new block, the object
          representing the block that this entry was added to, and the offset
          within the block that the entry was added to.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is not initialized')
 
@@ -521,7 +519,7 @@ class PrimaryOrSupplementaryVD(object):
 
     def clear_rr_ce_entries(self):
         # type: () -> None
-        '''
+        """
         Clear out all of the extent locations of all Rock Ridge Continuation
         Entries that the PVD is tracking.  This can be used to reset all data
         before assigning new data.
@@ -530,7 +528,7 @@ class PrimaryOrSupplementaryVD(object):
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is not initialized')
 
@@ -539,14 +537,14 @@ class PrimaryOrSupplementaryVD(object):
 
     def path_table_size(self):
         # type: () -> int
-        '''
+        """
         Get the path table size of the Volume Descriptor.
 
         Parameters:
          None.
         Returns:
          Path table size in bytes.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
 
@@ -554,14 +552,14 @@ class PrimaryOrSupplementaryVD(object):
 
     def add_to_space_size(self, addition_bytes):
         # type: (int) -> None
-        '''
+        """
         Add bytes to the space size tracked by this Volume Descriptor.
 
         Parameters:
          addition_bytes - The number of bytes to add to the space size.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
         # The 'addition' parameter is expected to be in bytes, but the space
@@ -570,14 +568,14 @@ class PrimaryOrSupplementaryVD(object):
 
     def remove_from_space_size(self, removal_bytes):
         # type: (int) -> None
-        '''
+        """
         Remove bytes from the volume descriptor.
 
         Parameters:
          removal_bytes - The number of bytes to remove.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
         # The 'removal' parameter is expected to be in bytes, but the space
@@ -586,7 +584,7 @@ class PrimaryOrSupplementaryVD(object):
 
     def root_directory_record(self):
         # type: () -> dr.DirectoryRecord
-        '''
+        """
         Get a handle to this Volume Descriptor's root directory record.
 
         Parameters:
@@ -594,7 +592,7 @@ class PrimaryOrSupplementaryVD(object):
         Returns:
          DirectoryRecord object representing this Volume Descriptor's root
          directory record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
 
@@ -602,14 +600,14 @@ class PrimaryOrSupplementaryVD(object):
 
     def logical_block_size(self):
         # type: () -> int
-        '''
+        """
         Get this Volume Descriptor's logical block size.
 
         Parameters:
          None.
         Returns:
          Size of this Volume Descriptor's logical block size in bytes.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
 
@@ -617,14 +615,14 @@ class PrimaryOrSupplementaryVD(object):
 
     def add_to_ptr_size(self, ptr_size):
         # type: (int) -> bool
-        '''
+        """
         Add the space for a path table record to the volume descriptor.
 
         Parameters:
          ptr_size - The length of the Path Table Record being added to this Volume Descriptor.
         Returns:
          True if extents need to be added to the Volume Descriptor, False otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
 
@@ -641,14 +639,14 @@ class PrimaryOrSupplementaryVD(object):
 
     def remove_from_ptr_size(self, ptr_size):
         # type: (int) -> bool
-        '''
+        """
         Remove the space for a path table record from the volume descriptor.
 
         Parameters:
          ptr_size - The length of the Path Table Record being removed from this Volume Descriptor.
         Returns:
          True if extents need to be removed from the Volume Descriptor, False otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
 
@@ -668,14 +666,14 @@ class PrimaryOrSupplementaryVD(object):
 
     def sequence_number(self):
         # type: () -> int
-        '''
+        """
         Get this Volume Descriptor's sequence number.
 
         Parameters:
          None.
         Returns:
          This Volume Descriptor's sequence number.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
 
@@ -683,7 +681,7 @@ class PrimaryOrSupplementaryVD(object):
 
     def copy_sizes(self, othervd):
         # type: (PrimaryOrSupplementaryVD) -> None
-        '''
+        """
         Copy the path_tbl_size, path_table_num_extents, and space_size from
         another volume descriptor.
 
@@ -691,7 +689,7 @@ class PrimaryOrSupplementaryVD(object):
          othervd - The other volume descriptor to copy from.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
 
@@ -701,14 +699,14 @@ class PrimaryOrSupplementaryVD(object):
 
     def extent_location(self):
         # type: () -> int
-        '''
+        """
         Get this Volume Descriptor's extent location.
 
         Parameters:
          None.
         Returns:
          Integer of this Volume Descriptor's extent location.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
 
@@ -718,28 +716,28 @@ class PrimaryOrSupplementaryVD(object):
 
     def set_extent_location(self, extent):
         # type: (int) -> None
-        '''
+        """
         Set the new location for this PVD/SVD.
 
         Parameters:
          extent - The new extent location to set for this PVD/SVD.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
         self.new_extent_loc = extent
 
     def is_pvd(self):
         # type: () -> bool
-        '''
+        """
         Determine whether this Volume Descriptor is a Primary one.
 
         Parameters:
          None.
         Returns:
          True if this Volume Descriptor is Primary, False otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
         return self._vd_type == VOLUME_DESCRIPTOR_TYPE_PRIMARY
@@ -753,7 +751,7 @@ def pvd_factory(sys_ident, vol_ident, set_size, seqnum, log_block_size,
                 app_ident_str, copyright_file, abstract_file, bibli_file,
                 vol_expire_date, app_use, xa):
     # type: (bytes, bytes, int, int, int, bytes, bytes, bytes, bytes, bytes, bytes, bytes, float, bytes, bool) -> PrimaryOrSupplementaryVD
-    '''
+    """
     An internal function to create a Primary Volume Descriptor.
 
     Parameters:
@@ -781,7 +779,7 @@ def pvd_factory(sys_ident, vol_ident, set_size, seqnum, log_block_size,
           ISO.  The default is False.
     Returns:
      The newly created Primary Volume Descriptor.
-    '''
+    """
     pvd = PrimaryOrSupplementaryVD(VOLUME_DESCRIPTOR_TYPE_PRIMARY)
     pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident_str, preparer_ident_str,
@@ -796,7 +794,7 @@ def enhanced_vd_factory(sys_ident, vol_ident, set_size, seqnum,
                         abstract_file, bibli_file, vol_expire_date, app_use,
                         xa):
     # type: (bytes, bytes, int, int, int, bytes, bytes, bytes, bytes, bytes, bytes, bytes, float, bytes, bool) -> PrimaryOrSupplementaryVD
-    '''
+    """
     An internal function to create an Enhanced Volume Descriptor for ISO 1999.
 
     Parameters:
@@ -824,7 +822,7 @@ def enhanced_vd_factory(sys_ident, vol_ident, set_size, seqnum,
           ISO.  The default is False.
     Returns:
      The newly created Enhanced Volume Descriptor.
-    '''
+    """
     svd = PrimaryOrSupplementaryVD(VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY)
     svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
             vol_set_ident, pub_ident_str, preparer_ident_str,
@@ -838,7 +836,7 @@ def joliet_vd_factory(joliet, sys_ident, vol_ident, set_size, seqnum,
                       preparer_ident_str, app_ident_str, copyright_file,
                       abstract_file, bibli_file, vol_expire_date, app_use, xa):
     # type: (int, bytes, bytes, int, int, int, bytes, bytes, bytes, bytes, bytes, bytes, bytes, float, bytes, bool) -> PrimaryOrSupplementaryVD
-    '''
+    """
     An internal function to create an Joliet Volume Descriptor.
 
     Parameters:
@@ -867,7 +865,7 @@ def joliet_vd_factory(joliet, sys_ident, vol_ident, set_size, seqnum,
           ISO.  The default is False.
     Returns:
      The newly created Joliet Volume Descriptor.
-    '''
+    """
     if joliet == 1:
         escape_sequence = b'%/@'
     elif joliet == 2:
@@ -886,7 +884,7 @@ def joliet_vd_factory(joliet, sys_ident, vol_ident, set_size, seqnum,
 
 
 class FileOrTextIdentifier(object):
-    '''
+    """
     A class to represent a file or text identifier as specified in Ecma-119
     section 8.4.20 (Primary Volume Descriptor Publisher Identifier),
     section 8.4.21 (Primary Volume Descriptor Data Preparer Identifier),
@@ -899,7 +897,7 @@ class FileOrTextIdentifier(object):
     parse a string to fill in the fields (the parse() method), or to create a
     new entry with a text string and whether this is a filename or not (the
     new() method).
-    '''
+    """
     __slots__ = ('_initialized', 'text')
 
     def __init__(self):
@@ -908,14 +906,14 @@ class FileOrTextIdentifier(object):
 
     def parse(self, ident_str):
         # type: (bytes) -> None
-        '''
+        """
         Parse a file or text identifier out of a string.
 
         Parameters:
           ident_str  - The string to parse the file or text identifier from.
         Returns:
           Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This File or Text identifier is already initialized')
         self.text = ident_str
@@ -927,14 +925,14 @@ class FileOrTextIdentifier(object):
 
     def new(self, text):
         # type: (bytes) -> None
-        '''
+        """
         Create a new file or text identifier.
 
         Parameters:
           text   - The text to store into the identifier.
         Returns:
           Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This File or Text identifier is already initialized')
 
@@ -947,14 +945,14 @@ class FileOrTextIdentifier(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Returns the file or text identification string suitable for recording.
 
         Parameters:
           None.
         Returns:
           The text representing this identifier.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This File or Text identifier is not initialized')
         return self.text
@@ -971,10 +969,10 @@ class FileOrTextIdentifier(object):
 
 
 class VolumeDescriptorSetTerminator(object):
-    '''
+    """
     A class that represents a Volume Descriptor Set Terminator.  The VDST
     signals the end of volume descriptors on the ISO.
-    '''
+    """
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc')
 
     FMT = '=B5sB2041s'
@@ -986,7 +984,7 @@ class VolumeDescriptorSetTerminator(object):
 
     def parse(self, vd, extent_loc):
         # type: (bytes, int) -> None
-        '''
+        """
         Parse a Volume Descriptor Set Terminator out of a string.
 
         Parameters:
@@ -994,7 +992,7 @@ class VolumeDescriptorSetTerminator(object):
          extent_loc - The extent this VDST is currently located at.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Volume Descriptor Set Terminator already initialized')
 
@@ -1021,14 +1019,14 @@ class VolumeDescriptorSetTerminator(object):
 
     def new(self):
         # type: () -> None
-        '''
+        """
         Create a new Volume Descriptor Set Terminator.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Volume Descriptor Set Terminator already initialized')
 
@@ -1036,14 +1034,14 @@ class VolumeDescriptorSetTerminator(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing this Volume Descriptor Set Terminator.
 
         Parameters:
          None.
         Returns:
          String representing this Volume Descriptor Set Terminator.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Volume Descriptor Set Terminator not initialized')
         return struct.pack(self.FMT, VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR,
@@ -1051,14 +1049,14 @@ class VolumeDescriptorSetTerminator(object):
 
     def extent_location(self):
         # type: () -> int
-        '''
+        """
         Get this Volume Descriptor Set Terminator's extent location.
 
         Parameters:
          None.
         Returns:
          Integer extent location.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Volume Descriptor Set Terminator not initialized')
 
@@ -1068,14 +1066,14 @@ class VolumeDescriptorSetTerminator(object):
 
     def set_extent_location(self, extent):
         # type: (int) -> None
-        '''
+        """
         Set the new location for this Volume Descriptor Set Terminator.
 
         Parameters:
          extent - The new extent location to set for this Volume Descriptor Set Terminator.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
         self.new_extent_loc = extent
@@ -1083,23 +1081,21 @@ class VolumeDescriptorSetTerminator(object):
 
 def vdst_factory():
     # type: () -> VolumeDescriptorSetTerminator
-    '''
+    """
     An internal function to create a new Volume Descriptor Set Terminator.
 
     Parameters:
      None.
     Returns:
      The newly created Volume Descriptor Set Terminator.
-    '''
+    """
     vdst = VolumeDescriptorSetTerminator()
     vdst.new()
     return vdst
 
 
 class BootRecord(object):
-    '''
-    A class representing an ISO9660 Boot Record.
-    '''
+    """A class representing an ISO9660 Boot Record."""
     __slots__ = ('_initialized', 'boot_system_identifier', 'boot_identifier',
                  'boot_system_use', 'orig_extent_loc', 'new_extent_loc')
 
@@ -1112,7 +1108,7 @@ class BootRecord(object):
 
     def parse(self, vd, extent_loc):
         # type: (bytes, int) -> None
-        '''
+        """
         Parse a Boot Record out of a string.
 
         Parameters:
@@ -1120,7 +1116,7 @@ class BootRecord(object):
          extent_loc - The extent location this Boot Record is current at.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Boot Record already initialized')
 
@@ -1144,7 +1140,7 @@ class BootRecord(object):
 
     def new(self, boot_system_id):
         # type: (bytes) -> None
-        '''
+        """
         Create a new Boot Record.
 
         Parameters:
@@ -1152,7 +1148,7 @@ class BootRecord(object):
                           Record.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Boot Record already initialized')
 
@@ -1164,14 +1160,14 @@ class BootRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing this Boot Record.
 
         Parameters:
          None.
         Returns:
          A string representing this Boot Record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Boot Record not initialized')
 
@@ -1181,14 +1177,14 @@ class BootRecord(object):
 
     def update_boot_system_use(self, boot_sys_use):
         # type: (bytes) -> None
-        '''
+        """
         Update the boot system use field of this Boot Record.
 
         Parameters:
          boot_sys_use - The new boot system use field for this Boot Record.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Boot Record not initialized')
 
@@ -1199,14 +1195,14 @@ class BootRecord(object):
 
     def extent_location(self):
         # type: () -> int
-        '''
+        """
         Get the extent location of this Boot Record.
 
         Parameters:
          None.
         Returns:
          Integer extent location of this Boot Record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Boot Record not initialized')
 
@@ -1216,25 +1212,25 @@ class BootRecord(object):
 
     def set_extent_location(self, extent):
         # type: (int) -> None
-        '''
+        """
         Set the new location for this Boot Record.
 
         Parameters:
          extent - The new extent location to set for this Boot Record.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
         self.new_extent_loc = extent
 
 
 class VersionVolumeDescriptor(object):
-    '''
+    """
     A class representing a Version Volume Descriptor.  This volume descriptor is
     not mentioned in any of the standards, but is included by genisoimage, so it
     is modeled here.
-    '''
+    """
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc', '_data')
 
     def __init__(self):
@@ -1244,7 +1240,7 @@ class VersionVolumeDescriptor(object):
 
     def parse(self, data, extent):
         # type: (bytes, int) -> bool
-        '''
+        """
         Do a parse of a Version Volume Descriptor.  This consists of seeing
         whether the data is either all zero or starts with 'MKI', and if so,
         setting the extent location of the Version Volume Descriptor properly.
@@ -1255,7 +1251,7 @@ class VersionVolumeDescriptor(object):
                   Version Volume Descriptor.
         Returns:
          True if the data passed in is a Version Descriptor, False otherwise.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is already initialized')
 
@@ -1270,14 +1266,14 @@ class VersionVolumeDescriptor(object):
 
     def new(self, log_block_size):
         # type: (int) -> None
-        '''
+        """
         Create a new Version Volume Descriptor.
 
         Parameters:
          log_block_size - The size of one extent.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is already initialized')
 
@@ -1286,7 +1282,7 @@ class VersionVolumeDescriptor(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing this Version Volume Descriptor.  Note that
         right now, this is always a string of zeros.
 
@@ -1294,7 +1290,7 @@ class VersionVolumeDescriptor(object):
          log_block_size - The logical block size to use when generating this string.
         Returns:
          A string representing this Version Volume Descriptor.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is not initialized')
 
@@ -1302,7 +1298,7 @@ class VersionVolumeDescriptor(object):
 
     def extent_location(self):
         # type: () -> int
-        '''
+        """
         Get the extent location of this Version Volume Descriptor.
 
         Parameters:
@@ -1310,7 +1306,7 @@ class VersionVolumeDescriptor(object):
         Returns:
          An integer representing the extent location of this Version Volume
          Descriptor.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is not initialized')
 
@@ -1320,14 +1316,14 @@ class VersionVolumeDescriptor(object):
 
     def set_extent_location(self, extent):
         # type: (int) -> None
-        '''
+        """
         Set the new location for this Version Volume Descriptor.
 
         Parameters:
          extent - The new extent location to set for this Version Volume Descriptor.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
         self.new_extent_loc = extent
@@ -1335,14 +1331,14 @@ class VersionVolumeDescriptor(object):
 
 def version_vd_factory(log_block_size):
     # type: (int) -> VersionVolumeDescriptor
-    '''
+    """
     An internal function to create a new Version Volume Descriptor.
 
     Parameters:
      log_block_size - The size of one extent.
     Returns:
      The newly created Version Volume Descriptor.
-    '''
+    """
     version_vd = VersionVolumeDescriptor()
     version_vd.new(log_block_size)
     return version_vd

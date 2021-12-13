@@ -14,9 +14,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'''
-PyCdlibIO class.
-'''
+"""PyCdlibIO class."""
 
 from __future__ import absolute_import
 
@@ -38,11 +36,11 @@ if sys.version_info.major == 2:
 
 
 class PyCdlibIO(io.RawIOBase):
-    '''
+    """
     The class that implements the user-facing python io-style context manager.
     Since ISOs are generally only readable, this is only a readable context
     manager.
-    '''
+    """
     __slots__ = ('_ctxt', '_fp', '_length', '_offset', '_open', '_startpos')
 
     def __init__(self, ino, logical_block_size):
@@ -63,7 +61,7 @@ class PyCdlibIO(io.RawIOBase):
 
     def read(self, size=None):
         # type: (Optional[int]) -> bytes
-        '''
+        """
         Read and return up to size bytes.
 
         Parameters:
@@ -73,7 +71,7 @@ class PyCdlibIO(io.RawIOBase):
          The number of bytes requested or the rest of the data left in the file,
          whichever is smaller.  If the file is at or past EOF, returns an empty
          bytestring.
-        '''
+        """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
 
@@ -91,7 +89,7 @@ class PyCdlibIO(io.RawIOBase):
 
     def readall(self):
         # type: () -> bytes
-        '''
+        """
         Read and return the remaining bytes in the file.
 
         Parameters:
@@ -99,7 +97,7 @@ class PyCdlibIO(io.RawIOBase):
         Returns:
          The rest of the data left in the file.  If the file is at or past EOF,
          returns an empty bytestring.
-        '''
+        """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
 
@@ -143,7 +141,7 @@ class PyCdlibIO(io.RawIOBase):
 
     def seek(self, offset, whence=0):
         # type: (int, int) -> int
-        '''
+        """
         Change the stream position to byte offset offset.  The offset is
         interpreted relative to the position indicated by whence.  Valid values
         for whence are:
@@ -158,7 +156,7 @@ class PyCdlibIO(io.RawIOBase):
                   current, 2 for end)
         Returns:
          The new absolute position.
-        '''
+        """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
 
@@ -199,70 +197,70 @@ class PyCdlibIO(io.RawIOBase):
 
     def tell(self):
         # type: () -> int
-        '''
+        """
         Return the current stream position.
 
         Parameters:
          None.
         Returns:
          The current stream position.
-        '''
+        """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
         return self._offset
 
     def length(self):
         # type: () -> int
-        '''
+        """
         Return the length of the current file.
 
         Parameters:
          None.
         Returns:
          The length of the file.
-        '''
+        """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
         return self._length
 
     def readable(self):
         # type: () -> bool
-        '''
+        """
         Determine whether this file is readable.
 
         Parameters:
          None.
         Returns:
          True in all cases.
-        '''
+        """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
         return True
 
     def seekable(self):
         # type: () -> bool
-        '''
+        """
         Determine whether this file is seekable.
 
         Parameters:
          None.
         Returns:
          True in all cases.
-        '''
+        """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
         return True
 
     def close(self):
         # type: () -> None
-        '''
+        """
         Close this file stream.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         self._open = False
         self._ctxt.__exit__()
 

@@ -20,8 +20,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""backport_functools.py - Tools for working with functions and callable objects
-   backported from python3 to python2.
+"""
+backport_functools.py - Tools for working with functions and callable objects
+backported from python3 to python2.
 """
 
 from __future__ import absolute_import
@@ -38,9 +39,7 @@ def update_wrapper(wrapper,
                    wrapped,
                    assigned=functools.WRAPPER_ASSIGNMENTS,
                    updated=functools.WRAPPER_UPDATES):
-    """
-    Patch two bugs in functools.update_wrapper.
-    """
+    """Patch two bugs in functools.update_wrapper."""
     # workaround for http://bugs.python.org/issue3445
     assigned = tuple(attr for attr in assigned if hasattr(wrapped, attr))
     wrapper = functools.update_wrapper(wrapper, wrapped, assigned, updated)
@@ -50,10 +49,10 @@ def update_wrapper(wrapper,
 
 
 class _HashedSeq(list):
-    """ This class guarantees that hash() will be called no more than once
-        per element.  This is important because the lru_cache() will hash
-        the key multiple times on a cache miss.
-
+    """
+    Guarantees that hash() will be called no more than once per element.
+    This is important because the lru_cache() will hash the key multiple
+    times on a cache miss.
     """
 
     __slots__ = ('hashvalue',)
@@ -68,7 +67,7 @@ class _HashedSeq(list):
 
 
 def _make_key(args, kwds, typed):
-    'Make a cache key from optionally typed positional and keyword arguments'
+    """Make a cache key from optionally typed positional and keyword arguments."""
     key = args
     if kwds:
         sorted_items = sorted(kwds.items())
@@ -85,7 +84,8 @@ def _make_key(args, kwds, typed):
 
 
 def lru_cache(maxsize=100, typed=False):
-    """Least-recently-used cache decorator.
+    """
+    Least-recently-used cache decorator.
 
     If *maxsize* is set to None, the LRU features are disabled and the cache
     can grow without bound.
@@ -101,7 +101,6 @@ def lru_cache(maxsize=100, typed=False):
     Access the underlying function with f.__wrapped__.
 
     See:  http://en.wikipedia.org/wiki/Cache_algorithms#Least_Recently_Used
-
     """
 
     # Users should only access the lru_cache through its public API:
@@ -197,12 +196,12 @@ def lru_cache(maxsize=100, typed=False):
                 return result
 
         def cache_info():
-            """Report cache statistics"""
+            """Report cache statistics."""
             with lock:
                 return _CacheInfo(stats[HITS], stats[MISSES], maxsize, len(cache))
 
         def cache_clear():
-            """Clear the cache and cache statistics"""
+            """Clear the cache and cache statistics."""
             with lock:
                 cache.clear()
                 root = nonlocal_root[0]

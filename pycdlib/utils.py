@@ -14,9 +14,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'''
-Various utilities for PyCdlib.
-'''
+"""Various utilities for PyCdlib."""
 
 from __future__ import absolute_import
 
@@ -52,14 +50,14 @@ if False:  # pylint: disable=using-constant-test
 
 def swab_32bit(x):
     # type: (int) -> int
-    '''
+    """
     A function to swab a 32-bit integer.
 
     Parameters:
      x - The 32-bit integer to swab.
     Returns:
      The swabbed version of the 32-bit integer.
-    '''
+    """
     if x > (((1 << 32) - 1) & 0xFFFFFFFF) or x < 0:
         raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swab; must be unsigned 32-bits!')
 
@@ -68,14 +66,14 @@ def swab_32bit(x):
 
 def swab_16bit(x):
     # type: (int) -> int
-    '''
+    """
     A function to swab a 16-bit integer.
 
     Parameters:
      x - The 16-bit integer to swab.
     Returns:
      The swabbed version of the 16-bit integer.
-    '''
+    """
     if x > (((1 << 16) - 1) & 0xFFFFFFFF) or x < 0:
         raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swab; must be unsigned 16-bits!')
 
@@ -84,7 +82,7 @@ def swab_16bit(x):
 
 def ceiling_div(numer, denom):
     # type: (int, int) -> int
-    '''
+    """
     A function to do ceiling division; that is, dividing numerator by denominator
     and taking the ceiling.
 
@@ -93,7 +91,7 @@ def ceiling_div(numer, denom):
      denom - The denominator for the division.
     Returns:
      The ceiling after dividing numerator by denominator.
-    '''
+    """
     # Doing division and then getting the ceiling is tricky; we do upside-down
     # floor division to make this happen.
     # See https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python.
@@ -102,7 +100,7 @@ def ceiling_div(numer, denom):
 
 def copy_data(data_length, blocksize, infp, outfp):
     # type: (int, int, BinaryIO, BinaryIO) -> None
-    '''
+    """
     A utility function to copy data from the input file object to the output
     file object.
 
@@ -113,7 +111,7 @@ def copy_data(data_length, blocksize, infp, outfp):
      outfp - The file object to copy data to.
     Returns:
      Nothing.
-    '''
+    """
     left = data_length
     readsize = blocksize
     while left > 0:
@@ -133,7 +131,7 @@ def copy_data(data_length, blocksize, infp, outfp):
 
 def encode_space_pad(instr, length, encoding):
     # type: (bytes, int, str) -> bytes
-    '''
+    """
     A function to pad out an input string with spaces to the length specified.
     The space is first encoded into the specified encoding, then appended to
     the input string until the length is reached.
@@ -144,7 +142,7 @@ def encode_space_pad(instr, length, encoding):
      encoding - The encoding to use.
     Returns:
      The input string encoded in the encoding and padded with encoded spaces.
-    '''
+    """
     output = instr.decode('utf-8').encode(encoding)
     if len(output) > length:
         raise pycdlibexception.PyCdlibInvalidInput('Input string too long!')
@@ -164,7 +162,7 @@ def encode_space_pad(instr, length, encoding):
 
 def normpath(path):
     # type: (str) -> bytes
-    '''
+    """
     Normalize the given path, eliminating double slashes, etc.  This function is
     a copy of the built-in python normpath, except we do *not* allow double
     slashes at the start.
@@ -173,7 +171,7 @@ def normpath(path):
      path - The path to normalize.
     Returns:
      The normalized path.
-    '''
+    """
     sep = '/'
     empty = ''
     dot = '.'
@@ -205,7 +203,7 @@ def normpath(path):
 
 def gmtoffset_from_tm(tm, local):
     # type: (float, time.struct_time) -> int
-    '''
+    """
     A function to compute the GMT offset from the time in seconds since the epoch
     and the local time object.
 
@@ -214,7 +212,7 @@ def gmtoffset_from_tm(tm, local):
      local - The struct_time object representing the local time.
     Returns:
      The gmtoffset.
-    '''
+    """
     gmtime = time.gmtime(tm)
     tmpyear = gmtime.tm_year - local.tm_year
     tmpyday = gmtime.tm_yday - local.tm_yday
@@ -231,7 +229,7 @@ def gmtoffset_from_tm(tm, local):
 
 def zero_pad(fp, data_size, pad_size):
     # type: (BinaryIO, int, int) -> None
-    '''
+    """
     A function to write padding out from data_size up to pad_size
     efficiently.
 
@@ -241,7 +239,7 @@ def zero_pad(fp, data_size, pad_size):
      pad_size - The boundary size of data to pad out to.
     Returns:
      Nothing.
-    '''
+    """
     padbytes = pad_size - (data_size % pad_size)
     if padbytes == pad_size:
         # Nothing to pad, get out.
@@ -253,7 +251,7 @@ def zero_pad(fp, data_size, pad_size):
 
 def starts_with_slash(path):
     # type: (bytes) -> bool
-    '''
+    """
     A function to determine if a path starts with a slash.  This is somewhat
     difficult to do portably between Python2 and Python3 and with performance,
     so we have a dedicated function for it.
@@ -262,20 +260,20 @@ def starts_with_slash(path):
      path - The path to determine if it starts with a slash
     Returns:
      Whether the path starts with a slash.
-    '''
+    """
     return bytearray(path)[0] == 47
 
 
 def split_path(iso_path):
     # type: (bytes) -> List[bytes]
-    '''
+    """
     A function to take a fully-qualified iso path and split it into components.
 
     Parameters:
      iso_path - The path to split.
     Returns:
      The components of the path as a list.
-    '''
+    """
     if not starts_with_slash(iso_path):
         raise pycdlibexception.PyCdlibInvalidInput('Must be a path starting with /')
 
@@ -286,14 +284,14 @@ def split_path(iso_path):
 
 def file_object_supports_binary(fp):
     # type: (BinaryIO) -> bool
-    '''
+    """
     A function to check whether a file-like object supports binary mode.
 
     Parameters:
      fp - The file-like object to check for binary mode support.
     Returns:
      True if the file-like object supports binary mode, False otherwise.
-    '''
+    """
     if hasattr(fp, 'mode'):
         return 'b' in fp.mode
 
@@ -307,7 +305,7 @@ def file_object_supports_binary(fp):
 
 def truncate_basename(basename, iso_level, is_dir):
     # type: (str, int, bool) -> str
-    '''
+    """
     A function to truncate a basename and make it conformant to the passed-in
     ISO interchange level.
 
@@ -318,7 +316,7 @@ def truncate_basename(basename, iso_level, is_dir):
     Returns:
      The truncated and translated name suitable for the ISO interchange level
      specified.
-    '''
+    """
     if iso_level == 4:
         # ISO level 4 allows "anything", so just return the original.
         return basename
@@ -340,7 +338,7 @@ def truncate_basename(basename, iso_level, is_dir):
 
 def mangle_file_for_iso9660(orig, iso_level):
     # type: (str, int) -> Tuple[str, str]
-    '''
+    """
     A function to take a regular Unix-style filename (including extension) and
     produce a tuple consisting of an ISO9660-valid basename and an ISO9660-valid
     extension.
@@ -351,7 +349,7 @@ def mangle_file_for_iso9660(orig, iso_level):
     Returns:
      A tuple where the first entry is the ISO9660-compliant basename and where
      the second entry is the ISO9660-compliant extension.
-    '''
+    """
     # ISO9660 has a lot of restrictions on what valid names are.  Here, we mangle
     # the names to conform to those rules.  In particular, the rules for
     # filenames are:
@@ -413,7 +411,7 @@ def mangle_file_for_iso9660(orig, iso_level):
 
 def mangle_dir_for_iso9660(orig, iso_level):
     # type: (str, int) -> str
-    '''
+    """
     A function to take a regular Unix-style directory name and produce an
     ISO9660-valid directory name.
 
@@ -422,7 +420,7 @@ def mangle_dir_for_iso9660(orig, iso_level):
      iso_level - The ISO interchange level to conform to
     Returns:
      An ISO9660-compliant directory name.
-    '''
+    """
     # ISO9660 has a lot of restrictions on what valid directory names are.
     # Here, we mangle the names to conform to those rules.  In particular, the
     # rules for dirnames are:

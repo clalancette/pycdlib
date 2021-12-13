@@ -14,9 +14,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'''
-Classes and utilities to support Rock Ridge extensions.
-'''
+"""Classes and utilities to support Rock Ridge extensions."""
 
 from __future__ import absolute_import
 
@@ -45,11 +43,11 @@ EXT_SRC_112 = b'PLEASE CONTACT THE IEEE STANDARDS DEPARTMENT, PISCATAWAY, NJ, US
 
 
 class RRSPRecord(object):
-    '''
+    """
     A class that represents a Rock Ridge Sharing Protocol record.  This record
     indicates that the sharing protocol is in use, and how many bytes to skip
     prior to parsing a Rock Ridge entry out of a directory record.
-    '''
+    """
     __slots__ = ('_initialized', 'bytes_to_skip')
 
     FMT = '=BBBBB'
@@ -60,14 +58,14 @@ class RRSPRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Sharing Protocol record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SP record already initialized')
 
@@ -86,14 +84,14 @@ class RRSPRecord(object):
 
     def new(self, bytes_to_skip):
         # type: (int) -> None
-        '''
+        """
         Create a new Rock Ridge Sharing Protocol record.
 
         Parameters:
         bytes_to_skip - The number of bytes to skip.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SP record already initialized')
 
@@ -102,14 +100,14 @@ class RRSPRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Sharing Protocol record.
 
         Parameters:
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SP record not initialized')
 
@@ -120,7 +118,7 @@ class RRSPRecord(object):
     @staticmethod
     def length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Sharing Protocol
         record.
 
@@ -128,15 +126,15 @@ class RRSPRecord(object):
          None.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 7
 
 
 class RRRRRecord(object):
-    '''
+    """
     A class that represents a Rock Ridge Rock Ridge record.  This optional
     record indicates which other Rock Ridge fields are present.
-    '''
+    """
     __slots__ = ('_initialized', 'rr_flags')
 
     FMT = '=BBB'
@@ -148,14 +146,14 @@ class RRRRRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Rock Ridge record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('RR record already initialized')
 
@@ -172,14 +170,14 @@ class RRRRRecord(object):
 
     def new(self):
         # type: () -> None
-        '''
+        """
         Create a new Rock Ridge Rock Ridge record.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('RR record already initialized')
 
@@ -188,7 +186,7 @@ class RRRRRecord(object):
 
     def append_field(self, fieldname):
         # type: (str) -> None
-        '''
+        """
         Mark a field as present in the Rock Ridge records.
 
         Parameters:
@@ -196,7 +194,7 @@ class RRRRRecord(object):
                      of 'PX', 'PN', 'SL', 'NM', 'CL', 'PL', 'RE', or 'TF'.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('RR record not initialized')
 
@@ -218,14 +216,14 @@ class RRRRRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Rock Ridge record.
 
         Parameters:
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('RR record not initialized')
 
@@ -235,7 +233,7 @@ class RRRRRecord(object):
     @staticmethod
     def length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Rock Ridge
         record.
 
@@ -243,16 +241,16 @@ class RRRRRecord(object):
          None.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 5
 
 
 class RRCERecord(object):
-    '''
+    """
     A class that represents a Rock Ridge Continuation Entry record.  This
     record represents additional information that did not fit in the standard
     directory record.
-    '''
+    """
     __slots__ = ('_initialized', 'bl_cont_area', 'offset_cont_area',
                  'len_cont_area')
 
@@ -264,14 +262,14 @@ class RRCERecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Continuation Entry record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CE record already initialized')
 
@@ -302,14 +300,14 @@ class RRCERecord(object):
 
     def new(self):
         # type: () -> None
-        '''
+        """
         Create a new Rock Ridge Continuation Entry record.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CE record already initialized')
 
@@ -321,14 +319,14 @@ class RRCERecord(object):
 
     def update_extent(self, extent):
         # type: (int) -> None
-        '''
+        """
         Update the extent for this CE record.
 
         Parameters:
          extent - The new extent for this CE record.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CE record not initialized')
 
@@ -336,14 +334,14 @@ class RRCERecord(object):
 
     def update_offset(self, offset):
         # type: (int) -> None
-        '''
+        """
         Update the offset for this CE record.
 
         Parameters:
          extent - The new offset for this CE record.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CE record not initialized')
 
@@ -351,7 +349,7 @@ class RRCERecord(object):
 
     def add_record(self, length):
         # type: (int) -> None
-        '''
+        """
         Add some more length to this CE record.  Used when a new record is going
         to get recorded into the CE (rather than the DR).
 
@@ -359,7 +357,7 @@ class RRCERecord(object):
          length - The length to add to this CE record.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CE record not initialized')
 
@@ -367,14 +365,14 @@ class RRCERecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Continuation Entry record.
 
         Parameters:
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CE record not initialized')
 
@@ -391,7 +389,7 @@ class RRCERecord(object):
     @staticmethod
     def length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Continuation Entry
         record.
 
@@ -399,16 +397,16 @@ class RRCERecord(object):
          None.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 28
 
 
 class RRPXRecord(object):
-    '''
+    """
     A class that represents a Rock Ridge POSIX File Attributes record.  This
     record contains information about the POSIX file mode, file links,
     user ID, group ID, and serial number of a directory record.
-    '''
+    """
     __slots__ = ('_initialized', 'posix_file_mode', 'posix_file_links',
                  'posix_user_id', 'posix_group_id', 'posix_serial_number')
 
@@ -426,14 +424,14 @@ class RRPXRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> int
-        '''
+        """
         Parse a Rock Ridge POSIX File Attributes record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          The length of the record in bytes.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PX record already initialized')
 
@@ -483,14 +481,14 @@ class RRPXRecord(object):
 
     def new(self, mode):
         # type: (int) -> None
-        '''
+        """
         Create a new Rock Ridge POSIX File Attributes record.
 
         Parameters:
          mode - The Unix file mode for this record.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PX record already initialized')
 
@@ -504,7 +502,7 @@ class RRPXRecord(object):
 
     def record(self, rr_version):
         # type: (str) -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge POSIX File Attributes
         record.
 
@@ -512,7 +510,7 @@ class RRPXRecord(object):
          rr_version - The Rock Ridge version to use.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PX record not initialized')
 
@@ -537,7 +535,7 @@ class RRPXRecord(object):
     @staticmethod
     def length(rr_version):
         # type: (str) -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge POSIX File
         Attributes record.
 
@@ -546,7 +544,7 @@ class RRPXRecord(object):
                       or '1.12'.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         if rr_version in ('1.09', '1.10'):
             return 36
         if rr_version == '1.12':
@@ -557,9 +555,7 @@ class RRPXRecord(object):
 
 
 class RRERRecord(object):
-    '''
-    A class that represents a Rock Ridge Extensions Reference record.
-    '''
+    """A class that represents a Rock Ridge Extensions Reference record."""
     __slots__ = ('_initialized', 'ext_id', 'ext_des', 'ext_src', 'ext_ver')
 
     FMT = '=BBBBBB'
@@ -573,14 +569,14 @@ class RRERRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Extensions Reference record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('ER record already initialized')
 
@@ -609,7 +605,7 @@ class RRERRecord(object):
 
     def new(self, ext_id, ext_des, ext_src):
         # type: (bytes, bytes, bytes) -> None
-        '''
+        """
         Create a new Rock Ridge Extensions Reference record.
 
         Parameters:
@@ -618,7 +614,7 @@ class RRERRecord(object):
          ext_src - The extension specification source to use.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('ER record already initialized')
 
@@ -631,7 +627,7 @@ class RRERRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Extensions Reference
         record.
 
@@ -639,7 +635,7 @@ class RRERRecord(object):
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('ER record not initialized')
 
@@ -654,7 +650,7 @@ class RRERRecord(object):
     @staticmethod
     def length(ext_id, ext_des, ext_src):
         # type: (bytes, bytes, bytes) -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Extensions Reference
         record.
 
@@ -664,14 +660,12 @@ class RRERRecord(object):
          ext_src - The extension specification source to use.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 8 + len(ext_id) + len(ext_des) + len(ext_src)
 
 
 class RRESRecord(object):
-    '''
-    A class that represents a Rock Ridge Extension Selector record.
-    '''
+    """A class that represents a Rock Ridge Extension Selector record."""
     __slots__ = ('_initialized', 'extension_sequence')
 
     FMT = '=BBB'
@@ -683,14 +677,14 @@ class RRESRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Extension Selector record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('ES record already initialized')
 
@@ -706,14 +700,14 @@ class RRESRecord(object):
 
     def new(self, extension_sequence):
         # type: (int) -> None
-        '''
+        """
         Create a new Rock Ridge Extension Selector record.
 
         Parameters:
          extension_sequence - The sequence number of this extension.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('ES record already initialized')
 
@@ -722,14 +716,14 @@ class RRESRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Extension Selector record.
 
         Parameters:
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('ES record not initialized')
 
@@ -741,7 +735,7 @@ class RRESRecord(object):
     @staticmethod
     def length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Extensions Selector
         record.
 
@@ -749,15 +743,15 @@ class RRESRecord(object):
          None.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 5
 
 
 class RRPNRecord(object):
-    '''
+    """
     A class that represents a Rock Ridge POSIX Device Number record.  This
     record represents a device major and minor special file.
-    '''
+    """
     __slots__ = ('_initialized', 'dev_t_high', 'dev_t_low')
 
     FMT = '<BBLLLL'
@@ -770,14 +764,14 @@ class RRPNRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge POSIX Device Number record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PN record already initialized')
 
@@ -803,7 +797,7 @@ class RRPNRecord(object):
 
     def new(self, dev_t_high, dev_t_low):
         # type: (int, int) -> None
-        '''
+        """
         Create a new Rock Ridge POSIX device number record.
 
         Parameters:
@@ -811,7 +805,7 @@ class RRPNRecord(object):
          dev_t_low - The low-order 32-bits of the device number.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PN record already initialized')
 
@@ -822,7 +816,7 @@ class RRPNRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge POSIX Device Number
         record.
 
@@ -830,7 +824,7 @@ class RRPNRecord(object):
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PN record not initialized')
 
@@ -845,7 +839,7 @@ class RRPNRecord(object):
     @staticmethod
     def length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge POSIX Device Number
         record.
 
@@ -853,24 +847,22 @@ class RRPNRecord(object):
          None.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 20
 
 
 class RRSLRecord(object):
-    '''
+    """
     A class that represents a Rock Ridge Symbolic Link record.  This record
     represents some or all of a symbolic link.  For a symbolic link, Rock Ridge
     specifies that each component (part of path separated by /) be in a separate
     component entry, and individual components may be split across multiple
     Symbolic Link records.  This class takes care of all of those details.
-    '''
+    """
     __slots__ = ('_initialized', 'symlink_components', 'flags')
 
     class Component(object):
-        '''
-        A class that represents one component of a Symbolic Link Record.
-        '''
+        """A class that represents one component of a Symbolic Link Record."""
         __slots__ = ('flags', 'curr_length', 'data')
 
         def __init__(self, flags, length, data):
@@ -891,14 +883,14 @@ class RRSLRecord(object):
 
         def name(self):
             # type: () -> bytes
-            '''
+            """
             Retrieve the human-readable name of this component.
 
             Parameters:
              None.
             Returns:
              Human readable name of this component.
-            '''
+            """
             if self.flags & (1 << 1):
                 return b'.'
             if self.flags & (1 << 2):
@@ -910,19 +902,19 @@ class RRSLRecord(object):
 
         def is_continued(self):
             # type: () -> bool
-            '''
+            """
             Determine whether this component is continued in the next component.
 
             Parameters:
              None.
             Returns:
              True if this component is continued in the next component, False otherwise.
-            '''
+            """
             return self.flags & (1 << 0) != 0
 
         def record(self):
             # type: () -> bytes
-            '''
+            """
             Return the representation of this component that is suitable for
             writing to disk.
 
@@ -930,7 +922,7 @@ class RRSLRecord(object):
              None.
             Returns:
              Representation of this compnent suitable for writing to disk.
-            '''
+            """
             if self.flags & (1 << 1):
                 return struct.pack('=BB', (1 << 1), 0)
             if self.flags & (1 << 2):
@@ -942,14 +934,14 @@ class RRSLRecord(object):
 
         def set_continued(self):
             # type: () -> None
-            '''
+            """
             Set the continued flag on this component.
 
             Parameters:
              None.
             Returns:
              Nothing.
-            '''
+            """
             self.flags |= (1 << 0)
 
         def __eq__(self, other):
@@ -965,14 +957,14 @@ class RRSLRecord(object):
         @staticmethod
         def length(symlink_component):
             # type: (bytes) -> int
-            '''
+            """
             Static method to compute the length of one symlink component.
 
             Parameters:
              symlink_component - String representing one symlink component.
             Returns:
              Length of symlink component plus overhead.
-            '''
+            """
             length = 2
             if symlink_component not in (b'.', b'..', b'/'):
                 length += len(symlink_component)
@@ -982,7 +974,7 @@ class RRSLRecord(object):
         @staticmethod
         def factory(name):
             # type: (bytes) -> RRSLRecord.Component
-            '''
+            """
             A static method to create a new, valid Component given a human
             readable name.
 
@@ -990,7 +982,7 @@ class RRSLRecord(object):
              name - The name to create the Component from.
             Returns:
              A new Component object representing this name.
-            '''
+            """
             if name == b'.':
                 flags = (1 << 1)
                 length = 0
@@ -1025,14 +1017,14 @@ class RRSLRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Symbolic Link record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SL record already initialized')
 
@@ -1066,14 +1058,14 @@ class RRSLRecord(object):
 
     def new(self):
         # type: () -> None
-        '''
+        """
         Create a new Rock Ridge Symbolic Link record.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SL record already initialized')
 
@@ -1081,14 +1073,14 @@ class RRSLRecord(object):
 
     def add_component(self, symlink_comp):
         # type: (bytes) -> None
-        '''
+        """
         Add a new component to this symlink record.
 
         Parameters:
          symlink_comp - The string to add to this symlink record.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SL record not initialized')
 
@@ -1099,14 +1091,14 @@ class RRSLRecord(object):
 
     def current_length(self):
         # type: () -> int
-        '''
+        """
         Calculate the current length of this symlink record.
 
         Parameters:
          None.
         Returns:
          Length of this symlink record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SL record not initialized')
 
@@ -1118,14 +1110,14 @@ class RRSLRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Symbolic Link record.
 
         Parameters:
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SL record not initialized')
 
@@ -1140,14 +1132,14 @@ class RRSLRecord(object):
 
     def name(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string that contains all components of the symlink.
 
         Parameters:
          None
         Returns:
          String containing all components of the symlink.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SL record not initialized')
 
@@ -1171,14 +1163,14 @@ class RRSLRecord(object):
 
     def set_continued(self):
         # type: () -> None
-        '''
+        """
         Set this SL record as continued in the next System Use Entry.
 
         Parameters:
          None
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SL record not initialized')
 
@@ -1186,14 +1178,14 @@ class RRSLRecord(object):
 
     def set_last_component_continued(self):
         # type: () -> None
-        '''
+        """
         Set the previous component of this SL record to continued.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SL record not initialized')
 
@@ -1204,7 +1196,7 @@ class RRSLRecord(object):
 
     def last_component_continued(self):
         # type: () -> bool
-        '''
+        """
         Determines whether the previous component of this SL record is a
         continued one or not.
 
@@ -1213,7 +1205,7 @@ class RRSLRecord(object):
         Returns:
          True if the previous component of this SL record is continued, False
          otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SL record not initialized')
 
@@ -1225,7 +1217,7 @@ class RRSLRecord(object):
     @staticmethod
     def header_length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of a Rock Ridge Symbolic Link
         header.
 
@@ -1233,13 +1225,13 @@ class RRSLRecord(object):
          None
         Returns:
          The length of the RRSLRecord header.
-        '''
+        """
         return 5
 
     @staticmethod
     def maximum_component_area_length():
         # type: () -> int
-        '''
+        """
         Static method to return the absolute maximum length a Rock Ridge
         Symbolic Link component area can be.
 
@@ -1247,13 +1239,13 @@ class RRSLRecord(object):
          None
         Returns:
          The maximum length a Symbolic Link component area can be.
-        '''
+        """
         return 255 - RRSLRecord.header_length()
 
     @staticmethod
     def length(symlink_components):
         # type: (List[bytes]) -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Symbolic Link
         record.
 
@@ -1262,7 +1254,7 @@ class RRSLRecord(object):
                               symbolic link components.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         length = RRSLRecord.header_length()
         for comp in symlink_components:
             length += RRSLRecord.Component.length(comp)
@@ -1270,19 +1262,17 @@ class RRSLRecord(object):
 
 
 class RRALRecord(object):
-    '''
+    """
     A class that represents an Arbitrary Attribute Interchange Protocol record.
     This is an unoffical extension by libisofs: https://dev.lovelyhq.com/libburnia/libisofs/src/commit/d297ce3aed5935e469bb108a36b7d6e31763a075/doc/susp_aaip_2_0.txt
     The goal of this record is to allow arbitrary attributes with arbitrary
     name/value pairs in the SUSP record.  It is split up much like an SL record,
     so a lot of the code is copied from that class.
-    '''
+    """
     __slots__ = ('_initialized', 'flags', 'components')
 
     class Component(object):
-        '''
-        A class that represents one component of an Arbitrary Attribute.
-        '''
+        """A class that represents one component of an Arbitrary Attribute."""
         __slots__ = ('flags', 'curr_length', 'data')
 
         def __init__(self, flags, length, data):
@@ -1296,7 +1286,7 @@ class RRALRecord(object):
 
         def record(self):
             # type: () -> bytes
-            '''
+            """
             Return the representation of this component that is suitable for
             writing to disk.
 
@@ -1304,45 +1294,45 @@ class RRALRecord(object):
              None.
             Returns:
              Representation of this compnent suitable for writing to disk.
-            '''
+            """
             return struct.pack('=BB', self.flags, self.curr_length) + self.data
 
         def set_continued(self):
             # type: () -> None
-            '''
+            """
             Set the continued flag on this component.
 
             Parameters:
              None.
             Returns:
              Nothing.
-            '''
+            """
             self.flags |= (1 << 0)
 
         @staticmethod
         def length(attr):
             # type: (bytes) -> int
-            '''
+            """
             Method to compute the length of a component.
 
             Parameters:
              None.
             Returns:
              Length of this component plus overhead.
-            '''
+            """
             return 2 + len(attr)
 
         @staticmethod
         def factory(component):
             # type: (bytes) -> RRALRecord.Component
-            '''
+            """
             A static method to create a new, valid Component given an attribute.
 
             Parameters:
              component - The string to create the Component from.
             Returns:
              A new Component object representing this string.
-            '''
+            """
             # Theoretically, this factory method could be passed a name
             # that wouldn't fit into either this AL record or into a single
             # component.  However, the only caller of this factory method
@@ -1364,14 +1354,14 @@ class RRALRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse an Arbitrary Attribute record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('AL record already initialized')
 
@@ -1405,14 +1395,14 @@ class RRALRecord(object):
 
     def current_length(self):
         # type: () -> int
-        '''
+        """
         Calculate the current length of this Arbitrary Attribute record.
 
         Parameters:
          None.
         Returns:
          Length of this Arbitrary Attribute record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('AL record not initialized')
 
@@ -1424,14 +1414,14 @@ class RRALRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Arbitrary Attribute record.
 
         Parameters:
          None.
         Returns:
          String containing the Arbitrary Attribute record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('AL record not initialized')
 
@@ -1446,14 +1436,14 @@ class RRALRecord(object):
 
     def new(self):
         # type: () -> None
-        '''
+        """
         Create a new Arbitrary Attribute record.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('AL record already initialized')
 
@@ -1461,14 +1451,14 @@ class RRALRecord(object):
 
     def set_continued(self):
         # type: () -> None
-        '''
+        """
         Set this AL record as continued in the next System Use Entry.
 
         Parameters:
          None
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('AL record not initialized')
 
@@ -1476,14 +1466,14 @@ class RRALRecord(object):
 
     def set_last_component_continued(self):
         # type: () -> None
-        '''
+        """
         Set the previous component of this AL record to continued.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('AL record not initialized')
 
@@ -1494,14 +1484,14 @@ class RRALRecord(object):
 
     def add_component(self, comp):
         # type: (bytes) -> None
-        '''
+        """
         Add a new component to this Arbitrary Attribute record.
 
         Parameters:
          comp - The string to add to this Arbitrary Attribute record.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('AL record not initialized')
 
@@ -1513,20 +1503,20 @@ class RRALRecord(object):
     @staticmethod
     def header_length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of an Arbitrary Attribute header.
 
         Parameters:
          None
         Returns:
          The length of the RRALRecord header.
-        '''
+        """
         return 5
 
     @staticmethod
     def maximum_component_area_length():
         # type: () -> int
-        '''
+        """
         Static method to return the absolute maximum length an Arbitrary
         Attribute component area can be.
 
@@ -1534,20 +1524,20 @@ class RRALRecord(object):
          None
         Returns:
          The maximum length an Arbitrary Attribute component area can be.
-        '''
+        """
         return 255 - RRALRecord.header_length()
 
     @staticmethod
     def length(attrs):
         # type: (List[bytes]) -> int
-        '''
+        """
         Static method to return the length of a list of attributes.
 
         Parameters:
          attrs - A list of attributes.
         Returns:
          The length of the entire record in bytes.
-        '''
+        """
         length = RRALRecord.header_length()
         for attr in attrs:
             length += RRALRecord.Component.length(attr)
@@ -1555,9 +1545,7 @@ class RRALRecord(object):
 
 
 class RRNMRecord(object):
-    '''
-    A class that represents a Rock Ridge Alternate Name record.
-    '''
+    """A class that represents a Rock Ridge Alternate Name record."""
     __slots__ = ('_initialized', 'posix_name_flags', 'posix_name')
 
     FMT = '=BBB'
@@ -1570,14 +1558,14 @@ class RRNMRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Alternate Name record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('NM record already initialized')
 
@@ -1600,14 +1588,14 @@ class RRNMRecord(object):
 
     def new(self, rr_name):
         # type: (bytes) -> None
-        '''
+        """
         Create a new Rock Ridge Alternate Name record.
 
         Parameters:
          rr_name - The name for the new record.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('NM record already initialized')
 
@@ -1618,14 +1606,14 @@ class RRNMRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Alternate Name record.
 
         Parameters:
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('NM record not initialized')
 
@@ -1636,14 +1624,14 @@ class RRNMRecord(object):
 
     def set_continued(self):
         # type: () -> None
-        '''
+        """
         Mark this alternate name record as continued.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('NM record not initialized')
 
@@ -1652,7 +1640,7 @@ class RRNMRecord(object):
     @staticmethod
     def length(rr_name):
         # type: (bytes) -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Alternate Name
         record.
 
@@ -1660,16 +1648,16 @@ class RRNMRecord(object):
          rr_name - The name to use.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 5 + len(rr_name)
 
 
 class RRCLRecord(object):
-    '''
+    """
     A class that represents a Rock Ridge Child Link record.  This record
     represents the logical block where a deeply nested directory was relocated
     to.
-    '''
+    """
     __slots__ = ('_initialized', 'child_log_block_num')
 
     FMT = '<BBLL'
@@ -1681,14 +1669,14 @@ class RRCLRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Child Link record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CL record already initialized')
 
@@ -1708,14 +1696,14 @@ class RRCLRecord(object):
 
     def new(self):
         # type: () -> None
-        '''
+        """
         Create a new Rock Ridge Child Link record.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CL record already initialized')
 
@@ -1725,14 +1713,14 @@ class RRCLRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Child Link record.
 
         Parameters:
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CL record not initialized')
 
@@ -1744,14 +1732,14 @@ class RRCLRecord(object):
 
     def set_log_block_num(self, bl):
         # type: (int) -> None
-        '''
+        """
         Set the logical block number for the child.
 
         Parameters:
          bl - Logical block number of the child.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CL record not initialized')
 
@@ -1760,7 +1748,7 @@ class RRCLRecord(object):
     @staticmethod
     def length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Child Link
         record.
 
@@ -1768,16 +1756,16 @@ class RRCLRecord(object):
          None.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 12
 
 
 class RRPLRecord(object):
-    '''
+    """
     A class that represents a Rock Ridge Parent Link record.  This record
     represents the logical block where a deeply nested directory was located
     from.
-    '''
+    """
     __slots__ = ('_initialized', 'parent_log_block_num')
 
     FMT = '<BBLL'
@@ -1789,14 +1777,14 @@ class RRPLRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Parent Link record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PL record already initialized')
 
@@ -1815,14 +1803,14 @@ class RRPLRecord(object):
 
     def new(self):
         # type: () -> None
-        '''
+        """
         Generate a string representing the Rock Ridge Parent Link record.
 
         Parameters:
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PL record already initialized')
 
@@ -1832,14 +1820,14 @@ class RRPLRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Child Link record.
 
         Parameters:
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PL record not initialized')
 
@@ -1851,14 +1839,14 @@ class RRPLRecord(object):
 
     def set_log_block_num(self, bl):
         # type: (int) -> None
-        '''
+        """
         Set the logical block number for the parent.
 
         Parameters:
          bl - Logical block number of the parent.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PL record not initialized')
 
@@ -1867,7 +1855,7 @@ class RRPLRecord(object):
     @staticmethod
     def length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Parent Link
         record.
 
@@ -1875,12 +1863,12 @@ class RRPLRecord(object):
          None.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 12
 
 
 class RRTFRecord(object):
-    '''
+    """
     A class that represents a Rock Ridge Time Stamp record.  This record
     represents the creation timestamp, the access time timestamp, the
     modification time timestamp, the attribute change time timestamp, the
@@ -1888,7 +1876,7 @@ class RRTFRecord(object):
     timestamp.  Each of the timestamps can be selectively enabled or disabled.
     Additionally, the timestamps can be configured to be Directory Record
     style timestamps (7 bytes) or Volume Descriptor style timestamps (17 bytes).
-    '''
+    """
     __slots__ = ('_initialized', 'creation_time', 'access_time',
                  'modification_time', 'attribute_change_time', 'backup_time',
                  'expiration_time', 'effective_time', 'time_flags')
@@ -1907,14 +1895,14 @@ class RRTFRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Time Stamp record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('TF record already initialized')
 
@@ -1944,14 +1932,14 @@ class RRTFRecord(object):
 
     def new(self, time_flags):
         # type: (int) -> None
-        '''
+        """
         Create a new Rock Ridge Time Stamp record.
 
         Parameters:
          time_flags - The flags to use for this time stamp record.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('TF record already initialized')
 
@@ -1973,14 +1961,14 @@ class RRTFRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Time Stamp record.
 
         Parameters:
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('TF record not initialized')
 
@@ -1998,7 +1986,7 @@ class RRTFRecord(object):
     @staticmethod
     def length(time_flags):
         # type: (int) -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Time Stamp
         record.
 
@@ -2006,7 +1994,7 @@ class RRTFRecord(object):
          time_flags - Integer representing the flags to use.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         tf_each_size = 7
         if time_flags & (1 << 7):
             tf_each_size = 17
@@ -2020,10 +2008,10 @@ class RRTFRecord(object):
 
 
 class RRSFRecord(object):
-    '''
+    """
     A class that represents a Rock Ridge Sparse File record.  This record
     represents the full file size of a sparsely-populated file.
-    '''
+    """
     __slots__ = ('_initialized', 'virtual_file_size_high',
                  'virtual_file_size_low', 'table_depth')
 
@@ -2036,14 +2024,14 @@ class RRSFRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Sparse File record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SF record already initialized')
 
@@ -2077,7 +2065,7 @@ class RRSFRecord(object):
 
     def new(self, file_size_high, file_size_low, table_depth):
         # type: (Optional[int], int, Optional[int]) -> None
-        '''
+        """
         Create a new Rock Ridge Sparse File record.
 
         Parameters:
@@ -2086,7 +2074,7 @@ class RRSFRecord(object):
          table_depth - The maximum virtual file size.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SF record already initialized')
 
@@ -2098,14 +2086,14 @@ class RRSFRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Sparse File record.
 
         Parameters:
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SF record not initialized')
 
@@ -2130,7 +2118,7 @@ class RRSFRecord(object):
     @staticmethod
     def length(rr_version):
         # type: (str) -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Sparse File
         record.
 
@@ -2138,7 +2126,7 @@ class RRSFRecord(object):
          rr_version - The version of Rock Ridge in use; must be '1.10' or '1.12'.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         if rr_version == '1.10':
             return 12
         if rr_version == '1.12':
@@ -2149,11 +2137,11 @@ class RRSFRecord(object):
 
 
 class RRRERecord(object):
-    '''
+    """
     A class that represents a Rock Ridge Relocated Directory record.  This
     record is used to mark an entry as having been relocated because it was
     deeply nested.
-    '''
+    """
     __slots__ = ('_initialized',)
 
     FMT = '=BB'
@@ -2164,14 +2152,14 @@ class RRRERecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Relocated Directory record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('RE record already initialized')
 
@@ -2188,14 +2176,14 @@ class RRRERecord(object):
 
     def new(self):
         # type: () -> None
-        '''
+        """
         Create a new Rock Ridge Relocated Directory record.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('RE record already initialized')
 
@@ -2203,7 +2191,7 @@ class RRRERecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Relocated Directory
         record.
 
@@ -2211,7 +2199,7 @@ class RRRERecord(object):
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('RE record not initialized')
 
@@ -2222,7 +2210,7 @@ class RRRERecord(object):
     @staticmethod
     def length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Relocated Directory
         record.
 
@@ -2230,16 +2218,16 @@ class RRRERecord(object):
          None.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 4
 
 
 class RRSTRecord(object):
-    '''
+    """
     A class that represents a Rock Ridge System Terminator record.  This
     record is used to terminate the SUSP/Rock Ridge records in a Directory
     Entry.
-    '''
+    """
     __slots__ = ('_initialized',)
 
     FMT = '=BB'
@@ -2250,14 +2238,14 @@ class RRSTRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge System Terminator record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('ST record already initialized')
 
@@ -2274,14 +2262,14 @@ class RRSTRecord(object):
 
     def new(self):
         # type: () -> None
-        '''
+        """
         Create a new Rock Ridge System Terminator record.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('ST record already initialized')
 
@@ -2289,7 +2277,7 @@ class RRSTRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge System Terminator
         record.
 
@@ -2297,7 +2285,7 @@ class RRSTRecord(object):
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('ST record not initialized')
 
@@ -2308,7 +2296,7 @@ class RRSTRecord(object):
     @staticmethod
     def length():
         # type: () -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge System Terminator
         record.
 
@@ -2316,16 +2304,16 @@ class RRSTRecord(object):
          None.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 4
 
 
 class RRPDRecord(object):
-    '''
+    """
     A class that represents a Rock Ridge Platform Dependent record.  This
     record is used to add platform-specific information to a Directory
     Entry, and may also be used as a terminator for Rock Ridge entries.
-    '''
+    """
     __slots__ = ('_initialized', 'padding')
 
     FMT = '=BB'
@@ -2336,14 +2324,14 @@ class RRPDRecord(object):
 
     def parse(self, rrstr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Rock Ridge Platform Dependent record out of a string.
 
         Parameters:
          rrstr - The string to parse the record out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PD record already initialized')
 
@@ -2359,14 +2347,14 @@ class RRPDRecord(object):
 
     def new(self):
         # type: () -> None
-        '''
+        """
         Create a new Rock Ridge Platform Dependent record.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PD record already initialized')
 
@@ -2375,7 +2363,7 @@ class RRPDRecord(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Generate a string representing the Rock Ridge Platform Dependent
         record.
 
@@ -2383,7 +2371,7 @@ class RRPDRecord(object):
          None.
         Returns:
          String containing the Rock Ridge record.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PD record not initialized')
 
@@ -2393,7 +2381,7 @@ class RRPDRecord(object):
     @staticmethod
     def length(padding):
         # type: (bytes) -> int
-        '''
+        """
         Static method to return the length of the Rock Ridge Platform Dependent
         record.
 
@@ -2401,15 +2389,15 @@ class RRPDRecord(object):
          padding - The padding bytes that this record will use.
         Returns:
          The length of this record in bytes.
-        '''
+        """
         return 4 + len(padding)
 
 
 class RockRidgeEntries(object):
-    '''
+    """
     A simple class container to hold a long list of possible Rock Ridge
     records.
-    '''
+    """
     __slots__ = ('sp_record', 'rr_record', 'ce_record', 'px_record',
                  'er_record', 'es_records', 'pn_record', 'sl_records',
                  'nm_records', 'cl_record', 'pl_record', 'tf_record',
@@ -2447,9 +2435,7 @@ class RockRidgeEntries(object):
 # which defines some standards on how to use the System Area.
 
 class RockRidge(object):
-    '''
-    A class representing Rock Ridge entries.
-    '''
+    """A class representing Rock Ridge entries."""
     __slots__ = ('_initialized', 'dr_entries', 'ce_entries', 'cl_to_moved_dr',
                  'moved_to_cl_dr', 'parent_link', 'rr_version', 'ce_block',
                  'bytes_to_skip', '_full_name')
@@ -2467,7 +2453,7 @@ class RockRidge(object):
 
     def has_entry(self, name):
         # type: (str) -> bool
-        '''
+        """
         An internal method to tell if we have already parsed an entry of the
         named type.
 
@@ -2476,13 +2462,13 @@ class RockRidge(object):
         Returns:
          True if we have already parsed an entry of the named type, False
          otherwise.
-        '''
+        """
         return getattr(self.dr_entries, name) or getattr(self.ce_entries, name)
 
     def parse(self, record, is_first_dir_record_of_root, bytes_to_skip,
               continuation):
         # type: (bytes, bool, int, bool) -> None
-        '''
+        """
         Method to parse a rock ridge record.
 
         Parameters:
@@ -2497,7 +2483,7 @@ class RockRidge(object):
                         list or in the DR list.
         Returns:
          Nothing.
-        '''
+        """
         # Note that we very explicitly do not check if self._initialized is True
         # here; this can be called multiple times in the case where there is
         # a continuation entry.
@@ -2647,14 +2633,14 @@ class RockRidge(object):
 
     def _record(self, entries):
         # type: (RockRidgeEntries) -> bytes
-        '''
+        """
         Return a string representing the Rock Ridge entry.
 
         Parameters:
          entries - The dr_entries or ce_entries to generate a record for.
         Returns:
          A string representing the Rock Ridge entry.
-        '''
+        """
 
         outlist = []
         if entries.sp_record is not None:
@@ -2709,7 +2695,7 @@ class RockRidge(object):
 
     def record_dr_entries(self):
         # type: () -> bytes
-        '''
+        """
         Return a string representing the Rock Ridge entries in the Directory
         Record.
 
@@ -2717,7 +2703,7 @@ class RockRidge(object):
          None.
         Returns:
          A string representing the Rock Ridge entry.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -2725,7 +2711,7 @@ class RockRidge(object):
 
     def record_ce_entries(self):
         # type: () -> bytes
-        '''
+        """
         Return a string representing the Rock Ridge entries in the Continuation
         Entry.
 
@@ -2733,7 +2719,7 @@ class RockRidge(object):
          None.
         Returns:
          A string representing the Rock Ridge entry.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -2741,7 +2727,7 @@ class RockRidge(object):
 
     def _new_symlink(self, symlink_path, curr_dr_len):
         # type: (bytes, int) -> int
-        '''
+        """
         An internal method to add the appropriate symlink record(s) to the ISO.
 
         Parameters:
@@ -2749,7 +2735,7 @@ class RockRidge(object):
          curr_dr_len - The current directory record length.
         Returns:
          The new directory record length.
-        '''
+        """
         # This is more complicated than I realized.  There are up to 3 layers
         # of maximum length:
         # 1.  If we are still using the directory record, then we are
@@ -2861,7 +2847,7 @@ class RockRidge(object):
 
     def _new_attributes(self, attributes, curr_dr_len):
         # type: (Dict[bytes, bytes], int) -> int
-        '''
+        """
         An internal method to add arbitrary attributes to the ISO.
 
         Parameters:
@@ -2869,7 +2855,7 @@ class RockRidge(object):
          curr_dr_len - The current directory record length.
         Returns:
          The new directory record length.
-        '''
+        """
         attr_list = list(attributes.keys()) + list(attributes.values())
         if curr_dr_len + RRALRecord.length(attr_list) > ALLOWED_DR_SIZE:
             if self.dr_entries.ce_record is None:
@@ -2948,7 +2934,7 @@ class RockRidge(object):
 
     def _add_name(self, rr_name, curr_dr_len):
         # type: (bytes, int) -> int
-        '''
+        """
         An internal method to add the appropriate name records to the ISO.
 
         Parameters:
@@ -2956,7 +2942,7 @@ class RockRidge(object):
          curr_dr_len - The current directory record length.
         Returns:
          The new directory record length.
-        '''
+        """
         # The length we are putting in this object (as opposed to the
         # continuation entry) is the maximum, minus how much is already in the
         # DR, minus 5 for the NM metadata.  We know that at least part of the
@@ -3011,7 +2997,7 @@ class RockRidge(object):
                         rr_relocated_parent, bytes_to_skip, curr_dr_len,
                         attributes):
         # type: (bool, bytes, int, bytes, bool, bool, bool, int, int, Dict[bytes, bytes]) -> int
-        '''
+        """
         Assign Rock Ridge entries to the appropriate DR or CE record.
 
         Parameters:
@@ -3033,7 +3019,7 @@ class RockRidge(object):
         Returns:
          The length of the directory record after the Rock Ridge extension has
          been added, or -1 if the entry will not fit.
-        '''
+        """
         # For SP Record
         if is_first_dir_record_of_root:
             new_sp = RRSPRecord()
@@ -3206,7 +3192,7 @@ class RockRidge(object):
             symlink_path, rr_version, rr_relocated_child, rr_relocated,
             rr_relocated_parent, bytes_to_skip, curr_dr_len, attributes):
         # type: (bool, bytes, int, bytes, str, bool, bool, bool, int, int, Dict[bytes, bytes]) -> int
-        '''
+        """
         Create a new Rock Ridge record.
 
         Parameters:
@@ -3231,7 +3217,7 @@ class RockRidge(object):
         Returns:
          The length of the directory record after the Rock Ridge extension has
          been added.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension already initialized')
 
@@ -3277,14 +3263,14 @@ class RockRidge(object):
 
     def add_to_file_links(self):
         # type: () -> None
-        '''
+        """
         Increment the number of POSIX file links on this entry by one.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3297,14 +3283,14 @@ class RockRidge(object):
 
     def remove_from_file_links(self):
         # type: () -> None
-        '''
+        """
         Decrement the number of POSIX file links on this entry by one.
 
         Parameters:
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3317,7 +3303,7 @@ class RockRidge(object):
 
     def copy_file_links(self, src):
         # type: (RockRidge) -> None
-        '''
+        """
         Copy the number of file links from the source Rock Ridge entry into
         this Rock Ridge entry.
 
@@ -3325,7 +3311,7 @@ class RockRidge(object):
          src - The source Rock Ridge entry to copy from.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3347,14 +3333,14 @@ class RockRidge(object):
 
     def get_file_mode(self):
         # type: () -> int
-        '''
+        """
         Get the POSIX file mode bits for this Rock Ridge entry.
 
         Parameters:
          None.
         Returns:
          The POSIX file mode bits for this Rock Ridge entry.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3367,14 +3353,14 @@ class RockRidge(object):
 
     def name(self):
         # type: () -> bytes
-        '''
+        """
         Get the alternate name from this Rock Ridge entry.
 
         Parameters:
          None.
         Returns:
          The alternate name from this Rock Ridge entry.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3382,21 +3368,19 @@ class RockRidge(object):
 
     def _is_symlink(self):
         # type: () -> bool
-        '''
-        Internal method to determine whether this Rock Ridge entry is a symlink.
-        '''
+        """Internal method to determine whether this Rock Ridge entry is a symlink."""
         return len(self.dr_entries.sl_records) > 0 or len(self.ce_entries.sl_records) > 0
 
     def is_symlink(self):
         # type: () -> bool
-        '''
+        """
         Determine whether this Rock Ridge entry describes a symlink.
 
         Parameters:
          None.
         Returns:
          True if this Rock Ridge entry describes a symlink, False otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3404,7 +3388,7 @@ class RockRidge(object):
 
     def symlink_path(self):
         # type: () -> bytes
-        '''
+        """
         Get the path as a string of the symlink target of this Rock Ridge entry
         (if this is a symlink).
 
@@ -3412,7 +3396,7 @@ class RockRidge(object):
          None.
         Returns:
          Symlink path as a string.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3436,7 +3420,7 @@ class RockRidge(object):
 
     def child_link_record_exists(self):
         # type: () -> bool
-        '''
+        """
         Determine whether this Rock Ridge entry has a child link record (used
         for relocating deep directory records).
 
@@ -3444,7 +3428,7 @@ class RockRidge(object):
          None.
         Returns:
          True if this Rock Ridge entry has a child link record, False otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3452,7 +3436,7 @@ class RockRidge(object):
 
     def child_link_update_from_dirrecord(self):
         # type: () -> None
-        '''
+        """
         Update the logical extent number stored in the child link record (if
         there is one), from the directory record entry that was stored in
         the child_link member.  This is used at the end of reshuffling extents
@@ -3462,7 +3446,7 @@ class RockRidge(object):
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3478,14 +3462,14 @@ class RockRidge(object):
 
     def child_link_extent(self):
         # type: () -> int
-        '''
+        """
         Get the extent of the child of this entry if it has one.
 
         Parameters:
          None.
         Returns:
          The logical block number of the child if it exists.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3498,7 +3482,7 @@ class RockRidge(object):
 
     def parent_link_record_exists(self):
         # type: () -> bool
-        '''
+        """
         Determine whether this Rock Ridge entry has a parent link record (used
         for relocating deep directory records).
 
@@ -3506,7 +3490,7 @@ class RockRidge(object):
          None:
         Returns:
          True if this Rock Ridge entry has a parent link record, False otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3514,7 +3498,7 @@ class RockRidge(object):
 
     def parent_link_update_from_dirrecord(self):
         # type: () -> None
-        '''
+        """
         Update the logical extent number stored in the parent link record (if
         there is one), from the directory record entry that was stored in
         the parent_link member.  This is used at the end of reshuffling extents
@@ -3524,7 +3508,7 @@ class RockRidge(object):
          None.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3540,14 +3524,14 @@ class RockRidge(object):
 
     def parent_link_extent(self):
         # type: () -> int
-        '''
+        """
         Get the extent of the parent of this entry if it has one.
 
         Parameters:
          None.
         Returns:
          The logical block number of the parent if it exists.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3560,7 +3544,7 @@ class RockRidge(object):
 
     def relocated_record(self):
         # type: () -> bool
-        '''
+        """
         Determine whether this Rock Ridge entry has a relocated record (used for
         relocating deep directory records).
 
@@ -3568,7 +3552,7 @@ class RockRidge(object):
          None.
         Returns:
          True if this Rock Ridge entry has a relocated record, False otherwise.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3576,14 +3560,14 @@ class RockRidge(object):
 
     def update_ce_block(self, block):
         # type: (RockRidgeContinuationBlock) -> None
-        '''
+        """
         Update the Continuation Entry block object used by this Rock Ridge Record.
 
         Parameters:
          block - The new block object.
         Returns:
          Nothing.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
@@ -3591,11 +3575,11 @@ class RockRidge(object):
 
 
 class RockRidgeContinuationEntry(object):
-    '''
+    """
     A class representing one 'abstract' Rock Ridge Continuation Entry.
     These entries are strictly for keeping tabs of the offset and size
     of each entry in a continuation block; they have no smarts beyond that.
-    '''
+    """
     __slots__ = ('_offset', '_length')
 
     def __init__(self, offset, length):
@@ -3606,27 +3590,27 @@ class RockRidgeContinuationEntry(object):
     @property
     def offset(self):
         # type: () -> int
-        '''
+        """
         Property method to return the offset of this entry.
 
         Parameters:
          None.
         Returns:
          The offset of this entry.
-        '''
+        """
         return self._offset
 
     @property
     def length(self):
         # type: () -> int
-        '''
+        """
         Property method to return the length of this entry.
 
         Parameters:
          None.
         Returns:
          The length of this entry.
-        '''
+        """
         return self._length
 
     def __lt__(self, other):
@@ -3634,12 +3618,12 @@ class RockRidgeContinuationEntry(object):
 
 
 class RockRidgeContinuationBlock(object):
-    '''
+    """
     A class representing one 'abstract' Rock Ridge Continuation Block.
     A Continuation Block is one extent holding many Rock Ridge Continuation
     Entries.  However, this is just used for tracking how many entries will
     fit in one block; all tracking of the actual data must be done elsewhere.
-    '''
+    """
     __slots__ = ('_extent', '_max_block_size', '_entries')
 
     def __init__(self, extent, max_block_size):
@@ -3650,31 +3634,31 @@ class RockRidgeContinuationBlock(object):
 
     def extent_location(self):
         # type: () -> int
-        '''
+        """
         Get the extent location that this block resides at.
 
         Parameters:
          None.
         Returns:
          The extent location that this block resides at.
-        '''
+        """
         return self._extent
 
     def set_extent_location(self, loc):
         # type: (int) -> None
-        '''
+        """
         Set the extent location that this block resides at.
 
         Parameters:
          loc - The new extent location.
         Returns:
          Nothing.
-        '''
+        """
         self._extent = loc
 
     def track_entry(self, offset, length):
         # type: (int, int) -> None
-        '''
+        """
         Track an already allocated entry in this Rock Ridge Continuation Block.
 
         Parameters:
@@ -3682,7 +3666,7 @@ class RockRidgeContinuationBlock(object):
          length - The length of the entry to track.
         Returns:
          Nothing.
-        '''
+        """
         newlen = offset + length - 1
         for entry in self._entries:
             thislen = entry.offset + entry.length - 1
@@ -3700,7 +3684,7 @@ class RockRidgeContinuationBlock(object):
 
     def add_entry(self, length):
         # type: (int) -> int
-        '''
+        """
         Add a new entry to this Rock Ridge Continuation Block.  This method
         attempts to find a gap that fits the new length anywhere within this
         Continuation Block.  If successful, it returns the offset at which
@@ -3710,7 +3694,7 @@ class RockRidgeContinuationBlock(object):
          length - The length of the entry to find a gap for.
         Returns:
          The offset the entry was placed at, or None if no gap was found.
-        '''
+        """
         offset = -1
         # Need to find a gap
         for index, entry in enumerate(self._entries):
@@ -3748,7 +3732,7 @@ class RockRidgeContinuationBlock(object):
 
     def remove_entry(self, offset, length):
         # type: (int, int) -> None
-        '''
+        """
         Given an offset and length, find and remove the entry in this block
         that corresponds.
 
@@ -3757,7 +3741,7 @@ class RockRidgeContinuationBlock(object):
          length - The length of the entry to look for.
         Returns:
          Nothing.
-        '''
+        """
         for index, entry in enumerate(self._entries):
             if entry.offset == offset and entry.length == length:
                 del self._entries[index]

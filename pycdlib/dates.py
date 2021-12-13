@@ -14,9 +14,9 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
-'''
+"""
 Classes and utilities for ISO date support.
-'''
+"""
 
 from __future__ import absolute_import
 
@@ -34,7 +34,7 @@ from pycdlib import utils
 @lru_cache(maxsize=256)
 def string_to_timestruct(input_string):
     # type: (bytes) -> time.struct_time
-    '''
+    """
     A cacheable function to take an input string and decode it into a
     time.struct_time from the time module.  If the string cannot be decoded
     because of an illegal value, then the all-zero time.struct_time will be
@@ -44,7 +44,7 @@ def string_to_timestruct(input_string):
      input_string - The string to attempt to parse.
     Returns:
      A time.struct_time object representing the time.
-    '''
+    """
     try:
         timestruct = time.strptime(input_string.decode('utf-8'), VolumeDescriptorDate.TIME_FMT)
     except ValueError:
@@ -60,7 +60,7 @@ def string_to_timestruct(input_string):
 
 
 class DirectoryRecordDate(object):
-    '''
+    """
     A class to represent a Directory Record date as described in Ecma-119
     section 9.1.5.  The Directory Record date consists of the number of years
     since 1900, the month, the day of the month, the hour, the minute, the
@@ -68,7 +68,7 @@ class DirectoryRecordDate(object):
     ways to use this class: either to instantiate and then parse a string to
     fill in the fields (the parse() method), or to create a new entry with a
     tm structure (the new() method).
-    '''
+    """
     FMT = '=BBBBBBb'
 
     __slots__ = ('_initialized', 'years_since_1900', 'month', 'day_of_month',
@@ -80,14 +80,14 @@ class DirectoryRecordDate(object):
 
     def parse(self, datestr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Directory Record date out of a string.
 
         Parameters:
          datestr - The string to parse the date out of.
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record Date already initialized')
 
@@ -99,14 +99,14 @@ class DirectoryRecordDate(object):
 
     def new(self):
         # type: () -> None
-        '''
+        """
         Create a new Directory Record date based on the current time.
 
         Parameters:
          tm - An optional argument that must be None
         Returns:
          Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record Date already initialized')
 
@@ -124,14 +124,14 @@ class DirectoryRecordDate(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Return a string representation of the Directory Record date.
 
         Parameters:
          None.
         Returns:
          A string representing this Directory Record Date.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record Date not initialized')
 
@@ -144,7 +144,7 @@ class DirectoryRecordDate(object):
 
 
 class VolumeDescriptorDate(object):
-    '''
+    """
     A class to represent a Volume Descriptor Date as described in Ecma-119
     section 8.4.26.1.  The Volume Descriptor Date consists of a year (from 1 to
     9999), month (from 1 to 12), day of month (from 1 to 31), hour (from 0
@@ -153,7 +153,7 @@ class VolumeDescriptorDate(object):
     are two main ways to use this class: either to instantiate and then parse a
     string to fill in the fields (the parse() method), or to create a new entry
     with a tm structure (the new() method).
-    '''
+    """
 
     TIME_FMT = '%Y%m%d%H%M%S'
 
@@ -169,7 +169,7 @@ class VolumeDescriptorDate(object):
 
     def parse(self, datestr):
         # type: (bytes) -> None
-        '''
+        """
         Parse a Volume Descriptor Date out of a string.  A string of all zeros
         is valid, which means that the date in this field was not specified.
 
@@ -177,7 +177,7 @@ class VolumeDescriptorDate(object):
           datestr - string to be parsed
         Returns:
           Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date object is already initialized')
 
@@ -209,14 +209,14 @@ class VolumeDescriptorDate(object):
 
     def record(self):
         # type: () -> bytes
-        '''
+        """
         Return the date string for this object.
 
         Parameters:
           None.
         Returns:
           Date as a string.
-        '''
+        """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date is not initialized')
 
@@ -224,7 +224,7 @@ class VolumeDescriptorDate(object):
 
     def new(self, tm=0.0):
         # type: (float) -> None
-        '''
+        """
         Create a new Volume Descriptor Date.  If tm is None, then this Volume
         Descriptor Date will be full of zeros (meaning not specified).  If tm
         is not None, it is expected to be a struct_time object, at which point
@@ -236,7 +236,7 @@ class VolumeDescriptorDate(object):
                or 0.0 for an empty VolumeDescriptorDate.
         Returns:
           Nothing.
-        '''
+        """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date object is already initialized')
 
