@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  unit_tests:
+    name: Unit Tests
+    runs-on: ubuntu-20.04
+    strategy:
+      matrix:
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10']
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        lfs: 'true'
+
+    - name: Setup python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: x64
+
+    - name: Install apt dependencies
+      run: |
+       sudo apt-get update
+       sudo apt-get install -y cmake git-lfs libbz2-dev libcap-dev libcdio-utils util-linux zlib1g-dev
+
+    - name: Install pip dependencies
+      run: python -m pip install flake8 pytest
+
+    - name: Build patched cdrkit
+      run: |
+        pushd vendor
+        tar -xvf cdrkit-1.1.11-fedora29-patched.tar.gz
+        pushd cdrkit-1.1.11
+        mkdir build
+        pushd build
+        cmake ..
+        make
+        popd
+        popd
+        popd
+
+    - name: flake8
+      run: flake8 --ignore=E501,E266 pycdlib tools/*
+
+    - name: tests
+      run: py.test --verbose tests
+      env:
+        PATH: vendor/cdrkit-1.1.11/build/genisoimage
+        LD_LIBRARY_PATH: vendor/cdrkit-1.1.11/build/libusal/:vendor/cdrkit-1.1.11/build/librols
+        PYCDLIB_TRACK_WRITES: 1
