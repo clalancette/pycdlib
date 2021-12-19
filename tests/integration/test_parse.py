@@ -3080,7 +3080,7 @@ def test_parse_eltorito_uefi(tmpdir):
     with open(os.path.join(str(indir), 'boot'), 'wb') as outfp:
         outfp.write(b'boot\n')
     subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
-                     '-c', 'boot.cat', '-e', 'boot', '-no-emul-boot',
+                     '-c', 'boot.cat', '-efi-boot', 'boot', '-no-emul-boot',
                      '-o', str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_eltorito_uefi)
