@@ -1321,7 +1321,7 @@ class PyCdlib(object):
         part_start = 0
 
         udf_files = []  # type: List[inode.Inode]
-        linked_inodes = {}  # type: Dict[int, bool]
+        linked_inodes = set()
         if self._has_udf:
             if current_extent > 32:
                 # There is no *requirement* in the UDF specification that the
@@ -1623,7 +1623,7 @@ class PyCdlib(object):
 
                 current_extent = _set_inode(enc.entry.inode, current_extent,
                                             part_start)
-                linked_inodes[id(enc.entry.inode)] = True
+                linked_inodes.add(id(enc.entry.inode))
 
         for ino in pvd_files + joliet_files + udf_files:
             if id(ino) in linked_inodes:
@@ -1633,7 +1633,7 @@ class PyCdlib(object):
 
             current_extent = _set_inode(ino, current_extent, part_start)
 
-            linked_inodes[id(ino)] = True
+            linked_inodes.add(id(ino))
 
         if self.enhanced_vd is not None:
             loc = self.pvd.root_directory_record().extent_location()
