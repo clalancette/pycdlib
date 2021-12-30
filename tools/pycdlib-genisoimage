@@ -363,7 +363,9 @@ def parse_arguments():
     parser.add_argument('-udf', help='Generate UDF file system', action='store_true')
     parser.add_argument('-dvd-video', help='Generate DVD-Video compliant UDF file system', action='store_true')
     parser.add_argument('-uid', help='Make the owner of all files this uid', action='store')
-    parser.add_argument('-untranslated-filenames', '-U', help='Allow Untranslated filenames (for HPUX & AIX - violates ISO9660).  Forces -l, -d, -N, -allow-leading-dots, -relaxed-filenames, -allow-lowercase, -allow-multidot', action='store_true')
+    parser.add_argument('-untranslated-filenames', '-U',
+                        help='Allow Untranslated filenames (for HPUX & AIX - violates ISO9660).  Forces -l, -d, -N, -allow-leading-dots, -relaxed-filenames, -allow-lowercase, -allow-multidot',
+                        action='store_true')
     parser.add_argument('-relaxed-filenames', help='Allow 7 bit ASCII except lower case characters (violates ISO9660)', action='store_true')
     parser.add_argument('-no-iso-translate', help="Do not translate illegal ISO characters '~', '-', and '#' (violates ISO9660)", action='store_true')
     parser.add_argument('-allow-lowercase', help='Allow lower case characters in addition to the current character set (violates ISO9660)', action='store_true')

@@ -275,7 +275,8 @@ class DirectoryRecord(object):
                 self.xa_record = xa_rec
                 record_offset += len(self.xa_record.record())
 
-            if len(record[record_offset:]) >= 2 and record[record_offset:record_offset + 2] in (b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE', b'AL'):
+            if len(record[record_offset:]) >= 2 and \
+               record[record_offset:record_offset + 2] in (b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE', b'AL'):
                 self.rock_ridge = rockridge.RockRidge()
 
                 is_first_dir_record_of_root = False
@@ -1248,7 +1249,13 @@ class DirectoryRecord(object):
         # comparing directory records.  In a lazy-extent assigning world, the
         # extents are not reliable, so we just rely on the rest of the fields to
         # tell us if two directory records are the same.
-        return self.dr_len != other.dr_len or self.xattr_len != other.xattr_len or self.data_length != other.data_length or self.date != other.date or self.file_flags != other.file_flags or self.file_unit_size != other.file_unit_size or self.interleave_gap_size != other.interleave_gap_size or self.seqnum != other.seqnum or self.len_fi != other.len_fi or self.file_ident != other.file_ident
+        return self.dr_len != other.dr_len or self.xattr_len != other.xattr_len or \
+            self.data_length != other.data_length or self.date != other.date or \
+            self.file_flags != other.file_flags or \
+            self.file_unit_size != other.file_unit_size or \
+            self.interleave_gap_size != other.interleave_gap_size or \
+            self.seqnum != other.seqnum or self.len_fi != other.len_fi or \
+            self.file_ident != other.file_ident
 
     def __eq__(self, other):
         # type: (object) -> bool

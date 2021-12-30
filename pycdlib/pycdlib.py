@@ -3658,7 +3658,7 @@ class PyCdlib(object):
                     eltorito_entries.add(id(entry.inode))
 
             if id(ino) in eltorito_entries:
-                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; use 'rm_eltorito' to remove El Torito, or use 'rm_hard_link' to hide the entry")
 
     def _rm_file_inodes(self, child):
         # type: (dr.DirectoryRecord) -> int
@@ -3682,7 +3682,7 @@ class PyCdlib(object):
         # the entry, but we need them to call the correct API to let us know.
         if self.eltorito_boot_catalog is not None:
             if any(id(child) == id(rec) for rec in self.eltorito_boot_catalog.dirrecords):
-                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; use 'rm_eltorito' to remove El Torito, or use 'rm_hard_link' to hide the entry")
 
         num_bytes_to_remove = 0
 
@@ -3772,7 +3772,7 @@ class PyCdlib(object):
             # the entry, but we need them to call the correct API to let us know.
             if self.eltorito_boot_catalog is not None:
                 if any(id(udf_file_entry) == id(rec) for rec in self.eltorito_boot_catalog.dirrecords):
-                    raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+                    raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; use 'rm_eltorito' to remove El Torito, or use 'rm_hard_link' to hide the entry")
 
             if udf_file_entry.inode is not None:
                 self._check_inode_against_eltorito(udf_file_entry.inode)

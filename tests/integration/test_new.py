@@ -4101,7 +4101,7 @@ def test_new_add_eltorito_rm_file():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_file('/BOOT.;1')
-    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; use 'rm_eltorito' to remove El Torito, or use 'rm_hard_link' to hide the entry")
 
     iso.close()
 
@@ -4120,7 +4120,7 @@ def test_new_eltorito_multi_boot_rm_file():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_file('/boot2')
-    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; use 'rm_eltorito' to remove El Torito, or use 'rm_hard_link' to hide the entry")
 
     iso.close()
 
@@ -5114,7 +5114,7 @@ def test_new_rm_file_linked_by_eltorito_bootcat():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_file('/BOOT.CAT;1')
-    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; use 'rm_eltorito' to remove El Torito, or use 'rm_hard_link' to hide the entry")
 
     iso.close()
 
@@ -6475,7 +6475,7 @@ def test_new_eltorito_udf_rm_eltorito():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_file(udf_path='/foo')
-    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; use 'rm_eltorito' to remove El Torito, or use 'rm_hard_link' to hide the entry")
 
     iso.close()
 
@@ -6494,7 +6494,7 @@ def test_new_udf_eltorito_multi_boot_rm_file():
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_file(udf_path='/boot2')
-    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
+    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; use 'rm_eltorito' to remove El Torito, or use 'rm_hard_link' to hide the entry")
 
     iso.close()
 

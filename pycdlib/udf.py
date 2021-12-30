@@ -1917,7 +1917,11 @@ class UDFPartitionHeaderDescriptor(object):
         # type: (object) -> bool
         if not isinstance(other, UDFPartitionHeaderDescriptor):
             return NotImplemented
-        return self.unalloc_space_table == other.unalloc_space_table and self.unalloc_space_bitmap == other.unalloc_space_bitmap and self.partition_integrity_table == other.partition_integrity_table and self.freed_space_table == other.freed_space_table and self.freed_space_bitmap == other.freed_space_bitmap
+        return self.unalloc_space_table == other.unalloc_space_table and \
+            self.unalloc_space_bitmap == other.unalloc_space_bitmap and \
+            self.partition_integrity_table == other.partition_integrity_table and \
+            self.freed_space_table == other.freed_space_table and \
+            self.freed_space_bitmap == other.freed_space_bitmap
 
 
 class UDFPartitionVolumeDescriptor(object):
