@@ -1447,7 +1447,7 @@ class PyCdlib(object):
                 current_extent += 1
 
             # Now assign files (this includes symlinks).
-            udf_file_entry_inodes_assigned = {}  # type: Dict[int, bool]
+            udf_file_entry_inodes_assigned = set()
             for udf_file_assign_entry, fi_desc in udf_file_assign_list:
                 if udf_file_assign_entry is None or fi_desc is None:
                     continue
@@ -1471,7 +1471,7 @@ class PyCdlib(object):
                                 rec.file_ident.set_icb(current_extent,
                                                        current_extent - part_start)
 
-                    udf_file_entry_inodes_assigned[id(udf_file_assign_entry.inode)] = True
+                    udf_file_entry_inodes_assigned.add(id(udf_file_assign_entry.inode))
 
                 current_extent += 1
 
@@ -3000,7 +3000,7 @@ class PyCdlib(object):
                 self._outfp_write_with_check(outfp, rec)
                 progress.call(len(rec))
 
-            written_file_entry_inodes = {}  # type: Dict[int, bool]
+            written_file_entry_inodes = set()
             udf_file_entries = collections.deque([(self.udf_root, True)])  # type: Deque[Tuple[Optional[udfmod.UDFFileEntry], bool]]
             while udf_file_entries:
                 udf_file_entry, isdir = udf_file_entries.popleft()
@@ -3013,7 +3013,7 @@ class PyCdlib(object):
                     rec = udf_file_entry.record()
                     self._outfp_write_with_check(outfp, rec)
                     progress.call(len(rec))
-                    written_file_entry_inodes[id(udf_file_entry.inode)] = True
+                    written_file_entry_inodes.add(id(udf_file_entry.inode))
 
                 if isdir:
                     outfp.seek(udf_file_entry.fi_descs[0].extent_location() * self.logical_block_size)
@@ -3636,11 +3636,11 @@ class PyCdlib(object):
          Nothing.
         """
         if self.eltorito_boot_catalog is not None:
-            eltorito_entries = {}
-            eltorito_entries[id(self.eltorito_boot_catalog.initial_entry.inode)] = True
+            eltorito_entries = set()
+            eltorito_entries.add(id(self.eltorito_boot_catalog.initial_entry.inode))
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
-                    eltorito_entries[id(entry.inode)] = True
+                    eltorito_entries.add(id(entry.inode))
 
             if id(ino) in eltorito_entries:
                 raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; either use 'rm_eltorito' to remove El Torito first, or use 'rm_hard_link' to hide the entry")
