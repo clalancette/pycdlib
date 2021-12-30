@@ -1258,6 +1258,174 @@ class PyCdlib(object):
             data = self._cdfp.read(32)
         self._cdfp.seek(old)
 
+    def _udf_assign_extents(self, udf_files, current_extent):
+        # type: (List[inode.Inode], int) -> Tuple[int, int]
+        """
+        An internal method to assign UDF extents when reshuffling.
+
+        Parameters:
+         udf_files - The list of UDF Inodes that will need extents assigned.
+         current_extent - The current extent being assigned.
+        Returns:
+         A tuple where the first entry is the new current extent, and the
+         second entry is the new partition start.
+        """
+        if current_extent > 32:
+            # There is no *requirement* in the UDF specification that the UDF
+            # Volume Descriptor Sequence starts at extent 32.  It can start
+            # anywhere between extents 16 and 256, as long as the ISO9660
+            # volume descriptors, the UDF Bridge Volume Recognition Sequence,
+            # Main Volume Descriptor Sequence, Reserve Volume Descriptor
+            # Sequence, and Logical Volume Integrity Sequence all fit, in that
+            # order.  The only way that all of these volume descriptors would
+            # not fit between extents 16 and 32 is in the case of many
+            # duplicate PVDs, many VDSTs, or similar.  Since that is unlikely,
+            # for now we maintain compatibility with genisoimage and force the
+            # UDF Main Descriptor Sequence to start at 32.  We can change this
+            # later if needed.
+            raise pycdlibexception.PyCdlibInternalError('Too many ISO9660 volume descriptors to fit UDF')
+
+        self.udf_main_descs.assign_desc_extents(32)
+
+        # ECMA TR-071 2.6 says that the volume sequence will be exactly 16
+        # extents long, and we know we started at 32, so make it exactly 48.
+        self.udf_reserve_descs.assign_desc_extents(48)
+
+        # ECMA TR-071 2.6 says that the volume sequence will be exactly 16
+        # extents long, and we know we started at 48, so make it exactly 64.
+        current_extent = 64
+
+        if self.udf_logical_volume_integrity is not None:
+            self.udf_logical_volume_integrity.set_extent_location(current_extent)
+            self.udf_main_descs.logical_volumes[0].set_integrity_location(current_extent)
+            self.udf_reserve_descs.logical_volumes[0].set_integrity_location(current_extent)
+            current_extent += 1
+
+        if self.udf_logical_volume_integrity_terminator is not None:
+            self.udf_logical_volume_integrity_terminator.set_extent_location(current_extent)
+            current_extent += 1
+
+        if len(self.udf_anchors) != 2:
+            raise pycdlibexception.PyCdlibInternalError('Expected 2 UDF anchors')
+
+        # The first UDF anchor is hard-coded at extent 256.  We assign the
+        # other anchor later, since it needs to be the last extent.
+        current_extent = 256
+        self.udf_anchors[0].set_extent_location(current_extent,
+                                                self.udf_main_descs.pvds[0].extent_location(),
+                                                self.udf_reserve_descs.pvds[0].extent_location())
+        current_extent += 1
+
+        # Now assign the UDF File Set Descriptor to the beginning of the
+        # partition.
+        part_start = current_extent
+        self.udf_file_set.set_extent_location(part_start)
+        self.udf_main_descs.partitions[0].set_start_location(part_start)
+        self.udf_reserve_descs.partitions[0].set_start_location(part_start)
+        current_extent += 1
+
+        if self.udf_file_set_terminator is not None:
+            self.udf_file_set_terminator.set_extent_location(current_extent,
+                                                             current_extent - part_start)
+            current_extent += 1
+
+        # Assignment of extents to UDF is complicated.  UDF filesystems are
+        # arranged by having one extent containing a File Entry that describes
+        # a directory or a file, followed by an extent that contains the
+        # entries in the case of a directory.  All File Entries and entries
+        # containing File Identifier Descriptors are arranged ahead of File
+        # Entries for files.  The implementation below alternates assignment to
+        # File Entries and File Descriptores for all directories, and then
+        # then assigns to all files.  Note that data for files is assigned in
+        # the 'normal' file assignment below.
+
+        # First assign directories.
+        if self.udf_root is None:
+            raise pycdlibexception.PyCdlibInternalError('ISO has UDF but no UDF root; this should never happen')
+        udf_file_assign_list = []
+        udf_file_entries = collections.deque([(self.udf_root, None)])  # type: Deque[Tuple[udfmod.UDFFileEntry, Optional[udfmod.UDFFileIdentifierDescriptor]]]
+        while udf_file_entries:
+            udf_file_entry, fi_desc = udf_file_entries.popleft()
+
+            # In theory we should check for and skip the work for files and
+            # symlinks, but they will never be added to 'udf_file_entries'
+            # to begin with so we can safely ignore them.
+
+            # Set the location that the File Entry lives at, and update the
+            # File Identifier Descriptor that points to it (for all but the
+            # root).
+            udf_file_entry.set_extent_location(current_extent,
+                                               current_extent - part_start)
+            if fi_desc is not None:
+                fi_desc.set_icb(current_extent, current_extent - part_start)
+            current_extent += 1
+
+            # Now assign where the File Entry points to; for files this is
+            # overwritten later, but for directories this tells us where to
+            # find the extent containing the list of File Identifier
+            # Descriptors that are in this directory.
+            udf_file_entry.set_data_location(current_extent,
+                                             current_extent - part_start)
+            offset = 0
+            for d in udf_file_entry.fi_descs:
+                if offset >= self.logical_block_size:
+                    # The offset has spilled over into a new extent.  Increase
+                    # the current extent by one, and update the offset.  Note
+                    # that the offset does not go to 0, since UDF allows File
+                    # Identifier Descs to span extents.  Instead, it is the
+                    # current offset minus the size of a block (say 2050 - 2048,
+                    # leaving us at offset 2).
+                    current_extent += 1
+                    offset = offset - self.logical_block_size
+
+                d.set_extent_location(current_extent,
+                                      current_extent - part_start)
+                if not d.is_parent() and d.file_entry is not None:
+                    if d.is_dir():
+                        udf_file_entries.append((d.file_entry, d))
+                    else:
+                        udf_file_assign_list.append((d.file_entry, d))
+                offset += udfmod.UDFFileIdentifierDescriptor.length(len(d.fi))
+
+            if offset > self.logical_block_size:
+                current_extent += 1
+
+            current_extent += 1
+
+        # Now assign files (this includes symlinks).
+        udf_file_entry_inodes_assigned = set()
+        for udf_file_assign_entry, fi_desc in udf_file_assign_list:
+            if udf_file_assign_entry is None or fi_desc is None:
+                continue
+
+            if udf_file_assign_entry.inode is not None and id(udf_file_assign_entry.inode) in udf_file_entry_inodes_assigned:
+                continue
+
+            udf_file_assign_entry.set_extent_location(current_extent,
+                                                      current_extent - part_start)
+            fi_desc.set_icb(current_extent, current_extent - part_start)
+
+            if udf_file_assign_entry.inode is not None:
+                # The data location for files will be set later.
+                if udf_file_assign_entry.inode.get_data_length() > 0:
+                    udf_files.append(udf_file_assign_entry.inode)
+                for rec, pvd_unused in udf_file_assign_entry.inode.linked_records:
+                    if isinstance(rec, udfmod.UDFFileEntry):
+                        rec.set_extent_location(current_extent,
+                                                current_extent - part_start)
+                        if rec.file_ident is not None:
+                            rec.file_ident.set_icb(current_extent,
+                                                   current_extent - part_start)
+
+                udf_file_entry_inodes_assigned.add(id(udf_file_assign_entry.inode))
+
+            current_extent += 1
+
+        if self.udf_logical_volume_integrity is not None:
+            self.udf_logical_volume_integrity.logical_volume_contents_use.unique_id = current_extent
+
+        return current_extent, part_start
+
     def _reshuffle_extents(self):
         # type: () -> None
         """
@@ -1321,162 +1489,8 @@ class PyCdlib(object):
         part_start = 0
 
         udf_files = []  # type: List[inode.Inode]
-        linked_inodes = set()
         if self._has_udf:
-            if current_extent > 32:
-                # There is no *requirement* in the UDF specification that the
-                # UDF Volume Descriptor Sequence starts at extent 32.  It can
-                # start anywhere between extents 16 and 256, as long as the
-                # ISO9660 volume descriptors, the UDF Bridge Volume Recognition
-                # Sequence, Main Volume Descriptor Sequence, Reserve Volume
-                # Descriptor Sequence, and Logical Volume Integrity Sequence all
-                # fit, in that order.  The only way that all of these volume
-                # descriptors would not fit between extents 16 and 32 is in the
-                # case of many duplicate PVDs, many VDSTs, or similar.  Since
-                # that is unlikely, for now we maintain compatibility with
-                # genisoimage and force the UDF Main Descriptor Sequence to
-                # start at 32.  We can change this later if needed.
-                raise pycdlibexception.PyCdlibInternalError('Too many ISO9660 volume descriptors to fit UDF')
-
-            self.udf_main_descs.assign_desc_extents(32)
-
-            # ECMA TR-071 2.6 says that the volume sequence will be exactly 16
-            # extents long, and we know we started at 32, so make it exactly 48.
-            self.udf_reserve_descs.assign_desc_extents(48)
-
-            # ECMA TR-071 2.6 says that the volume sequence will be exactly 16
-            # extents long, and we know we started at 48, so make it exactly 64.
-            current_extent = 64
-
-            if self.udf_logical_volume_integrity is not None:
-                self.udf_logical_volume_integrity.set_extent_location(current_extent)
-                self.udf_main_descs.logical_volumes[0].set_integrity_location(current_extent)
-                self.udf_reserve_descs.logical_volumes[0].set_integrity_location(current_extent)
-                current_extent += 1
-
-            if self.udf_logical_volume_integrity_terminator is not None:
-                self.udf_logical_volume_integrity_terminator.set_extent_location(current_extent)
-                current_extent += 1
-
-            # Now assign the first UDF anchor at 256.
-            if len(self.udf_anchors) != 2:
-                raise pycdlibexception.PyCdlibInternalError('Expected 2 UDF anchors')
-
-            # The first UDF anchor is hard-coded at extent 256.  We assign the
-            # other anchor later, since it needs to be the last extent.
-            current_extent = 256
-            self.udf_anchors[0].set_extent_location(current_extent,
-                                                    self.udf_main_descs.pvds[0].extent_location(),
-                                                    self.udf_reserve_descs.pvds[0].extent_location())
-            current_extent += 1
-
-            # Now assign the UDF File Set Descriptor to the beginning of the
-            # partition.
-            part_start = current_extent
-            self.udf_file_set.set_extent_location(part_start)
-            self.udf_main_descs.partitions[0].set_start_location(part_start)
-            self.udf_reserve_descs.partitions[0].set_start_location(part_start)
-            current_extent += 1
-
-            if self.udf_file_set_terminator is not None:
-                self.udf_file_set_terminator.set_extent_location(current_extent,
-                                                                 current_extent - part_start)
-                current_extent += 1
-
-            # Assignment of extents to UDF is complicated.  UDF filesystems are
-            # arranged by having one extent containing a File Entry that
-            # describes a directory or a file, followed by an extent that
-            # contains the entries in the case of a directory.  All File Entries
-            # and entries containing File Identifier Descriptors are arranged
-            # ahead of File Entries for files.  The implementation below
-            # alternates assignment to File Entries and File Descriptores for
-            # all directories, and then assigns to all files.  Note that data
-            # for files is assigned in the 'normal' file assignment below.
-
-            # First assign directories.
-            if self.udf_root is None:
-                raise pycdlibexception.PyCdlibInternalError('ISO has UDF but no UDF root; this should never happen')
-            udf_file_assign_list = []
-            udf_file_entries = collections.deque([(self.udf_root, None)])  # type: Deque[Tuple[udfmod.UDFFileEntry, Optional[udfmod.UDFFileIdentifierDescriptor]]]
-            while udf_file_entries:
-                udf_file_entry, fi_desc = udf_file_entries.popleft()
-
-                # In theory we should check for and skip the work for files and
-                # symlinks, but they will never be added to 'udf_file_entries'
-                # to begin with so we can safely ignore them.
-
-                # Set the location that the File Entry lives at, and update
-                # the File Identifier Descriptor that points to it (for all
-                # but the root).
-                udf_file_entry.set_extent_location(current_extent,
-                                                   current_extent - part_start)
-                if fi_desc is not None:
-                    fi_desc.set_icb(current_extent, current_extent - part_start)
-                current_extent += 1
-
-                # Now assign where the File Entry points to; for files this
-                # is overwritten later, but for directories this tells us where
-                # to find the extent containing the list of File Identifier
-                # Descriptors that are in this directory.
-                udf_file_entry.set_data_location(current_extent,
-                                                 current_extent - part_start)
-                offset = 0
-                for d in udf_file_entry.fi_descs:
-                    if offset >= self.logical_block_size:
-                        # The offset has spilled over into a new extent.
-                        # Increase the current extent by one, and update the
-                        # offset.  Note that the offset does not go to 0, since
-                        # UDF allows File Identifier Descs to span extents.
-                        # Instead, it is the current offset minus the size of a
-                        # block (say 2050 - 2048, leaving us at offset 2).
-                        current_extent += 1
-                        offset = offset - self.logical_block_size
-
-                    d.set_extent_location(current_extent,
-                                          current_extent - part_start)
-                    if not d.is_parent() and d.file_entry is not None:
-                        if d.is_dir():
-                            udf_file_entries.append((d.file_entry, d))
-                        else:
-                            udf_file_assign_list.append((d.file_entry, d))
-                    offset += udfmod.UDFFileIdentifierDescriptor.length(len(d.fi))
-
-                if offset > self.logical_block_size:
-                    current_extent += 1
-
-                current_extent += 1
-
-            # Now assign files (this includes symlinks).
-            udf_file_entry_inodes_assigned = set()
-            for udf_file_assign_entry, fi_desc in udf_file_assign_list:
-                if udf_file_assign_entry is None or fi_desc is None:
-                    continue
-
-                if udf_file_assign_entry.inode is not None and id(udf_file_assign_entry.inode) in udf_file_entry_inodes_assigned:
-                    continue
-
-                udf_file_assign_entry.set_extent_location(current_extent,
-                                                          current_extent - part_start)
-                fi_desc.set_icb(current_extent, current_extent - part_start)
-
-                if udf_file_assign_entry.inode is not None:
-                    # The data location for files will be set later.
-                    if udf_file_assign_entry.inode.get_data_length() > 0:
-                        udf_files.append(udf_file_assign_entry.inode)
-                    for rec, pvd_unused in udf_file_assign_entry.inode.linked_records:
-                        if isinstance(rec, udfmod.UDFFileEntry):
-                            rec.set_extent_location(current_extent,
-                                                    current_extent - part_start)
-                            if rec.file_ident is not None:
-                                rec.file_ident.set_icb(current_extent,
-                                                       current_extent - part_start)
-
-                    udf_file_entry_inodes_assigned.add(id(udf_file_assign_entry.inode))
-
-                current_extent += 1
-
-            if self.udf_logical_volume_integrity is not None:
-                self.udf_logical_volume_integrity.logical_volume_contents_use.unique_id = current_extent
+            current_extent, part_start = self._udf_assign_extents(udf_files, current_extent)
 
         # Next up, put the path table records in the right place.
         for pvd in self.pvds:
@@ -1543,6 +1557,7 @@ class PyCdlib(object):
                                                 self.logical_block_size)
             return current_extent
 
+        linked_inodes = set()
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
             for rec in self.eltorito_boot_catalog.dirrecords:
