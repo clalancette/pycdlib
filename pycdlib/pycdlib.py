@@ -3372,7 +3372,6 @@ class PyCdlib(object):
                                                              eltorito_catalog,
                                                              udf_new_path=udf_path)
 
-
         return num_bytes_to_add
 
     def _rm_dr_link(self, rec):
