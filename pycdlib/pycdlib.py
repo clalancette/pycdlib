@@ -1426,6 +1426,31 @@ class PyCdlib(object):
 
         return current_extent, part_start
 
+    def _set_inode(self, ino, current_extent, part_start):
+        # type: (inode.Inode, int, int) -> int
+        """
+        An internal function to set the location of an inode and update the
+        metadata of all records attached to it.
+
+        Parameters:
+         ino - The inode to update.
+         current_extent - The extent to set the inode to.
+         part_start - The start of the partition that the inode is on.
+        Returns:
+         The new extent location.
+        """
+        if len(self.udf_anchors) > 2 and current_extent == self.pvd.space_size - 256:
+            current_extent += 1
+
+        ino.set_extent_location(current_extent)
+        for rec, pvd_unused in ino.linked_records:
+            rec.set_data_location(current_extent,
+                                  current_extent - part_start)
+
+        current_extent += utils.ceiling_div(ino.get_data_length(),
+                                            self.logical_block_size)
+        return current_extent
+
     def _reshuffle_extents(self):
         # type: () -> None
         """
@@ -1532,31 +1557,6 @@ class PyCdlib(object):
                                                     self.udf_main_descs.pvds[0].extent_location(),
                                                     self.udf_reserve_descs.pvds[0].extent_location())
 
-        def _set_inode(ino, current_extent, part_start):
-            # type: (inode.Inode, int, int) -> int
-            """
-            An internal function to set the location of an inode and update the
-            metadata of all records attached to it.
-
-            Parameters:
-             ino - The inode to update.
-             current_extent - The extent to set the inode to.
-             part_start - The start of the partition that the inode is on.
-            Returns:
-             The new extent location.
-            """
-            if len(self.udf_anchors) > 2 and current_extent == self.pvd.space_size - 256:
-                current_extent += 1
-
-            ino.set_extent_location(current_extent)
-            for rec, pvd_unused in ino.linked_records:
-                rec.set_data_location(current_extent,
-                                      current_extent - part_start)
-
-            current_extent += utils.ceiling_div(ino.get_data_length(),
-                                                self.logical_block_size)
-            return current_extent
-
         linked_inodes = set()
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
@@ -1636,8 +1636,8 @@ class PyCdlib(object):
                     elif enc.platform_id == 0:
                         self.isohybrid_mbr.update_rba(current_extent)
 
-                current_extent = _set_inode(enc.entry.inode, current_extent,
-                                            part_start)
+                current_extent = self._set_inode(enc.entry.inode, current_extent,
+                                                 part_start)
                 linked_inodes.add(id(enc.entry.inode))
 
         for ino in pvd_files + joliet_files + udf_files:
@@ -1646,7 +1646,7 @@ class PyCdlib(object):
                 # earlier entry.
                 continue
 
-            current_extent = _set_inode(ino, current_extent, part_start)
+            current_extent = self._set_inode(ino, current_extent, part_start)
 
             linked_inodes.add(id(ino))
 
