@@ -4177,8 +4177,8 @@ class UDFFileEntry(object):
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
 
         current_assignment = start_extent
-        for index, desc_unused in enumerate(self.alloc_descs):
-            self.alloc_descs[index].log_block_num = current_assignment
+        for desc in self.alloc_descs:
+            desc.log_block_num = current_assignment
             current_assignment += 1
 
     def get_data_length(self):
