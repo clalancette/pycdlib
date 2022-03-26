@@ -22,6 +22,7 @@ import bisect
 import collections
 import inspect
 import io
+import logging
 import os
 import struct
 import sys
@@ -67,6 +68,7 @@ if sys.version_info.major == 2:
 # We allow A-Z, 0-9, and _ as "d1" characters.  The below is the fastest way to
 # build that list as integers.
 _allowed_d1_characters = set(tuple(range(65, 91)) + tuple(range(48, 58)) + tuple((ord(b'_'),)))
+_logger = logging.getLogger(__name__)
 
 
 def _check_d1_characters(name):
@@ -2143,7 +2145,7 @@ class PyCdlib(object):
         desc_tag.parse(file_set_and_term_data[self.logical_block_size:],
                        current_extent - self.udf_main_descs.partitions[0].part_start_location)
         if desc_tag.tag_ident != 8:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF File Set Terminator Tag identifier not 8')
+            _logger.warning('UDF File Set Terminator Tag identifier not 8')
         self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
         self.udf_file_set_terminator.parse(current_extent, desc_tag)
 
