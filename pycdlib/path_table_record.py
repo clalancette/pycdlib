@@ -107,8 +107,8 @@ class PathTableRecord(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
 
-        return self._record(utils.swab_32bit(self.extent_location),
-                            utils.swab_16bit(self.parent_directory_num))
+        return self._record(utils.swap_32bit(self.extent_location),
+                            utils.swap_16bit(self.parent_directory_num))
 
     @classmethod
     def record_length(cls, len_di):
@@ -219,8 +219,8 @@ class PathTableRecord(object):
 
         if be_record.len_di != self.len_di or \
            be_record.xattr_length != self.xattr_length or \
-           utils.swab_32bit(be_record.extent_location) != self.extent_location or \
-           utils.swab_16bit(be_record.parent_directory_num) != self.parent_directory_num or \
+           utils.swap_32bit(be_record.extent_location) != self.extent_location or \
+           utils.swap_16bit(be_record.parent_directory_num) != self.parent_directory_num or \
            be_record.directory_identifier != self.directory_identifier:
             return False
         return True

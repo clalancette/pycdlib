@@ -283,13 +283,13 @@ class RRCERecord(object):
         if su_len != RRCERecord.length():
             raise pycdlibexception.PyCdlibInvalidISO('Invalid length on rock ridge extension')
 
-        if bl_cont_area_le != utils.swab_32bit(bl_cont_area_be):
+        if bl_cont_area_le != utils.swap_32bit(bl_cont_area_be):
             raise pycdlibexception.PyCdlibInvalidISO('CE record big and little endian continuation area do not agree')
 
-        if offset_cont_area_le != utils.swab_32bit(offset_cont_area_be):
+        if offset_cont_area_le != utils.swap_32bit(offset_cont_area_be):
             raise pycdlibexception.PyCdlibInvalidISO('CE record big and little endian continuation area offset do not agree')
 
-        if len_cont_area_le != utils.swab_32bit(len_cont_area_be):
+        if len_cont_area_le != utils.swap_32bit(len_cont_area_be):
             raise pycdlibexception.PyCdlibInvalidISO('CE record big and little endian continuation area length do not agree')
 
         self.bl_cont_area = bl_cont_area_le
@@ -380,11 +380,11 @@ class RRCERecord(object):
                                    RRCERecord.length(),
                                    SU_ENTRY_VERSION,
                                    self.bl_cont_area,
-                                   utils.swab_32bit(self.bl_cont_area),
+                                   utils.swap_32bit(self.bl_cont_area),
                                    self.offset_cont_area,
-                                   utils.swab_32bit(self.offset_cont_area),
+                                   utils.swap_32bit(self.offset_cont_area),
                                    self.len_cont_area,
-                                   utils.swab_32bit(self.len_cont_area))
+                                   utils.swap_32bit(self.len_cont_area))
 
     @staticmethod
     def length():
@@ -443,16 +443,16 @@ class RRPXRecord(object):
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
-        if posix_file_mode_le != utils.swab_32bit(posix_file_mode_be):
+        if posix_file_mode_le != utils.swap_32bit(posix_file_mode_be):
             raise pycdlibexception.PyCdlibInvalidISO('PX record big and little-endian file mode do not agree')
 
-        if posix_file_links_le != utils.swab_32bit(posix_file_links_be):
+        if posix_file_links_le != utils.swap_32bit(posix_file_links_be):
             raise pycdlibexception.PyCdlibInvalidISO('PX record big and little-endian file links do not agree')
 
-        if posix_file_user_id_le != utils.swab_32bit(posix_file_user_id_be):
+        if posix_file_user_id_le != utils.swap_32bit(posix_file_user_id_be):
             raise pycdlibexception.PyCdlibInvalidISO('PX record big and little-endian file user ID do not agree')
 
-        if posix_file_group_id_le != utils.swab_32bit(posix_file_group_id_be):
+        if posix_file_group_id_le != utils.swap_32bit(posix_file_group_id_be):
             raise pycdlibexception.PyCdlibInvalidISO('PX record big and little-endian file group ID do not agree')
 
         # In Rock Ridge 1.09 and 1.10, there is no serial number so the su_len
@@ -464,7 +464,7 @@ class RRPXRecord(object):
             (posix_file_serial_number_le,
              posix_file_serial_number_be) = struct.unpack_from('<LL',
                                                                rrstr[:44], 36)
-            if posix_file_serial_number_le != utils.swab_32bit(posix_file_serial_number_be):
+            if posix_file_serial_number_le != utils.swap_32bit(posix_file_serial_number_be):
                 raise pycdlibexception.PyCdlibInvalidISO('PX record big and little-endian file serial number do not agree')
         else:
             raise pycdlibexception.PyCdlibInvalidISO('Invalid length on Rock Ridge PX record')
@@ -516,16 +516,16 @@ class RRPXRecord(object):
 
         outlist = [b'PX', struct.pack(self.FMT, RRPXRecord.length(rr_version),
                                       SU_ENTRY_VERSION, self.posix_file_mode,
-                                      utils.swab_32bit(self.posix_file_mode),
+                                      utils.swap_32bit(self.posix_file_mode),
                                       self.posix_file_links,
-                                      utils.swab_32bit(self.posix_file_links),
+                                      utils.swap_32bit(self.posix_file_links),
                                       self.posix_user_id,
-                                      utils.swab_32bit(self.posix_user_id),
+                                      utils.swap_32bit(self.posix_user_id),
                                       self.posix_group_id,
-                                      utils.swab_32bit(self.posix_group_id))]
+                                      utils.swap_32bit(self.posix_group_id))]
         if rr_version == '1.12':
             outlist.append(struct.pack('<LL', self.posix_serial_number,
-                                       utils.swab_32bit(self.posix_serial_number)))
+                                       utils.swap_32bit(self.posix_serial_number)))
         # The rr_version can never be "wrong" at this point; if it was, it would
         # have thrown an exception earlier when calling length().  So just skip
         # any potential checks here.
@@ -784,10 +784,10 @@ class RRPNRecord(object):
         if su_len != RRPNRecord.length():
             raise pycdlibexception.PyCdlibInvalidISO('Invalid length on rock ridge extension')
 
-        if dev_t_high_le != utils.swab_32bit(dev_t_high_be):
+        if dev_t_high_le != utils.swap_32bit(dev_t_high_be):
             raise pycdlibexception.PyCdlibInvalidISO('Dev_t high little-endian does not match big-endian')
 
-        if dev_t_low_le != utils.swab_32bit(dev_t_low_be):
+        if dev_t_low_le != utils.swap_32bit(dev_t_low_be):
             raise pycdlibexception.PyCdlibInvalidISO('Dev_t low little-endian does not match big-endian')
 
         self.dev_t_high = dev_t_high_le
@@ -832,9 +832,9 @@ class RRPNRecord(object):
                                    RRPNRecord.length(),
                                    SU_ENTRY_VERSION,
                                    self.dev_t_high,
-                                   utils.swab_32bit(self.dev_t_high),
+                                   utils.swap_32bit(self.dev_t_high),
                                    self.dev_t_low,
-                                   utils.swab_32bit(self.dev_t_low))
+                                   utils.swap_32bit(self.dev_t_low))
 
     @staticmethod
     def length():
@@ -1688,7 +1688,7 @@ class RRCLRecord(object):
         if su_len != RRCLRecord.length():
             raise pycdlibexception.PyCdlibInvalidISO('Invalid length on rock ridge extension')
 
-        if child_log_block_num_le != utils.swab_32bit(child_log_block_num_be):
+        if child_log_block_num_le != utils.swap_32bit(child_log_block_num_be):
             raise pycdlibexception.PyCdlibInvalidISO('Little endian block num does not equal big endian; corrupt ISO')
         self.child_log_block_num = child_log_block_num_le
 
@@ -1728,7 +1728,7 @@ class RRCLRecord(object):
                                    RRCLRecord.length(),
                                    SU_ENTRY_VERSION,
                                    self.child_log_block_num,
-                                   utils.swab_32bit(self.child_log_block_num))
+                                   utils.swap_32bit(self.child_log_block_num))
 
     def set_log_block_num(self, bl):
         # type: (int) -> None
@@ -1795,7 +1795,7 @@ class RRPLRecord(object):
          parent_log_block_num_le, parent_log_block_num_be) = struct.unpack_from(self.FMT, rrstr[:12], 2)
         if su_len != RRPLRecord.length():
             raise pycdlibexception.PyCdlibInvalidISO('Invalid length on rock ridge extension')
-        if parent_log_block_num_le != utils.swab_32bit(parent_log_block_num_be):
+        if parent_log_block_num_le != utils.swap_32bit(parent_log_block_num_be):
             raise pycdlibexception.PyCdlibInvalidISO('Little endian block num does not equal big endian; corrupt ISO')
         self.parent_log_block_num = parent_log_block_num_le
 
@@ -1835,7 +1835,7 @@ class RRPLRecord(object):
                                    RRPLRecord.length(),
                                    SU_ENTRY_VERSION,
                                    self.parent_log_block_num,
-                                   utils.swab_32bit(self.parent_log_block_num))
+                                   utils.swap_32bit(self.parent_log_block_num))
 
     def set_log_block_num(self, bl):
         # type: (int) -> None
@@ -2044,17 +2044,17 @@ class RRSFRecord(object):
         if su_len == 12:
             # This is a Rock Ridge version 1.10 SF Record, which is 12 bytes.
             (virtual_file_size_le, virtual_file_size_be) = struct.unpack_from('<LL', rrstr[:12], 4)
-            if virtual_file_size_le != utils.swab_32bit(virtual_file_size_be):
+            if virtual_file_size_le != utils.swap_32bit(virtual_file_size_be):
                 raise pycdlibexception.PyCdlibInvalidISO('Virtual file size little-endian does not match big-endian')
             self.virtual_file_size_low = virtual_file_size_le
         elif su_len == 21:
             # This is a Rock Ridge version 1.12 SF Record, which is 21 bytes.
             (virtual_file_size_high_le, virtual_file_size_high_be, virtual_file_size_low_le,
              virtual_file_size_low_be, self.table_depth) = struct.unpack_from('<LLLLB', rrstr[:21], 4)
-            if virtual_file_size_high_le != utils.swab_32bit(virtual_file_size_high_be):
+            if virtual_file_size_high_le != utils.swap_32bit(virtual_file_size_high_be):
                 raise pycdlibexception.PyCdlibInvalidISO('Virtual file size high little-endian does not match big-endian')
 
-            if virtual_file_size_low_le != utils.swab_32bit(virtual_file_size_low_be):
+            if virtual_file_size_low_le != utils.swap_32bit(virtual_file_size_low_be):
                 raise pycdlibexception.PyCdlibInvalidISO('Virtual file size low little-endian does not match big-endian')
             self.virtual_file_size_low = virtual_file_size_low_le
             self.virtual_file_size_high = virtual_file_size_high_le
@@ -2104,14 +2104,14 @@ class RRSFRecord(object):
         if self.virtual_file_size_high is not None and self.table_depth is not None:
             ret += struct.pack('<LLLLB',
                                self.virtual_file_size_high,
-                               utils.swab_32bit(self.virtual_file_size_high),
+                               utils.swap_32bit(self.virtual_file_size_high),
                                self.virtual_file_size_low,
-                               utils.swab_32bit(self.virtual_file_size_low),
+                               utils.swap_32bit(self.virtual_file_size_low),
                                self.table_depth)
         else:
             ret += struct.pack('<LL',
                                self.virtual_file_size_low,
-                               utils.swab_32bit(self.virtual_file_size_low))
+                               utils.swap_32bit(self.virtual_file_size_low))
 
         return ret
 

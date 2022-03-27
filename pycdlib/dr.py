@@ -220,8 +220,8 @@ class DirectoryRecord(object):
         # length.  However, we have seen ISOs in the wild where this is
         # incorrect, so we elide the check here.
 
-        if extent_location_le != utils.swab_32bit(extent_location_be):
-            raise pycdlibexception.PyCdlibInvalidISO('Little-endian (%d) and big-endian (%d) extent location disagree' % (extent_location_le, utils.swab_32bit(extent_location_be)))
+        if extent_location_le != utils.swap_32bit(extent_location_be):
+            raise pycdlibexception.PyCdlibInvalidISO('Little-endian (%d) and big-endian (%d) extent location disagree' % (extent_location_le, utils.swap_32bit(extent_location_be)))
         self.orig_extent_loc = extent_location_le
 
         # Theoretically, we should check to make sure that the little endian
@@ -231,7 +231,7 @@ class DirectoryRecord(object):
 
         self.data_length = data_length_le
 
-        if seqnum_le != utils.swab_16bit(seqnum_be):
+        if seqnum_le != utils.swap_16bit(seqnum_be):
             raise pycdlibexception.PyCdlibInvalidISO('Little-endian and big-endian seqnum disagree')
         self.seqnum = seqnum_le
 
@@ -1073,11 +1073,11 @@ class DirectoryRecord(object):
             rr_rec = self.rock_ridge.record_dr_entries()
 
         outlist = [struct.pack(self.FMT, self.dr_len, self.xattr_len,
-                               extent_loc, utils.swab_32bit(extent_loc),
-                               self.data_length, utils.swab_32bit(self.data_length),
+                               extent_loc, utils.swap_32bit(extent_loc),
+                               self.data_length, utils.swap_32bit(self.data_length),
                                self.date.record(), self.file_flags,
                                self.file_unit_size, self.interleave_gap_size,
-                               self.seqnum, utils.swab_16bit(self.seqnum),
+                               self.seqnum, utils.swap_16bit(self.seqnum),
                                self.len_fi) + self.file_ident + padstr + xa_rec + rr_rec]
 
         outlist.append(b'\x00' * (len(outlist[0]) % 2))

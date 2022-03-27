@@ -21,21 +21,21 @@ for i in range(0, 3):
 import pycdlib.utils
 import pycdlib.pycdlibexception
 
-def test_swab_32bit():
-    assert(pycdlib.utils.swab_32bit(0x89) == 0x89000000)
+def test_swap_32bit():
+    assert(pycdlib.utils.swap_32bit(0x89) == 0x89000000)
 
-def test_swab_32bit_bad_input():
+def test_swap_32bit_bad_input():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        pycdlib.utils.swab_32bit(-1)
-    assert(str(excinfo.value) == 'Invalid integer passed to swab; must be unsigned 32-bits!')
+        pycdlib.utils.swap_32bit(-1)
+    assert(str(excinfo.value) == 'Invalid integer passed to swap; must be unsigned 32-bits!')
 
-def test_swab_16bit():
-    assert(pycdlib.utils.swab_16bit(0x55aa) == 0xaa55)
+def test_swap_16bit():
+    assert(pycdlib.utils.swap_16bit(0x55aa) == 0xaa55)
 
-def test_swab_16bit_bad_input():
+def test_swap_16bit_bad_input():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        pycdlib.utils.swab_16bit(-1)
-    assert(str(excinfo.value) == 'Invalid integer passed to swab; must be unsigned 16-bits!')
+        pycdlib.utils.swap_16bit(-1)
+    assert(str(excinfo.value) == 'Invalid integer passed to swap; must be unsigned 16-bits!')
 
 def test_ceiling_div():
     assert(pycdlib.utils.ceiling_div(0, 2048) == 0)

@@ -152,28 +152,28 @@ class PrimaryOrSupplementaryVD(object):
 
         # Check to make sure that the little-endian and big-endian versions
         # of the parsed data agree with each other.
-        if space_size_le != utils.swab_32bit(space_size_be):
+        if space_size_le != utils.swap_32bit(space_size_be):
             raise pycdlibexception.PyCdlibInvalidISO('Little-endian and big-endian space size disagree')
         self.space_size = space_size_le
 
-        if set_size_le != utils.swab_16bit(set_size_be):
+        if set_size_le != utils.swap_16bit(set_size_be):
             raise pycdlibexception.PyCdlibInvalidISO('Little-endian and big-endian set size disagree')
         self.set_size = set_size_le
 
-        if seqnum_le != utils.swab_16bit(seqnum_be):
+        if seqnum_le != utils.swap_16bit(seqnum_be):
             raise pycdlibexception.PyCdlibInvalidISO('Little-endian and big-endian seqnum disagree')
         self.seqnum = seqnum_le
 
-        if logical_block_size_le != utils.swab_16bit(logical_block_size_be):
+        if logical_block_size_le != utils.swap_16bit(logical_block_size_be):
             raise pycdlibexception.PyCdlibInvalidISO('Little-endian and big-endian logical block size disagree')
         self.log_block_size = logical_block_size_le
 
-        if path_table_size_le != utils.swab_32bit(path_table_size_be):
+        if path_table_size_le != utils.swap_32bit(path_table_size_be):
             raise pycdlibexception.PyCdlibInvalidISO('Little-endian and big-endian path table size disagree')
         self.path_tbl_size = path_table_size_le
         self.path_table_num_extents = utils.ceiling_div(self.path_tbl_size, 4096) * 2
 
-        self.path_table_location_be = utils.swab_32bit(self.path_table_location_be)
+        self.path_table_location_be = utils.swap_32bit(self.path_table_location_be)
 
         self.encoding = 'ascii'
         if self.escape_sequences in (b'%/@'.ljust(32, b'\x00'), b'%/C'.ljust(32, b'\x00'), b'%/E'.ljust(32, b'\x00')):
@@ -421,19 +421,19 @@ class PrimaryOrSupplementaryVD(object):
                            self.volume_identifier,
                            0,
                            self.space_size,
-                           utils.swab_32bit(self.space_size),
+                           utils.swap_32bit(self.space_size),
                            self.escape_sequences,
                            self.set_size,
-                           utils.swab_16bit(self.set_size),
+                           utils.swap_16bit(self.set_size),
                            self.seqnum,
-                           utils.swab_16bit(self.seqnum),
+                           utils.swap_16bit(self.seqnum),
                            self.log_block_size,
-                           utils.swab_16bit(self.log_block_size),
+                           utils.swap_16bit(self.log_block_size),
                            self.path_tbl_size,
-                           utils.swab_32bit(self.path_tbl_size),
+                           utils.swap_32bit(self.path_tbl_size),
                            self.path_table_location_le,
                            self.optional_path_table_location_le,
-                           utils.swab_32bit(self.path_table_location_be),
+                           utils.swap_32bit(self.path_table_location_be),
                            self.optional_path_table_location_be,
                            self.root_dir_record.record(),
                            self.volume_set_identifier,

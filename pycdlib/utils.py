@@ -48,34 +48,34 @@ if False:  # pylint: disable=using-constant-test
     from typing import BinaryIO, List, Optional, Tuple  # NOQA pylint: disable=unused-import
 
 
-def swab_32bit(x):
+def swap_32bit(x):
     # type: (int) -> int
     """
-    A function to swab a 32-bit integer.
+    A function to swap a 32-bit integer.
 
     Parameters:
-     x - The 32-bit integer to swab.
+     x - The 32-bit integer to swap.
     Returns:
-     The swabbed version of the 32-bit integer.
+     The swapped version of the 32-bit integer.
     """
     if x > (((1 << 32) - 1) & 0xFFFFFFFF) or x < 0:
-        raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swab; must be unsigned 32-bits!')
+        raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swap; must be unsigned 32-bits!')
 
     return struct.unpack("<I", struct.pack(">I", x))[0]
 
 
-def swab_16bit(x):
+def swap_16bit(x):
     # type: (int) -> int
     """
-    A function to swab a 16-bit integer.
+    A function to swap a 16-bit integer.
 
     Parameters:
-     x - The 16-bit integer to swab.
+     x - The 16-bit integer to swap.
     Returns:
-     The swabbed version of the 16-bit integer.
+     The swapped version of the 16-bit integer.
     """
     if x > (((1 << 16) - 1) & 0xFFFFFFFF) or x < 0:
-        raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swab; must be unsigned 16-bits!')
+        raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swap; must be unsigned 16-bits!')
 
     return struct.unpack("<H", struct.pack(">H", x))[0]
 
