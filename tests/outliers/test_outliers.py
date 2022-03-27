@@ -5,6 +5,7 @@ import pathlib
 import pytest
 import sys
 import lzma
+import logging
 
 try:
     from cStringIO import StringIO as BytesIO
@@ -50,8 +51,10 @@ def try_list_files(name):
     return listing
 
 
-def test_UDF_tag_identifier_not_8():
-    files = try_list_files('ff42e1a03e7d70b48305d83edf6ed5fce0a858ef001acafab86e9e03c561f30c')
+def test_UDF_tag_identifier_not_8(caplog):
+    with caplog.at_level(logging.WARNING):
+        files = try_list_files('ff42e1a03e7d70b48305d83edf6ed5fce0a858ef001acafab86e9e03c561f30c')
     assert 'CDVD.IRX' in files
     assert 'COLECO.ROM' in files
     assert 'SYSTEM.CNF' in files
+    assert 'UDF File Set Terminator Tag identifier not 8' in caplog.text
