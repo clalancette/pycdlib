@@ -18,6 +18,7 @@
 
 from __future__ import absolute_import
 
+import logging
 import struct
 import time
 
@@ -38,6 +39,7 @@ VOLUME_DESCRIPTOR_TYPE_VOLUME_PARTITION = 3
 VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 
 allzero = b'\x00' * 2048
+_logger = logging.getLogger(__name__)
 
 
 class PrimaryOrSupplementaryVD(object):
@@ -142,10 +144,10 @@ class PrimaryOrSupplementaryVD(object):
                 self.file_structure_version = 1
         elif self._vd_type == VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY:
             if self.file_structure_version not in (1, 2):
-                raise pycdlibexception.PyCdlibInvalidISO('File structure version expected to be 1')
+                _logger.warning('File structure version expected to be 1')
         # According to Ecma-119, 8.4.31, the second unused field should be 0.
         if unused2 != 0:
-            raise pycdlibexception.PyCdlibInvalidISO('data in 2nd unused field not zero')
+            _logger.warning('data in 2nd unused field not zero')
         # According to Ecma-119, the last 653 bytes of the VD should be all 0.
         # However, we have seen ISOs in the wild that do not follow this, so
         # relax the check.
