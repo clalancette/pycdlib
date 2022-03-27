@@ -21,6 +21,7 @@ The class to support ISO9660 Directory Records.
 from __future__ import absolute_import
 
 import bisect
+import logging
 import struct
 
 from pycdlib import dates
@@ -35,6 +36,8 @@ if False:  # pylint: disable=using-constant-test
     # NOTE: these imports have to be here to avoid circular deps
     from pycdlib import headervd  # NOQA pylint: disable=unused-import
     from pycdlib import path_table_record  # NOQA pylint: disable=unused-import
+
+_logger = logging.getLogger(__name__)
 
 
 class XARecord(object):
@@ -740,15 +743,33 @@ class DirectoryRecord(object):
         # see if the child to be added is a duplicate with the entry that
         # bisect_left returned.
         index = bisect.bisect_left(self.children, child)
-        if index != len(self.children) and self.children[index].file_ident == child.file_ident:
-            if not self.children[index].is_associated_file() and not child.is_associated_file():
-                if not (self.rock_ridge is not None and self.file_identifier() == b'RR_MOVED'):
-                    if not allow_duplicate:
-                        raise pycdlibexception.PyCdlibInvalidInput('Failed adding duplicate name to parent')
-
-                    self.children[index].data_continuation = child
-                    self.children[index].file_flags |= (1 << self.FILE_FLAG_MULTI_EXTENT_BIT)
-                    index += 1
+        if index != len(self.children):
+            dupe = self.children[index]
+            if dupe.file_ident == child.file_ident and \
+               not (dupe.is_associated_file() or child.is_associated_file()) and \
+               not (self.rock_ridge is not None and self.file_identifier() == b'RR_MOVED'):
+                if child.is_dir():
+                    identifier = child.file_identifier()
+                    is_data_continuation = False
+                    is_error = not dupe.is_dir() or identifier != dupe.file_identifier()
+                    if not is_error:
+                        warning = 'Allowing duplicate dir entry with same {}.'
+                        try:
+                            identifier = identifier.decode('latin1')
+                        except UnicodeDecodeError:
+                            identifier = 'non-printable identifier'
+                        else:
+                            identifier = 'identifier "{}"'.format(identifier)
+                        _logger.warning(warning.format(identifier))
+                else:
+                    is_data_continuation = allow_duplicate
+                    is_error = not is_data_continuation
+                if is_error:
+                    raise pycdlibexception.PyCdlibInvalidInput('Failed adding duplicate name to parent')
+                if is_data_continuation:
+                    dupe.data_continuation = child
+                    dupe.file_flags |= (1 << self.FILE_FLAG_MULTI_EXTENT_BIT)
+                index += 1
         self.children.insert(index, child)
 
         if child.rock_ridge is not None and not child.is_dot() and not child.is_dotdot():
