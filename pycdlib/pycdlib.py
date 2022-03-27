@@ -1012,7 +1012,8 @@ class PyCdlib(object):
         all_extent_to_dr = {}  # type: Dict[int, dr.DirectoryRecord]
         is_pvd = vd.is_pvd()
         root_dir_record = vd.root_directory_record()
-        root_dir_record.set_ptr(path_table_records[0])
+        if path_table_records:
+            root_dir_record.set_ptr(path_table_records[0])
         interchange_level = 1
         parent_links = []
         child_links = []

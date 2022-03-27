@@ -68,3 +68,7 @@ def test_invalid_Joliet_ISO(caplog):
     assert 'Big-endian path table records use little-endian byte order.' in caplog.text
     assert 'Allowing duplicate dir entry with same identifier "."' in caplog.text
     assert 'Joliet big-endian path table records use little-endian byte order.' in caplog.text
+
+def test_sample_with_no_path_table_records():
+    files = try_list_files('e1567a6661b475460efe1b89a9ead760cc887b0951c74e6b70631bc08e8e4a5b')
+    assert set(files) == {'auth_crt.pfx', 'init.config'}
