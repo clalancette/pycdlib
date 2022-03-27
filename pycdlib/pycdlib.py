@@ -933,11 +933,21 @@ class PyCdlib(object):
         # None (to account for dotdot records which have no Rock Ridge).
         if not self.rock_ridge:
             self.rock_ridge = rr
-        else:
-            for ver in ('1.09', '1.10', '1.12'):
-                if self.rock_ridge == ver:
-                    if rr and rr != ver:
-                        raise pycdlibexception.PyCdlibInvalidISO('Inconsistent Rock Ridge versions on the ISO!')
+        elif rr:
+            versions = ('1.09', '1.10', '1.12')
+            try:
+                k = versions.index(self.rock_ridge)
+                j = versions.index(rr)
+            except ValueError:
+                pass
+            else:
+                if j != k:
+                    chosen = versions[min(j, k)]
+                    reject = versions[max(j, k)]
+                    _logger.warning(
+                        'Inconsistent Rock Ridge versions on the ISO: Choosing the '
+                        'smaller {} over {}'.format(chosen, reject))
+                    self.rock_ridge = chosen
 
     def _get_iso_size(self):
         # type: () -> int
@@ -2346,9 +2356,11 @@ class PyCdlib(object):
 
         for index, ptr in enumerate(le_ptrs):
             cmp = ptr.equal_to_be(tmp_be_ptrs[index])
-            if cmp < path_table_record.CompareResult.EQUAL_UP_TO_BYTE_ORDER:
+            if cmp <= path_table_record.CompareResult.DIFFERENT:
                 raise pycdlibexception.PyCdlibInvalidISO(
                     'Little-endian and big-endian path table records do not agree')
+            elif cmp is path_table_record.CompareResult.DIFFERENT_ENCODED_VALUES:
+                _logger.warning('Big-endian and little-endian path table records encode different values.')
             elif cmp is path_table_record.CompareResult.EQUAL_UP_TO_BYTE_ORDER:
                 _logger.warning('Big-endian path table records use little-endian byte order.')
 
@@ -2419,9 +2431,11 @@ class PyCdlib(object):
 
                 for index, ptr in enumerate(le_ptrs):
                     cmp = ptr.equal_to_be(tmp_be_ptrs[index])
-                    if cmp < path_table_record.CompareResult.EQUAL_UP_TO_BYTE_ORDER:
+                    if cmp <= path_table_record.CompareResult.DIFFERENT:
                         raise pycdlibexception.PyCdlibInvalidISO(
-                            'Joliet little-endian and big-endian path table records do not agree')
+                            'Little-endian and big-endian path table records do not agree')
+                    elif cmp is path_table_record.CompareResult.DIFFERENT_ENCODED_VALUES:
+                        _logger.warning('Joliet big-endian and little-endian path table records encode different values.')
                     elif cmp is path_table_record.CompareResult.EQUAL_UP_TO_BYTE_ORDER:
                         _logger.warning('Joliet big-endian path table records use little-endian byte order.')
 
