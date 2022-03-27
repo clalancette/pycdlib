@@ -47,6 +47,7 @@ def try_list_files(name):
         for name in files:
             name = name.lstrip('/')
             facade.get_record(F'{root}/{name}')
+            name, _, _ = name.partition(';')
             listing.append(name)
     return listing
 
@@ -58,3 +59,12 @@ def test_UDF_tag_identifier_not_8(caplog):
     assert 'COLECO.ROM' in files
     assert 'SYSTEM.CNF' in files
     assert 'UDF File Set Terminator Tag identifier not 8' in caplog.text
+
+def test_invalid_Joliet_ISO(caplog):
+    with caplog.at_level(logging.WARNING):
+        files = try_list_files('ea6cd95fbceed7e3048f79d1c596abc770ef8a4bc3661785570188aa65e01a36')
+    assert files == ['LUBRNQUWR78KA.VBS']
+    assert 'File structure version expected to be 1' in caplog.text
+    assert 'Big-endian path table records use little-endian byte order.' in caplog.text
+    assert 'Allowing duplicate dir entry with same identifier "."' in caplog.text
+    assert 'Joliet big-endian path table records use little-endian byte order.' in caplog.text
