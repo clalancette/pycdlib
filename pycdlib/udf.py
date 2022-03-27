@@ -18,6 +18,7 @@
 
 from __future__ import absolute_import
 
+import logging
 import random
 import struct
 import sys
@@ -35,6 +36,8 @@ if False:  # pylint: disable=using-constant-test
     from typing import List, Optional, Type, Union  # NOQA pylint: disable=unused-import
     # NOTE: this import has to be here to avoid circular deps
     from pycdlib import inode  # NOQA pylint: disable=unused-import
+
+_logger = logging.getLogger(__name__)
 
 # This is the CRC CCITT table generated with a polynomial of 0x11021 and
 # 16-bits.  The following code will re-generate the table:
@@ -686,6 +689,9 @@ class UDFTag(object):
             # Terminator.  So that we can support those ISOs, just silently
             # fix it up.  We lose a little bit of detection of whether this is
             # "truly" a UDFTag, but it is really not a big risk.
+            _logger.info(
+                'Tag location was {} but shoould be {}. Continuing to parse with '
+                'the corrected value.'.format(self.tag_location, extent))
             self.tag_location = extent
 
         if self.desc_version not in (2, 3):
