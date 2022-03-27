@@ -19,6 +19,7 @@
 from __future__ import absolute_import
 
 import struct
+import enum
 
 from pycdlib import pycdlibexception
 from pycdlib import utils
@@ -26,6 +27,13 @@ from pycdlib import utils
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
     from typing import Type  # NOQA pylint: disable=unused-import
+
+
+class CompareResult(enum.IntEnum):
+    DIFFERENT = 0
+    DIFFERENT_ENCODED_VALUES = 1
+    EQUAL_UP_TO_BYTE_ORDER = 2
+    EQUAL = 3
 
 
 class PathTableRecord(object):
@@ -202,7 +210,7 @@ class PathTableRecord(object):
         self.parent_directory_num = parent_dir_num
 
     def equal_to_be(self, be_record):
-        # type: (PathTableRecord) -> bool
+        # type: (PathTableRecord) -> CompareResult
         """
         Compare a little-endian path table record to its big-endian counterpart.
         This is used to ensure that the ISO is sane.
@@ -211,16 +219,27 @@ class PathTableRecord(object):
          be_record - The big-endian object to compare with the little-endian
                      object.
         Returns:
-         True if this record is equal to the big-endian record passed in,
-         False otherwise.
+         A CompareResult indicating the differences between the two records. The
+         result is CompareResult.EQUAL if this record is equal to the big-endian
+         record passed in. The value CompareResult.EQUAL_UP_TO_BYTE_ORDER means
+         that one of the two records has its byte-order-dependent values stored
+         incorrectly. CompareResult.DIFFERENT_ENCODED_VALUES indicates that
+         these values are different, even when taking invalid byte order into
+         account. Finally, CompareResult.DIFFERENT indicates that the records
+         are completely different.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
 
         if be_record.len_di != self.len_di or \
            be_record.xattr_length != self.xattr_length or \
-           utils.swap_32bit(be_record.extent_location) != self.extent_location or \
-           utils.swap_16bit(be_record.parent_directory_num) != self.parent_directory_num or \
            be_record.directory_identifier != self.directory_identifier:
-            return False
-        return True
+            return CompareResult.DIFFERENT
+        be1, be2 = be_record.extent_location, be_record.parent_directory_num
+        le1, le2 = self.extent_location, self.parent_directory_num
+        if be1 == le1 and be2 == le2:
+            return CompareResult.EQUAL_UP_TO_BYTE_ORDER
+        elif utils.swap_32bit(be1) == le1 and utils.swap_32bit(be2) == le2:
+            return CompareResult.EQUAL
+        else:
+            return CompareResult.DIFFERENT_ENCODED_VALUES

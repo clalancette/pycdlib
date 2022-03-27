@@ -2344,8 +2344,12 @@ class PyCdlib(object):
                                                        self.pvd.path_table_location_be)
 
         for index, ptr in enumerate(le_ptrs):
-            if not ptr.equal_to_be(tmp_be_ptrs[index]):
-                raise pycdlibexception.PyCdlibInvalidISO('Little-endian and big-endian path table records do not agree')
+            cmp = ptr.equal_to_be(tmp_be_ptrs[index])
+            if cmp < path_table_record.CompareResult.EQUAL_UP_TO_BYTE_ORDER:
+                raise pycdlibexception.PyCdlibInvalidISO(
+                    'Little-endian and big-endian path table records do not agree')
+            elif cmp is path_table_record.CompareResult.EQUAL_UP_TO_BYTE_ORDER:
+                _logger.warning('Big-endian path table records use little-endian byte order.')
 
         self.interchange_level = 1
         for svd in self.svds:
@@ -2413,8 +2417,12 @@ class PyCdlib(object):
                                                                svd.path_table_location_be)
 
                 for index, ptr in enumerate(le_ptrs):
-                    if not ptr.equal_to_be(tmp_be_ptrs[index]):
-                        raise pycdlibexception.PyCdlibInvalidISO('Joliet little-endian and big-endian path table records do not agree')
+                    cmp = ptr.equal_to_be(tmp_be_ptrs[index])
+                    if cmp < path_table_record.CompareResult.EQUAL_UP_TO_BYTE_ORDER:
+                        raise pycdlibexception.PyCdlibInvalidISO(
+                            'Joliet little-endian and big-endian path table records do not agree')
+                    elif cmp is path_table_record.CompareResult.EQUAL_UP_TO_BYTE_ORDER:
+                        _logger.warning('Joliet big-endian path table records use little-endian byte order.')
 
                 self._walk_directories(svd, joliet_extent_to_ptr,
                                        extent_to_inode, le_ptrs)
