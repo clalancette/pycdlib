@@ -2140,6 +2140,9 @@ class PyCdlib(object):
 
         current_extent += 1
         desc_tag = udfmod.UDFTag()
+        out_filename = 'pycdlib-extent-%d.data' % (self._cdfp.tell() - self.logical_block_size - self.logical_block_size)
+        with open(out_filename, 'wb') as outfp:
+            outfp.write(file_set_and_term_data)
         desc_tag.parse(file_set_and_term_data[self.logical_block_size:],
                        current_extent - self.udf_main_descs.partitions[0].part_start_location)
         if desc_tag.tag_ident != 8:
