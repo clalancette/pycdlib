@@ -2141,13 +2141,21 @@ class PyCdlib(object):
                                 current_extent, desc_tag)
 
         current_extent += 1
-        desc_tag = udfmod.UDFTag()
-        desc_tag.parse(file_set_and_term_data[self.logical_block_size:],
-                       current_extent - self.udf_main_descs.partitions[0].part_start_location)
-        if desc_tag.tag_ident != 8:
-            _logger.warning('UDF File Set Terminator Tag identifier not 8')
+        (tag_ident,) = struct.unpack_from('<H', file_set_and_term_data, self.logical_block_size)
         self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
-        self.udf_file_set_terminator.parse(current_extent, desc_tag)
+        print("Current extent %d, tag %d" % (current_extent, current_extent - self.udf_main_descs.partitions[0].part_start_location))
+        if tag_ident == 8:
+            desc_tag = udfmod.UDFTag()
+            desc_tag.parse(file_set_and_term_data[self.logical_block_size:],
+                           current_extent - self.udf_main_descs.partitions[0].part_start_location)
+            self.udf_file_set_terminator.parse(current_extent, desc_tag)
+        else:
+            # In this case, the UDF ISO had an invalid File Set Terminator Tag.
+            # But this isn't fatal, so log a warning and continue on.
+            _logger.warning('Missing UDF File Set Terminator, continuing')
+            self.udf_file_set_terminator.new()
+            self.udf_file_set_terminator.orig_extent_loc = current_extent
+            self.udf_file_set_terminator.desc_tag.tag_location = current_extent - self.udf_main_descs.partitions[0].part_start_location
 
     def _parse_udf_file_entry(self, abs_file_entry_extent, icb, parent):
         # type: (int, udfmod.UDFLongAD, Optional[udfmod.UDFFileEntry]) -> Optional[udfmod.UDFFileEntry]
