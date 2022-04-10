@@ -5682,3 +5682,69 @@ class UDFDescriptorSequence(object):
         if self.terminator.initialized:
             self.terminator.set_extent_location(current_extent)
             current_extent += 1
+
+def _parse_udf_vol_descs(vd_data, extent, logical_block_size):
+    # Parse the data.  Since the sequence doesn't have to be in any set order,
+    # and since some of the entries may be missing, we parse the Descriptor
+    # Tag (the first 16 bytes) to find out what kind of descriptor it is,
+    # then construct the correct type based on that.  We keep going until we
+    # see a Terminating Descriptor.
+
+    descs = UDFDescriptorSequence()
+    offset = 0
+    current_extent = extent
+    done = False
+    while not done:
+        desc_tag = UDFTag()
+        desc_tag.parse(vd_data[offset:], current_extent)
+        if desc_tag.tag_ident == 1:
+            pvd = UDFPrimaryVolumeDescriptor()
+            pvd.parse(vd_data[offset:offset + 512], current_extent, desc_tag)
+            descs.append_to_list('pvds', pvd)
+        elif desc_tag.tag_ident == 3:
+            descs.desc_pointer.parse(vd_data[offset:offset + 512],
+                                     current_extent, desc_tag)
+            done = True
+        elif desc_tag.tag_ident == 4:
+            impl_use = UDFImplementationUseVolumeDescriptor()
+            impl_use.parse(vd_data[offset:offset + 512],
+                           current_extent, desc_tag)
+            descs.append_to_list('impl_use', impl_use)
+        elif desc_tag.tag_ident == 5:
+            partition = UDFPartitionVolumeDescriptor()
+            partition.parse(vd_data[offset:offset + 512],
+                            current_extent, desc_tag)
+            descs.append_to_list('partitions', partition)
+        elif desc_tag.tag_ident == 6:
+            logical_volume = UDFLogicalVolumeDescriptor()
+            logical_volume.parse(vd_data[offset:offset + 512],
+                                 current_extent, desc_tag)
+            descs.append_to_list('logical_volumes', logical_volume)
+        elif desc_tag.tag_ident == 7:
+            unallocated_space = UDFUnallocatedSpaceDescriptor()
+            unallocated_space.parse(vd_data[offset:offset + 512],
+                                    current_extent, desc_tag)
+            descs.append_to_list('unallocated_space', unallocated_space)
+        elif desc_tag.tag_ident == 8:
+            descs.terminator.parse(current_extent, desc_tag)
+            done = True
+        elif desc_tag.tag_ident == 0:
+            # This would be an unrecorded sector, so we are done.
+            done = True
+        else:
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Tag identifier not %d' % (desc_tag.tag_ident))
+
+        offset += logical_block_size
+        current_extent += 1
+
+    if not descs.pvds:
+        raise pycdlibexception.PyCdlibInvalidISO('At least one UDF Primary Volume Descriptor required')
+
+    saw_zero_desc_num = False
+    for pvd in descs.pvds:
+        if pvd.desc_num == 0:
+            if saw_zero_desc_num:
+                raise pycdlibexception.PyCdlibInvalidISO('Only one UDF Primary Volume Descriptor can have a descriptor number 0')
+            saw_zero_desc_num = True
+
+    return descs
