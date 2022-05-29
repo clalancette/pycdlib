@@ -1972,8 +1972,8 @@ class PyCdlib(object):
         self._seek_to_extent(extent)
         vd_data = self._cdfp.read(length)
 
-        return udfmod._parse_udf_vol_descs(vd_data, extent,
-                                           self.logical_block_size)
+        return udfmod.parse_udf_vol_descs(vd_data, extent,
+                                          self.logical_block_size)
 
     def _parse_udf_descriptors(self):
         # type: () -> None

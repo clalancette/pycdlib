@@ -5683,7 +5683,20 @@ class UDFDescriptorSequence(object):
             self.terminator.set_extent_location(current_extent)
             current_extent += 1
 
-def _parse_udf_vol_descs(vd_data, extent, logical_block_size):
+
+def parse_udf_vol_descs(vd_data, extent, logical_block_size):
+    # type: (bytes, int, int) -> UDFDescriptorSequence
+    """
+    An internal method to parse a set of UDF Volume Descriptors.
+
+    Parameters:
+     vd_data - The data to parse.
+     extent - The extent at which to start parsing.
+     logical_block_size - The logical block size for this ISO.
+    Returns:
+     The UDFDescriptorSequence object that stores parsed objects.
+    """
+
     # Parse the data.  Since the sequence doesn't have to be in any set order,
     # and since some of the entries may be missing, we parse the Descriptor
     # Tag (the first 16 bytes) to find out what kind of descriptor it is,
