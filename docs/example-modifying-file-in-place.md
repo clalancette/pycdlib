@@ -9,7 +9,7 @@ Despite these limitations, modifying a file in place is extremely fast, much fas
 
 Here's the complete code for the example:
 
-```
+```python
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -37,7 +37,7 @@ iso.close()
 
 Let's take a closer look at the code.
 
-```
+```python
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -48,7 +48,7 @@ import pycdlib
 
 As in earlier examples, import the relevant libraries, including pycdlib itself.
 
-```
+```python
 iso = pycdlib.PyCdlib()
 iso.new()
 foostr = b'foo\n'
@@ -60,20 +60,20 @@ iso.close()
 
 Create an ISO with a single file called "/FOO.;1" on it.  This is similar to previous examples, with the one exception that we are using the [write_fp](pycdlib-api.html#PyCdlib-write_fp) API to write the ISO out to a string in memory (rather than on-disk).  Note that at this point, the "/FOO.;1" file has the contents 'foo\n' on the ISO.
 
-```
+```python
 iso.open_fp(outiso)
 ```
 
 Open up the ISO that is in the `outiso` BytesIO object.
 
-```
+```python
 bazstr = b'bazzzzzz\n'
 iso.modify_file_in_place(BytesIO(bazstr), len(bazstr), '/FOO.;1')
 ```
 
 Here we get to the heart of the example.  We use [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) to modify the "/FOO.;1" file to have the contents 'bazzzzzz\n'.  We are allowed to expand the size of the file because we are still smaller than the size of the extent (the [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) API enforces this).
 
-```
+```python
 modifiediso = BytesIO()
 iso.write_fp(modifiediso)
 iso.close()

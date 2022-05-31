@@ -3,7 +3,7 @@ The first 32768 bytes of any ISO are designated as "system use".  In a normal IS
 
 Here's the complete code for the example:
 
-```
+```python
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -29,7 +29,7 @@ iso.close()
 
 Let's take a closer look at the code.
 
-```
+```python
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -40,7 +40,7 @@ import pycdlib
 
 As usual, import the necessary libraries, including pycdlib.
 
-```
+```python
 iso = pycdlib.PyCdlib()
 
 iso.new()
@@ -48,26 +48,26 @@ iso.new()
 
 Create a new PyCdlib object, and then create a new, basic ISO.
 
-```
+```python
 isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
 iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/BOOT.;1')
 ```
 
 Add a file called /BOOT.;1 to the ISO.  The contents of this conform to the expected boot start sequence as specified by isolinux.  A complete discussion of the correct form of the file is out of scope for this tutorial; see [isolinux](http://www.syslinux.org/wiki/index.php?title=ISOLINUX) for more details.  The above is the minimum code that conforms to the sequence, though it is not technically bootable.
 
-```
+```python
 iso.add_eltorito('/BOOT.;1', boot_load_size=4)
 ```
 
 Add El Torito to the ISO, making the boot file "/BOOT.;1", and setting the `boot_load_size` to 4.  The `boot_load_size` is the number of 512-bytes sectors to read during initial boot.  While other values may be allowed for this, all current examples (from cdrkit or isolinux) use this value.  After this call, the ISO is El Torito bootable, but not yet a hybrid ISO.
 
-```
+```python
 iso.add_isohybrid()
 ```
 
 Add the boot file to the system use area, making this a hybrid ISO.  There are various parameters that can be passed to control how the hybrid file is added, but the defaults are typically good enough for creating a hybrid ISO similar to those made for most Linux distributions.
 
-```
+```python
 iso.write('eltorito.iso')
 
 iso.close()
