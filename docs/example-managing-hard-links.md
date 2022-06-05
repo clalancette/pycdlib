@@ -12,7 +12,7 @@ The data can be referred to zero, one, or many times from each of these contexts
 
 An example should help to illustrate the concept.  Here's the complete code for the example:
 
-```
+```python
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -38,7 +38,7 @@ iso.close()
 
 Let's take a closer look at the code.
 
-```
+```python
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -49,40 +49,40 @@ import pycdlib
 
 As in earlier examples, import the relevant libraries, including pycdlib itself.
 
-```
+```python
 iso = pycdlib.PyCdlib()
 iso.new(joliet=3)
 ```
 
 As in earlier examples, create a PyCdlib object, and then create a new, empty ISO with the Joliet extensions.
 
-```
+```python
 foostr = b'foo\n'
 iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 ```
 
 As in earlier examples, add a new file to the ISO.  Here we have provided both the ISO path '/FOO.;1' and the Joliet path '/foo', so the file implicitly has two links; one from the ISO context, and one from the Joliet context.
 
-```
+```python
 iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
 ```
 
 Add a hard-link from the original '/FOO.;1' location in the ISO context to a second location in the ISO context '/BAR.;1'.  This takes up no additional space on the ISO for the data, only for the metadata.
 
-```
+```python
 iso.rm_hard_link(joliet_path='/foo')
 ```
 
 Remove the link from the Joliet context for the file.  Now this file is effectively hidden from the Joliet context, while still being visible in the ISO context.
 
-```
+```python
 outiso = BytesIO()
 iso.write_fp(outiso)
 ```
 
 As in earlier examples, write the ISO out to the BytesIO object.
 
-```
+```python
 iso.close()
 ```
 

@@ -8,7 +8,7 @@ Of the two, using lazy metadata updating and only calling [force_consistency](py
 
 Here's the complete code for the example:
 
-```
+```python
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -32,7 +32,7 @@ iso.close()
 
 Let's take a closer look at the code.
 
-```
+```python
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -43,39 +43,39 @@ import pycdlib
 
 As in earlier examples, import the relevant libraries, including pycdlib itself.
 
-```
+```python
 iso = pycdlib.PyCdlib()
 iso.new()
 ```
 
 As in earlier examples, create a new PyCdlib object and then create a new ISO with no extensions.
 
-```
+```python
 foostr = b'foo\n'
 iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
 ```
 
 As in earlier examples, add a new file to the ISO.
 
-```
+```python
 iso.force_consistency()
 ```
 
 Now force consistency on the ISO.  This will cause PyCdlib to update all of the metadata on the ISO, and after this call all of the metadata for all entries on the ISO will be accurate.
 
-```
+```python
 iso.add_directory('/DIR1')
 ```
 
 As in earlier examples, add a new directory to the ISO.  Note that the metadata on the ISO is now out-of-date again, so to accurately look at the metadata, [force_consistency](pycdlib-api.html#PyCdlib-force_consistency) would have to be called again after this modification.
 
-```
+```python
 iso.write('new.iso')
 ```
 
 As in earlier examples, write the ISO out to a file.  The [write](pycdlib-api.html#PyCdlib-write) method implicitly does a metadata update since it needs all of the metadata to be accurate to successfully write out the ISO.
 
-```
+```python
 iso.close()
 ```
 
