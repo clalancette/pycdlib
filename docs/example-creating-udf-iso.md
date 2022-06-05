@@ -10,7 +10,7 @@ except ImportError:
 import pycdlib
 
 iso = pycdlib.PyCdlib()
-iso.new(udf=True)
+iso.new(udf='2.60')
 foostr = b'foo\n'
 iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 iso.add_directory('/DIR1', udf_path='/dir1')
@@ -33,10 +33,10 @@ As in earlier examples, import the relevant libraries, including pycdlib itself.
 
 ```
 iso = pycdlib.PyCdlib()
-iso.new(udf=True)
+iso.new(udf='2.60')
 ```
 
-Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have UDF, we pass the argument `udf=True` to the [new](pycdlib-api.html#PyCdlib-new) method.
+Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have UDF, we pass the argument `udf='2.60'` to the [new](pycdlib-api.html#PyCdlib-new) method.
 
 ```
 foostr = b'foo\n'
