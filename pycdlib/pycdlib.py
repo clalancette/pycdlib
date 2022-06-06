@@ -2081,7 +2081,6 @@ class PyCdlib(object):
         current_extent += 1
         (tag_ident,) = struct.unpack_from('<H', file_set_and_term_data, self.logical_block_size)
         self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
-        print("Current extent %d, tag %d" % (current_extent, current_extent - self.udf_main_descs.partitions[0].part_start_location))
         if tag_ident == 8:
             desc_tag = udfmod.UDFTag()
             desc_tag.parse(file_set_and_term_data[self.logical_block_size:],
