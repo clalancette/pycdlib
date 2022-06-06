@@ -3097,3 +3097,23 @@ def test_parse_isolevel4_deep_directory(tmpdir):
                      '-o', str(outfile), str(indir)])
 
     do_a_test(tmpdir, outfile, check_isolevel4_deep_directory)
+
+def test_parse_udf_open_invalid_file_set_terminator(caplog, tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('udfinvalidfilesetterminator')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-udf', '-o', str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, we open it up and set the file set
+    # terminator sector to something invalid.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(0x81000)
+        fp.write(b'\x00'*512)
+
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+
+    do_a_test(tmpdir, outfile, check_udf_onefile)
