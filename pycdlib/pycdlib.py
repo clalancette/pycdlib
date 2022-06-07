@@ -1992,18 +1992,24 @@ class PyCdlib(object):
         # Parse the anchors.  According to ECMA-167, Part 3, 8.4.2.1, there
         # must be anchors recorded in at least two of the three extent locations
         # 256, N-256, and N, where N is the total number of extents on the disc.
-        # We'll preserve all 3 if they exist, with a minimum of two for a valid
-        # disc.
+        # Note that one some ISOs, the PVD lies about the amount of space, so we
+        # actually check what the PVD tells us is the end, but also the end of
+        # the physical space on the ISO.  We'll preserve as many as we find,
+        # with a minimum of two for a valid ISO.
         self._cdfp.seek(0, os.SEEK_END)
-        last_extent = self.pvd.space_size - 1
-        anchor_locations = [256, last_extent - 256, last_extent]
+        last_physical_extent = (self._cdfp.tell() // self.logical_block_size) - 1
+        last_pvd_extent = self.pvd.space_size - 1
+        anchor_locations = [256, last_pvd_extent - 256, last_pvd_extent]
+        if last_physical_extent != last_pvd_extent:
+            anchor_locations.append(last_physical_extent)
+            anchor_locations.append(last_physical_extent - 256)
+
         for loc in anchor_locations:
             self._seek_to_extent(loc)
-            extent = self._cdfp.tell() // self.logical_block_size
             anchor_data = self._cdfp.read(self.logical_block_size)
             anchor_tag = udfmod.UDFTag()
             try:
-                anchor_tag.parse(anchor_data, extent)
+                anchor_tag.parse(anchor_data, loc)
             except pycdlibexception.PyCdlibInvalidISO:
                 continue
 
@@ -2011,7 +2017,7 @@ class PyCdlib(object):
                 continue
 
             anchor = udfmod.UDFAnchorVolumeStructure()
-            anchor.parse(anchor_data, extent, anchor_tag)
+            anchor.parse(anchor_data, loc, anchor_tag)
             self.udf_anchors.append(anchor)
 
         if len(self.udf_anchors) < 2:
