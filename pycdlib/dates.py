@@ -177,9 +177,9 @@ class VolumeDescriptorDate(object):
         is valid, which means that the date in this field was not specified.
 
         Parameters:
-          datestr - string to be parsed
+         datestr - string to be parsed
         Returns:
-          Nothing.
+         Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date object is already initialized')
@@ -216,9 +216,9 @@ class VolumeDescriptorDate(object):
         Return the date string for this object.
 
         Parameters:
-          None.
+         None.
         Returns:
-          Date as a string.
+         Date as a string.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date is not initialized')
@@ -235,8 +235,8 @@ class VolumeDescriptorDate(object):
         struct_time.
 
         Parameters:
-          tm - struct_time object to base new VolumeDescriptorDate off of,
-               or 0.0 for an empty VolumeDescriptorDate.
+         tm - struct_time object to base new VolumeDescriptorDate off of,
+              or 0.0 for an empty VolumeDescriptorDate.
         Returns:
           Nothing.
         """
