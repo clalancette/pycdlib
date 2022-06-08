@@ -365,30 +365,30 @@ class PrimaryOrSupplementaryVD(object):
         self.optional_path_table_location_le = orig.optional_path_table_location_le
         self.path_table_location_be = orig.path_table_location_be
         self.optional_path_table_location_be = orig.optional_path_table_location_be
-        # Root dir record is a DirectoryRecord object, and we want this copy to hold
-        # onto exactly the same reference as the original
+        # Root dir record is a DirectoryRecord object, and we want this copy to
+        # hold onto exactly the same reference as the original
         self.root_dir_record = orig.root_dir_record
         self.volume_set_identifier = orig.volume_set_identifier
-        # publisher_identifier is a FileOrTextIdentifier object, and we want this copy to
-        # hold onto exactly the same reference as the original
+        # publisher_identifier is a FileOrTextIdentifier object, and we want
+        # this copy to hold onto exactly the same reference as the original
         self.publisher_identifier = orig.publisher_identifier
-        # preparer_identifier is a FileOrTextIdentifier object, and we want this copy to
-        # hold onto exactly the same reference as the original
+        # preparer_identifier is a FileOrTextIdentifier object, and we want this
+        # copy to hold onto exactly the same reference as the original
         self.preparer_identifier = orig.preparer_identifier
-        # application_identifier is a FileOrTextIdentifier object, and we want this copy to
-        # hold onto exactly the same reference as the original
+        # application_identifier is a FileOrTextIdentifier object, and we want
+        # this copy to hold onto exactly the same reference as the original
         self.application_identifier = orig.application_identifier
         self.copyright_file_identifier = orig.copyright_file_identifier
         self.abstract_file_identifier = orig.abstract_file_identifier
         self.bibliographic_file_identifier = orig.bibliographic_file_identifier
-        # volume_creation_date is a VolumeDescriptorDate object, and we want this copy to
-        # hold onto exactly the same reference as the original
+        # volume_creation_date is a VolumeDescriptorDate object, and we want
+        # this copy to hold onto exactly the same reference as the original
         self.volume_creation_date = orig.volume_creation_date
-        # volume_expiration_date is a VolumeDescriptorDate object, and we want this copy to
-        # hold onto exactly the same reference as the original
+        # volume_expiration_date is a VolumeDescriptorDate object, and we want
+        # this copy to hold onto exactly the same reference as the original
         self.volume_expiration_date = orig.volume_expiration_date
-        # volume_effective_date is a VolumeDescriptorDate object, and we want this copy to
-        # hold onto exactly the same reference as the original
+        # volume_effective_date is a VolumeDescriptorDate object, and we want
+        # this copy to hold onto exactly the same reference as the original
         self.volume_effective_date = orig.volume_effective_date
         self.file_structure_version = orig.file_structure_version
         self.application_use = orig.application_use
