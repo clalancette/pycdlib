@@ -8,6 +8,7 @@ try:
 except ImportError:
     from io import BytesIO
 import struct
+import time
 
 prefix = '.'
 for i in range(0, 3):
@@ -121,7 +122,7 @@ def test_dr_rr_dir_no_rr():
 
 def test_dr_rr_new_on_root():
     root_dr = pycdlib.dr.DirectoryRecord()
-    root_dr.new_root(None, 1, 2048)
+    root_dr.new_root(None, 1, 2048, time.time())
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         root_dr._rr_new('1.09', b'', b'', False, False, False, 0)
@@ -130,78 +131,82 @@ def test_dr_rr_new_on_root():
 def test_dr_new_dir_no_parent_rr():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
-    root_dr.new_root(pvd, 1, 2048)
+    root_dr.new_root(pvd, 1, 2048, time.time())
 
     dir1_dr = pycdlib.dr.DirectoryRecord()
-    dir1_dr.new_dir(pvd, b'DIR1', root_dr, 1, '', b'', 2048, False, False, False, 0)
+    dir1_dr.new_dir(pvd, b'DIR1', root_dr, 1, '', b'', 2048, False, False, False,
+                    0, time.time())
 
     dir2_dr = pycdlib.dr.DirectoryRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
-        dir2_dr.new_dir(pvd, b'DIR2', dir1_dr, 1, '1.09', b'', 2048, False, False, False, 0)
+        dir2_dr.new_dir(pvd, b'DIR2', dir1_dr, 1, '1.09', b'', 2048, False,
+                        False, False, 0, time.time())
     assert(str(excinfo.value) == 'Parent of the entry did not have Rock Ridge, ISO is corrupt')
 
 def test_dr_rr_new_on_root():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
-    root_dr.new_root(pvd, 1, 2048)
+    root_dr.new_root(pvd, 1, 2048, time.time())
 
     dir1_dr = pycdlib.dr.DirectoryRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
-        dir1_dr.new_dir(pvd, b'DIR1', root_dr, 1, '1.09', b'', 2048, False, False, False, 0)
+        dir1_dr.new_dir(pvd, b'DIR1', root_dr, 1, '1.09', b'', 2048, False,
+                        False, False, 0, time.time())
     assert(str(excinfo.value) == 'Expected at least 2 children of the root directory record, saw 0')
 
 def test_dr_new_symlink_already_initialized():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
-    dr.new_root(pvd, 1, 2048)
+    dr.new_root(pvd, 1, 2048, time.time())
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        dr.new_symlink(pvd, b'', None, b'', 1, '', b'', False)
+        dr.new_symlink(pvd, b'', None, b'', 1, '', b'', False, time.time())
     assert(str(excinfo.value) == 'Directory Record already initialized')
 
 def test_dr_new_file_already_initialized():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
-    dr.new_root(pvd, 1, 2048)
+    dr.new_root(pvd, 1, 2048, time.time())
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        dr.new_file(pvd, 0, b'', None, 1, '', b'', False, 0)
+        dr.new_file(pvd, 0, b'', None, 1, '', b'', False, 0, time.time())
     assert(str(excinfo.value) == 'Directory Record already initialized')
 
 def test_dr_new_root_already_initialized():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
-    dr.new_root(pvd, 1, 2048)
+    dr.new_root(pvd, 1, 2048, time.time())
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        dr.new_root(pvd, 1, 2048)
+        dr.new_root(pvd, 1, 2048, time.time())
     assert(str(excinfo.value) == 'Directory Record already initialized')
 
 def test_dr_new_dot_already_initialized():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
-    dr.new_root(pvd, 1, 2048)
+    dr.new_root(pvd, 1, 2048, time.time())
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        dr.new_dot(pvd, None, 1, '', 2048, False, 0)
+        dr.new_dot(pvd, None, 1, '', 2048, False, 0, time.time())
     assert(str(excinfo.value) == 'Directory Record already initialized')
 
 def test_dr_new_dotdot_already_initialized():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
-    dr.new_root(pvd, 1, 2048)
+    dr.new_root(pvd, 1, 2048, time.time())
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        dr.new_dotdot(pvd, None, 1, '', 2048, False, False, 0)
+        dr.new_dotdot(pvd, None, 1, '', 2048, False, False, 0, time.time())
     assert(str(excinfo.value) == 'Directory Record already initialized')
 
 def test_dr_new_dir_already_initialized():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
-    dr.new_root(pvd, 1, 2048)
+    dr.new_root(pvd, 1, 2048, time.time())
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        dr.new_dir(pvd, b'', None, 1, '', b'', 2048, False, False, False, 0)
+        dr.new_dir(pvd, b'', None, 1, '', b'', 2048, False, False, False, 0,
+                   time.time())
     assert(str(excinfo.value) == 'Directory Record already initialized')
 
 def test_dr_change_existence_not_initialized():
@@ -214,7 +219,7 @@ def test_dr_change_existence_not_initialized():
 def test_dr_add_child_not_dir():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
-    dr.new_file(pvd, 0, b'', None, 1, '', b'', False, 0)
+    dr.new_file(pvd, 0, b'', None, 1, '', b'', False, 0, time.time())
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         dr.add_child(pvd, 2048)
@@ -244,7 +249,7 @@ def test_dr_remove_child_not_initialized():
 def test_dr_remove_child_negative_index():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
-    dr.new_file(pvd, 0, b'', None, 1, '', b'', False, 0)
+    dr.new_file(pvd, 0, b'', None, 1, '', b'', False, 0, time.time())
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         dr.remove_child(pvd, -1, 2048)
@@ -295,7 +300,7 @@ def test_dr_directory_record_length_not_initialized():
 def test_dr_directory_record_length():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
-    dr.new_file(pvd, 0, b'', None, 1, '', b'', False, 0)
+    dr.new_file(pvd, 0, b'', None, 1, '', b'', False, 0, time.time())
     assert(dr.directory_record_length() == 34)
 
 def test_dr_directory_extent_location_not_initialized():
@@ -375,5 +380,5 @@ def test_dr_file_too_big():
     dr = pycdlib.dr.DirectoryRecord()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        dr.new_file(pvd, 2**32, b'', None, 1, '', b'', False, 0)
+        dr.new_file(pvd, 2**32, b'', None, 1, '', b'', False, 0, 0)
     assert(str(excinfo.value) == 'Maximum supported file length is 2^32-1')

@@ -559,7 +559,7 @@ class UDFBootDescriptor(object):
         self.start_address = 0  # FIXME: allow the user to set this
 
         self.desc_creation_time = UDFTimestamp()
-        self.desc_creation_time.new()
+        self.desc_creation_time.new(time.time())
 
         self.flags = 0  # FIXME: allow the user to set this
         self.boot_use = b'\x00' * 1906  # FIXME: allow the user to set this
@@ -1089,23 +1089,23 @@ class UDFTimestamp(object):
                            self.centiseconds, self.hundreds_microseconds,
                            self.microseconds)
 
-    def new(self):
-        # type: () -> None
+    def new(self, date_seconds):
+        # type: (float) -> None
         """
         Create a new UDF Timestamp.
 
         Parameters:
-         None.
+         date_seconds - Time and date, in seconds since the epoch, to use for
+                        this time stamp record.
         Returns:
          Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Timestamp already initialized')
 
-        tm = time.time()
-        local = time.localtime(tm)
+        local = time.localtime(date_seconds)
 
-        self.tz = utils.gmtoffset_from_tm(tm, local)
+        self.tz = utils.gmtoffset_from_tm(date_seconds, local)
         # FIXME: for the timetype, 0 is UTC, 1 is local, 2 is 'agreement'.
         # let the user set this.
         self.timetype = 1
@@ -1535,7 +1535,7 @@ class UDFPrimaryVolumeDescriptor(object):
         self.app_ident = UDFEntityID()
         self.app_ident.new(0)
         self.recording_date = UDFTimestamp()
-        self.recording_date.new()
+        self.recording_date.new(time.time())
         self.impl_ident = UDFEntityID()
         self.impl_ident.new(0, b'*pycdlib')
         self.implementation_use = b'\x00' * 64  # FIXME: let the user set this
@@ -3470,7 +3470,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
         self.desc_tag.new(9)  # FIXME: let the user set serial_number
 
         self.recording_date = UDFTimestamp()
-        self.recording_date.new()
+        self.recording_date.new(time.time())
 
         self.integrity_type = 1  # FIXME: let the user set this
 
@@ -3642,7 +3642,7 @@ class UDFFileSetDescriptor(object):
         self.desc_tag.new(256)  # FIXME: let the user set serial_number
 
         self.recording_date = UDFTimestamp()
-        self.recording_date.new()
+        self.recording_date.new(time.time())
 
         self.domain_ident = UDFEntityID()
         self.domain_ident.new(0, b'*OSTA UDF Compliant', b'\x02\x01\x03')
@@ -4038,13 +4038,13 @@ class UDFFileEntry(object):
                 len_left -= alloc_len
 
         self.access_time = UDFTimestamp()
-        self.access_time.new()
+        self.access_time.new(time.time())
 
         self.mod_time = UDFTimestamp()
-        self.mod_time.new()
+        self.mod_time.new(time.time())
 
         self.attr_time = UDFTimestamp()
-        self.attr_time.new()
+        self.attr_time.new(time.time())
 
         self.extended_attr_icb = UDFLongAD()
         self.extended_attr_icb.new(0, 0)
@@ -5316,7 +5316,7 @@ class UDFPartitionIntegrityEntry(object):
         self.integrity_type = 1
 
         self.timestamp = UDFTimestamp()
-        self.timestamp.new()
+        self.timestamp.new(time.time())
 
         self.impl_ident = UDFEntityID()
         self.impl_ident.new(0)
@@ -5498,13 +5498,13 @@ class UDFExtendedFileEntry(object):
                 len_left -= alloc_len
 
         self.access_time = UDFTimestamp()
-        self.access_time.new()
+        self.access_time.new(time.time())
 
         self.mod_time = UDFTimestamp()
-        self.mod_time.new()
+        self.mod_time.new(time.time())
 
         self.attr_time = UDFTimestamp()
-        self.attr_time.new()
+        self.attr_time.new(time.time())
 
         self.extended_attr_icb = UDFLongAD()
         self.extended_attr_icb.new(0, 0)

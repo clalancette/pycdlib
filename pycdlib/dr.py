@@ -22,7 +22,6 @@ from __future__ import absolute_import
 
 import bisect
 import struct
-import time
 
 from pycdlib import dates
 from pycdlib import inode
@@ -329,8 +328,8 @@ class DirectoryRecord(object):
         return ret
 
     def _rr_new(self, rr_version, rr_name, rr_symlink_target, rr_relocated_child,
-                rr_relocated, rr_relocated_parent, file_mode):
-        # type: (str, bytes, bytes, bool, bool, bool, int) -> None
+                rr_relocated, rr_relocated_parent, file_mode, date_seconds):
+        # type: (str, bytes, bytes, bool, bool, bool, int, float) -> None
         """
         Internal method to add Rock Ridge to a Directory Record.
 
@@ -347,6 +346,8 @@ class DirectoryRecord(object):
          rr_relocated_parent - True if this is a directory record for a rock
                                ridge relocated parent.
          file_mode - The Unix file mode for this Rock Ridge entry.
+         date_seconds - Time and date, in seconds since the epoch, to use for
+                        this directory record.
         Returns:
          Nothing.
         """
@@ -363,7 +364,7 @@ class DirectoryRecord(object):
                                           file_mode, rr_symlink_target,
                                           rr_version, rr_relocated_child,
                                           rr_relocated, rr_relocated_parent,
-                                          bytes_to_skip, self.dr_len, {})
+                                          bytes_to_skip, self.dr_len, {}, date_seconds)
 
         # For files, we are done
         if not self.isdir:
@@ -419,8 +420,8 @@ class DirectoryRecord(object):
                     raise pycdlibexception.PyCdlibInvalidISO('Dot child of the parent did not have a dot entry; ISO is corrupt')
                 self.parent.children[0].rock_ridge.add_to_file_links()
 
-    def _new(self, vd, name, parent, seqnum, isdir, length, xa):
-        # type: (headervd.PrimaryOrSupplementaryVD, bytes, Optional[DirectoryRecord], int, bool, int, bool) -> None
+    def _new(self, vd, name, parent, seqnum, isdir, length, xa, date_seconds):
+        # type: (headervd.PrimaryOrSupplementaryVD, bytes, Optional[DirectoryRecord], int, bool, int, bool, float) -> None
         """
         Internal method to create a new Directory Record.
 
@@ -432,6 +433,8 @@ class DirectoryRecord(object):
          isdir - Whether this directory record represents a directory.
          length - The length of the data for this directory record.
          xa - True if this is an Extended Attribute record.
+         date_seconds - Time and date, in seconds since the epoch, to use for
+                        this directory record.
         Returns:
          Nothing.
         """
@@ -446,7 +449,7 @@ class DirectoryRecord(object):
         # We create it here just to have something in the field, but we'll
         # redo the whole thing when we are mastering.
         self.date = dates.DirectoryRecordDate()
-        self.date.new(time.time())
+        self.date.new(date_seconds)
 
         if length > 2**32 - 1:
             raise pycdlibexception.PyCdlibInvalidInput('Maximum supported file length is 2^32-1')
@@ -507,8 +510,8 @@ class DirectoryRecord(object):
         self.initialized = True
 
     def new_symlink(self, vd, name, parent, rr_target, seqnum, rock_ridge,
-                    rr_name, xa):
-        # type: (headervd.PrimaryOrSupplementaryVD, bytes, DirectoryRecord, bytes, int, str, bytes, bool) -> None
+                    rr_name, xa, date_seconds):
+        # type: (headervd.PrimaryOrSupplementaryVD, bytes, DirectoryRecord, bytes, int, str, bytes, bool, float) -> None
         """
         Create a new symlink Directory Record.  This implies that the new
         record will be Rock Ridge.
@@ -522,20 +525,22 @@ class DirectoryRecord(object):
          rock_ridge - The version of Rock Ridge to use for this directory record.
          rr_name - The Rock Ridge name for this directory record.
          xa - True if this is an Extended Attribute record.
+         date_seconds - Time and date, in seconds since the epoch, to use for
+                        this symlink.
         Returns:
          Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
-        self._new(vd, name, parent, seqnum, False, 0, xa)
+        self._new(vd, name, parent, seqnum, False, 0, xa, date_seconds)
         if rock_ridge:
             self._rr_new(rock_ridge, rr_name, rr_target, False, False, False,
-                         0o0120555)
+                         0o0120555, date_seconds)
 
     def new_file(self, vd, length, isoname, parent, seqnum, rock_ridge, rr_name,
-                 xa, file_mode):
-        # type: (headervd.PrimaryOrSupplementaryVD, int, bytes, DirectoryRecord, int, str, bytes, bool, int) -> None
+                 xa, file_mode, date_seconds):
+        # type: (headervd.PrimaryOrSupplementaryVD, int, bytes, DirectoryRecord, int, str, bytes, bool, int, float) -> None
         """
         Create a new file Directory Record.
 
@@ -549,19 +554,21 @@ class DirectoryRecord(object):
          rr_name - The Rock Ridge name for this directory record.
          xa - True if this is an Extended Attribute record.
          file_mode - The POSIX file mode for this entry.
+         date_seconds - Time and date, in seconds since the epoch, to use for
+                        this file.
         Returns:
          Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
-        self._new(vd, isoname, parent, seqnum, False, length, xa)
+        self._new(vd, isoname, parent, seqnum, False, length, xa, date_seconds)
         if rock_ridge:
             self._rr_new(rock_ridge, rr_name, b'', False, False, False,
-                         file_mode)
+                         file_mode, date_seconds)
 
-    def new_root(self, vd, seqnum, log_block_size):
-        # type: (headervd.PrimaryOrSupplementaryVD, int, int) -> None
+    def new_root(self, vd, seqnum, log_block_size, date_seconds):
+        # type: (headervd.PrimaryOrSupplementaryVD, int, int, float) -> None
         """
         Create a new root Directory Record.
 
@@ -569,17 +576,20 @@ class DirectoryRecord(object):
          vd - The Volume Descriptor this record is part of.
          seqnum - The sequence number for this directory record.
          log_block_size - The logical block size to use.
+         date_seconds - Time and date, in seconds since the epoch, to use for
+                        this root.
         Returns:
          Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
-        self._new(vd, b'\x00', None, seqnum, True, log_block_size, False)
+        self._new(vd, b'\x00', None, seqnum, True, log_block_size, False,
+                  date_seconds)
 
     def new_dot(self, vd, parent, seqnum, rock_ridge, log_block_size, xa,
-                file_mode):
-        # type: (headervd.PrimaryOrSupplementaryVD, DirectoryRecord, int, str, int, bool, int) -> None
+                file_mode, date_seconds):
+        # type: (headervd.PrimaryOrSupplementaryVD, DirectoryRecord, int, str, int, bool, int, float) -> None
         """
         Create a new 'dot' Directory Record.
 
@@ -591,19 +601,22 @@ class DirectoryRecord(object):
          log_block_size - The logical block size to use.
          xa - True if this is an Extended Attribute record.
          file_mode - The POSIX file mode to set for this directory.
+         date_seconds - Time and date, in seconds since the epoch, to use for
+                        this dot record.
         Returns:
          Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
-        self._new(vd, b'\x00', parent, seqnum, True, log_block_size, xa)
+        self._new(vd, b'\x00', parent, seqnum, True, log_block_size, xa, date_seconds)
         if rock_ridge:
-            self._rr_new(rock_ridge, b'', b'', False, False, False, file_mode)
+            self._rr_new(rock_ridge, b'', b'', False, False, False, file_mode,
+                         date_seconds)
 
     def new_dotdot(self, vd, parent, seqnum, rock_ridge, log_block_size,
-                   rr_relocated_parent, xa, file_mode):
-        # type: (headervd.PrimaryOrSupplementaryVD, DirectoryRecord, int, str, int, bool, bool, int) -> None
+                   rr_relocated_parent, xa, file_mode, date_seconds):
+        # type: (headervd.PrimaryOrSupplementaryVD, DirectoryRecord, int, str, int, bool, bool, int, float) -> None
         """
         Create a new 'dotdot' Directory Record.
 
@@ -616,19 +629,23 @@ class DirectoryRecord(object):
          rr_relocated_parent - True if this is a Rock Ridge relocated parent.
          xa - True if this is an Extended Attribute record.
          file_mode - The POSIX file mode to set for this directory.
+         date_seconds - Time and date, in seconds since the epoch, to use for
+                        this dotdot record.
         Returns:
          Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
-        self._new(vd, b'\x01', parent, seqnum, True, log_block_size, xa)
+        self._new(vd, b'\x01', parent, seqnum, True, log_block_size, xa, date_seconds)
         if rock_ridge:
-            self._rr_new(rock_ridge, b'', b'', False, False, rr_relocated_parent, file_mode)
+            self._rr_new(rock_ridge, b'', b'', False, False, rr_relocated_parent,
+                         file_mode, date_seconds)
 
     def new_dir(self, vd, name, parent, seqnum, rock_ridge, rr_name,
-                log_block_size, rr_relocated_child, rr_relocated, xa, file_mode):
-        # type: (headervd.PrimaryOrSupplementaryVD, bytes, DirectoryRecord, int, str, bytes, int, bool, bool, bool, int) -> None
+                log_block_size, rr_relocated_child, rr_relocated, xa, file_mode,
+                date_seconds):
+        # type: (headervd.PrimaryOrSupplementaryVD, bytes, DirectoryRecord, int, str, bytes, int, bool, bool, bool, int, float) -> None
         """
         Create a new directory Directory Record.
 
@@ -644,16 +661,19 @@ class DirectoryRecord(object):
          rr_relocated - True if this is a Rock Ridge relocated entry.
          xa - True if this is an Extended Attribute record.
          file_mode - The POSIX file mode to set for this directory.
+         date_seconds - Time and date, in seconds since the epoch, to use for
+                        this directory record.
         Returns:
          Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
-        self._new(vd, name, parent, seqnum, True, log_block_size, xa)
+        self._new(vd, name, parent, seqnum, True, log_block_size, xa,
+                  date_seconds)
         if rock_ridge:
             self._rr_new(rock_ridge, rr_name, b'', rr_relocated_child,
-                         rr_relocated, False, file_mode)
+                         rr_relocated, False, file_mode, date_seconds)
             if rr_relocated_child and self.rock_ridge:
                 # Relocated Rock Ridge entries are not exactly treated as
                 # directories, so fix things up here.

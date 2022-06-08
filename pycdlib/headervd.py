@@ -294,7 +294,7 @@ class PrimaryOrSupplementaryVD(object):
         # FIXME: we don't support the optional path table location right now
         self.optional_path_table_location_le = 0
         self.optional_path_table_location_be = 0
-        self.root_dir_record.new_root(self, seqnum, self.log_block_size)
+        self.root_dir_record.new_root(self, seqnum, self.log_block_size, time.time())
 
         if len(vol_set_ident) > 128:
             raise pycdlibexception.PyCdlibInvalidInput('The maximum length for the volume set identifier is 128')

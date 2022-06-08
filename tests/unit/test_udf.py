@@ -8,6 +8,7 @@ try:
 except ImportError:
     from io import BytesIO
 import struct
+import time
 
 prefix = '.'
 for i in range(0, 3):
@@ -515,17 +516,17 @@ def test_timestamp_record_not_initialized():
 
 def test_timestamp_new_initialized_twice():
     ts = pycdlib.udf.UDFTimestamp()
-    ts.new()
+    ts.new(time.time())
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        ts.new()
+        ts.new(time.time())
     assert(str(excinfo.value) == 'UDF Timestamp already initialized')
 
 def test_timestamp_equal():
     ts = pycdlib.udf.UDFTimestamp()
-    ts.new()
+    ts.new(time.time())
 
     ts2 = pycdlib.udf.UDFTimestamp()
-    ts2.new()
+    ts2.new(time.time())
 
     assert(ts == ts2)
 

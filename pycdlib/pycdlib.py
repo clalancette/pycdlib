@@ -26,6 +26,7 @@ import logging
 import os
 import struct
 import sys
+import time
 try:
     from cStringIO import StringIO as BytesIO
 except ImportError:
@@ -1816,7 +1817,7 @@ class PyCdlib(object):
                     self.pvd.root_directory_record(),
                     self.pvd.sequence_number(), self.rock_ridge,
                     self._rr_moved_rr_name, self.logical_block_size,
-                    False, False, self.xa, 0o040555)
+                    False, False, self.xa, 0o040555, time.time())
         num_bytes_to_add = self._add_child_to_dr(rec)
 
         self._create_dot(self.pvd, rec, self.rock_ridge, self.xa, 0o040555)
@@ -2336,7 +2337,7 @@ class PyCdlib(object):
                 new_record.new_file(self.pvd, self.logical_block_size,
                                     b'FAKEELT.;1',
                                     self.pvd.root_directory_record(), 0, '',
-                                    b'', False, 0)
+                                    b'', False, 0, time.time())
                 self.eltorito_boot_catalog.add_dirrecord(new_record)
 
         self.interchange_level = max(self.interchange_level, ic_level)
@@ -3206,7 +3207,8 @@ class PyCdlib(object):
 
             new_rec = dr.DirectoryRecord()
             new_rec.new_file(vd, length, new_name, new_parent,
-                             vd.sequence_number(), rr, rr_name, xa, file_mode)
+                             vd.sequence_number(), rr, rr_name, xa, file_mode,
+                             time.time())
 
             num_bytes_to_add += self._add_child_to_dr(new_rec)
             num_bytes_to_add += self._update_rr_ce_entry(new_rec)
@@ -3518,7 +3520,7 @@ class PyCdlib(object):
         rec.new_dir(self.joliet_vd, joliet_name, joliet_parent,
                     self.joliet_vd.sequence_number(), '', b'',
                     self.logical_block_size, False, False,
-                    False, -1)
+                    False, -1, time.time())
         num_bytes_to_add = self._add_child_to_dr(rec)
 
         self._create_dot(self.joliet_vd, rec, '', False, -1)
@@ -3787,7 +3789,7 @@ class PyCdlib(object):
         """
         dot = dr.DirectoryRecord()
         dot.new_dot(vd, parent, vd.sequence_number(), rock_ridge,
-                    vd.logical_block_size(), xa, file_mode)
+                    vd.logical_block_size(), xa, file_mode, time.time())
         self._add_child_to_dr(dot)
 
     def _create_dotdot(self, vd, parent, rock_ridge, relocated, xa, file_mode):
@@ -3807,7 +3809,8 @@ class PyCdlib(object):
         """
         dotdot = dr.DirectoryRecord()
         dotdot.new_dotdot(vd, parent, vd.sequence_number(), rock_ridge,
-                          vd.logical_block_size(), relocated, xa, file_mode)
+                          vd.logical_block_size(), relocated, xa, file_mode,
+                          time.time())
         self._add_child_to_dr(dotdot)
         return dotdot
 
@@ -4833,7 +4836,7 @@ class PyCdlib(object):
                                      self.pvd.sequence_number(),
                                      self.rock_ridge, new_rr_name,
                                      self.logical_block_size, True, False,
-                                     self.xa, file_mode)
+                                     self.xa, file_mode, time.time())
                 num_bytes_to_add += self._add_child_to_dr(fake_dir_rec)
 
                 # The fake dir record doesn't get an entry in the path table
@@ -4864,7 +4867,7 @@ class PyCdlib(object):
             rec.new_dir(self.pvd, iso9660_name, parent,
                         self.pvd.sequence_number(), self.rock_ridge, new_rr_name,
                         self.logical_block_size, False, relocated,
-                        self.xa, file_mode)
+                        self.xa, file_mode, time.time())
             num_bytes_to_add += self._add_child_to_dr(rec)
             if rec.rock_ridge is not None:
                 if relocated and fake_dir_rec is not None and fake_dir_rec.rock_ridge is not None:
@@ -5412,7 +5415,7 @@ class PyCdlib(object):
                 rr_symlink_name_bytes = rr_symlink_name.encode('utf-8')
                 rec.new_symlink(self.pvd, name, parent, rr_path.encode('utf-8'),
                                 self.pvd.sequence_number(), self.rock_ridge,
-                                rr_symlink_name_bytes, self.xa)
+                                rr_symlink_name_bytes, self.xa, time.time())
                 num_bytes_to_add += self._add_child_to_dr(rec)
 
                 num_bytes_to_add += self._update_rr_ce_entry(rec)
@@ -5478,7 +5481,7 @@ class PyCdlib(object):
             joliet_rec = dr.DirectoryRecord()
             joliet_rec.new_file(self.joliet_vd, 0, joliet_name, joliet_parent,
                                 self.joliet_vd.sequence_number(), '', b'',
-                                self.xa, -1)
+                                self.xa, -1, time.time())
             num_bytes_to_add += self._add_child_to_dr(joliet_rec)
 
         self._finish_add(0, num_bytes_to_add)

@@ -8,6 +8,7 @@ try:
 except ImportError:
     from io import BytesIO
 import struct
+import time
 
 prefix = '.'
 for i in range(0, 3):
@@ -868,14 +869,14 @@ def test_rrtfrecord_parse_use_vol_desc_dates():
 
 def test_rrtfrecord_new_double_initialized():
     tf = pycdlib.rockridge.RRTFRecord()
-    tf.new(0)
+    tf.new(0, time.time())
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        tf.new(0)
+        tf.new(0, time.time())
     assert(str(excinfo.value) == 'TF record already initialized')
 
 def test_rrtfrecord_new_use_vol_desc_dates():
     tf = pycdlib.rockridge.RRTFRecord()
-    tf.new(0x81)
+    tf.new(0x81, time.time())
     assert(type(tf.creation_time) == pycdlib.dates.VolumeDescriptorDate)
 
 def test_rrtfrecord_record_not_initialized():
@@ -1184,45 +1185,45 @@ def test_rr_record_sf_record():
 
 def test_rr_new_initialize_twice():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
+        rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
     assert(str(excinfo.value) == 'Rock Ridge extension already initialized')
 
 def test_rr_new_invalid_rr_version():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        rr.new(False, b'foo', 0, None, '1.13', False, False, False, 0, 0, {})
+        rr.new(False, b'foo', 0, None, '1.13', False, False, False, 0, 0, {}, time.time())
     assert(str(excinfo.value) == 'Only Rock Ridge versions 1.09, 1.10, and 1.12 are implemented')
 
 def test_rr_new_sprecord_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(True, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {})
+    rr.new(True, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {}, time.time())
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.sp_record is not None)
 
 def test_rr_new_rrrecord_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {})
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {}, time.time())
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.rr_record is not None)
 
 def test_rr_new_clrecord_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', True, False, False, 0, 254-28, {})
+    rr.new(False, b'foo', 0, None, '1.09', True, False, False, 0, 254-28, {}, time.time())
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.cl_record is not None)
     assert(rr.child_link_extent() == 0)
 
 def test_rr_new_rerecord_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, True, False, 0, 254-28, {})
+    rr.new(False, b'foo', 0, None, '1.09', False, True, False, 0, 254-28, {}, time.time())
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.re_record is not None)
 
 def test_rr_new_plrecord_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, True, 0, 254-28, {})
+    rr.new(False, b'foo', 0, None, '1.09', False, False, True, 0, 254-28, {}, time.time())
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.pl_record is not None)
     assert(rr.parent_link_extent() == 0)
@@ -1230,18 +1231,18 @@ def test_rr_new_plrecord_ce_record():
 def test_rr_new_increase_dr_len_too_far():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-7, {})
+        rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-7, {}, time.time())
     assert(str(excinfo.value) == 'Rock Ridge entry increased DR length too far')
 
 def test_rr_new_alrecord():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, True, 0, 0, {b'name': b'value'})
+    rr.new(False, b'foo', 0, None, '1.09', False, False, True, 0, 0, {b'name': b'value'}, time.time())
     assert(rr.dr_entries.ce_record is None)
     assert(len(rr.dr_entries.al_records) == 1)
 
 def test_rr_new_alrecord_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-50, {b'name': b'value'})
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-50, {b'name': b'value'}, time.time())
     assert(rr.dr_entries.ce_record is not None)
     assert(len(rr.dr_entries.al_records) == 1)
     assert(rr.dr_entries.al_records[0].flags == 0x1)
@@ -1261,7 +1262,7 @@ def test_rr_new_alrecord_ce_record():
 
 def test_rr_new_alrecord_ce_record_only():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {b'name': b'value'})
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {b'name': b'value'}, time.time())
     assert(rr.dr_entries.ce_record is not None)
     assert(len(rr.dr_entries.al_records) == 0)
     assert(len(rr.ce_entries.al_records) == 1)
@@ -1276,7 +1277,7 @@ def test_rr_new_alrecord_ce_record_only():
 
 def test_rr_get_file_mode_ce_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {})
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {}, time.time())
     assert(rr.dr_entries.ce_record is not None)
     assert(rr.ce_entries.px_record is not None)
     assert(rr.get_file_mode() == 0)
@@ -1325,7 +1326,7 @@ def test_rr_symlink_path_not_initialized():
 
 def test_rr_symlink_path_no_end():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, b'bar', '1.09', False, False, False, 0, 0, {})
+    rr.new(False, b'foo', 0, b'bar', '1.09', False, False, False, 0, 0, {}, time.time())
     rr.dr_entries.sl_records[0].set_last_component_continued()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         rr.symlink_path()
@@ -1345,7 +1346,7 @@ def test_rr_child_link_update_from_dirrecord_not_initialized():
 
 def test_rr_child_link_update_from_dirrecord_no_child_link():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         rr.child_link_update_from_dirrecord()
     assert(str(excinfo.value) == 'No child link found!')
@@ -1358,7 +1359,7 @@ def test_rr_child_link_extent_not_initialized():
 
 def test_rr_child_link_extent_no_child_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.child_link_extent()
     assert(str(excinfo.value) == 'Asked for child extent for non-existent child record')
@@ -1377,7 +1378,7 @@ def test_rr_parent_link_update_from_dirrecord_not_initialized():
 
 def test_rr_parent_link_update_from_dirrecord_no_parent_link():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         rr.parent_link_update_from_dirrecord()
     assert(str(excinfo.value) == 'No parent link found!')
@@ -1390,7 +1391,7 @@ def test_rr_parent_link_extent_not_initialized():
 
 def test_rr_parent_link_extent_no_parent_record():
     rr = pycdlib.rockridge.RockRidge()
-    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {})
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.parent_link_extent()
     assert(str(excinfo.value) == 'Asked for parent extent for non-existent parent record')

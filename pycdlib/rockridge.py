@@ -20,7 +20,6 @@ from __future__ import absolute_import
 
 import bisect
 import struct
-import time
 
 from pycdlib import dates
 from pycdlib import pycdlibexception
@@ -1931,13 +1930,15 @@ class RRTFRecord(object):
 
         self._initialized = True
 
-    def new(self, time_flags):
-        # type: (int) -> None
+    def new(self, time_flags, date_seconds):
+        # type: (int, float) -> None
         """
         Create a new Rock Ridge Time Stamp record.
 
         Parameters:
          time_flags - The flags to use for this time stamp record.
+         date_seconds - Time and date, in seconds since the epoch, to use for
+                        this time stamp record.
         Returns:
          Nothing.
         """
@@ -1956,7 +1957,7 @@ class RRTFRecord(object):
                     setattr(self, fieldname, dates.DirectoryRecordDate())
                 elif tflen == 17:
                     setattr(self, fieldname, dates.VolumeDescriptorDate())
-                getattr(self, fieldname).new(time.time())
+                getattr(self, fieldname).new(date_seconds)
 
         self._initialized = True
 
@@ -3001,8 +3002,8 @@ class RockRidge(object):
     def _assign_entries(self, is_first_dir_record_of_root, rr_name, file_mode,
                         symlink_path, rr_relocated_child, rr_relocated,
                         rr_relocated_parent, bytes_to_skip, curr_dr_len,
-                        attributes):
-        # type: (bool, bytes, int, bytes, bool, bool, bool, int, int, Dict[bytes, bytes]) -> int
+                        attributes, date_seconds):
+        # type: (bool, bytes, int, bytes, bool, bool, bool, int, int, Dict[bytes, bytes], float) -> int
         """
         Assign Rock Ridge entries to the appropriate DR or CE record.
 
@@ -3022,6 +3023,8 @@ class RockRidge(object):
          curr_dr_len - The current length of the directory record; this is used
                        when figuring out whether a continuation entry is needed.
          attributes - Arbitrary attributes to add to the Rock Ridge entry.
+         date_seconds - Time and date, in seconds, to use for this Rock Ridge
+                        record.
         Returns:
          The length of the directory record after the Rock Ridge extension has
          been added, or -1 if the entry will not fit.
@@ -3101,7 +3104,7 @@ class RockRidge(object):
 
         # For TF record
         new_tf = RRTFRecord()
-        new_tf.new(TF_FLAGS)
+        new_tf.new(TF_FLAGS, date_seconds)
         thislen = RRTFRecord.length(TF_FLAGS)
         if curr_dr_len + thislen > ALLOWED_DR_SIZE:
             if self.dr_entries.ce_record is None:
@@ -3196,8 +3199,9 @@ class RockRidge(object):
 
     def new(self, is_first_dir_record_of_root, rr_name, file_mode,
             symlink_path, rr_version, rr_relocated_child, rr_relocated,
-            rr_relocated_parent, bytes_to_skip, curr_dr_len, attributes):
-        # type: (bool, bytes, int, bytes, str, bool, bool, bool, int, int, Dict[bytes, bytes]) -> int
+            rr_relocated_parent, bytes_to_skip, curr_dr_len, attributes,
+            date_seconds):
+        # type: (bool, bytes, int, bytes, str, bool, bool, bool, int, int, Dict[bytes, bytes], float) -> int
         """
         Create a new Rock Ridge record.
 
@@ -3220,6 +3224,8 @@ class RockRidge(object):
                        when figuring out whether a continuation entry is needed.
          attributes - Arbitrary attributes to add to the record.  This is a
                       non-standard extension, so use with care.
+         date_seconds - Time and date, in seconds, to use for this Rock Ridge
+                        record.
         Returns:
          The length of the directory record after the Rock Ridge extension has
          been added.
@@ -3236,7 +3242,7 @@ class RockRidge(object):
                                           file_mode, symlink_path,
                                           rr_relocated_child, rr_relocated,
                                           rr_relocated_parent, bytes_to_skip,
-                                          curr_dr_len, attributes)
+                                          curr_dr_len, attributes, date_seconds)
 
         if new_dr_len < 0:
             self.dr_entries = RockRidgeEntries()
@@ -3250,7 +3256,7 @@ class RockRidge(object):
                                               rr_name, file_mode, symlink_path,
                                               rr_relocated_child, rr_relocated,
                                               rr_relocated_parent, bytes_to_skip,
-                                              curr_dr_len, attributes)
+                                              curr_dr_len, attributes, date_seconds)
             if new_dr_len < 0:
                 raise pycdlibexception.PyCdlibInternalError('Could not assign Rock Ridge entries')
 
