@@ -103,7 +103,7 @@ class DirectoryRecordDate(object):
         Create a new Directory Record date based on the current time.
 
         Parameters:
-         tm - An optional argument that must be None
+         tm - An optional argument that must be None.
         Returns:
          Nothing.
         """
@@ -177,7 +177,7 @@ class VolumeDescriptorDate(object):
         is valid, which means that the date in this field was not specified.
 
         Parameters:
-         datestr - string to be parsed
+         datestr - The string to be parsed.
         Returns:
          Nothing.
         """
@@ -228,15 +228,15 @@ class VolumeDescriptorDate(object):
     def new(self, tm=0.0):
         # type: (float) -> None
         """
-        Create a new Volume Descriptor Date.  If tm is None, then this Volume
+        Create a new Volume Descriptor Date.  If tm is 0.0, then this Volume
         Descriptor Date will be full of zeros (meaning not specified).  If tm
-        is not None, it is expected to be a struct_time object, at which point
-        this Volume Descriptor Date object will be filled in with data from that
-        struct_time.
+        is not 0.0, it is expected to be a float number of seconds from the
+        epoch, at which point this Volume Descriptor Date object will be filled
+        in with that time.
 
         Parameters:
-         tm - struct_time object to base new VolumeDescriptorDate off of,
-              or 0.0 for an empty VolumeDescriptorDate.
+         tm - Seconds since the epoch to base the new VolumeDescriptorDate off
+              of, or 0.0 for an empty VolumeDescriptorDate.
         Returns:
           Nothing.
         """
