@@ -22,6 +22,7 @@ from __future__ import absolute_import
 
 import bisect
 import struct
+import time
 
 from pycdlib import dates
 from pycdlib import inode
@@ -445,7 +446,7 @@ class DirectoryRecord(object):
         # We create it here just to have something in the field, but we'll
         # redo the whole thing when we are mastering.
         self.date = dates.DirectoryRecordDate()
-        self.date.new()
+        self.date.new(time.time())
 
         if length > 2**32 - 1:
             raise pycdlibexception.PyCdlibInvalidInput('Maximum supported file length is 2^32-1')
@@ -1055,12 +1056,6 @@ class DirectoryRecord(object):
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
-
-        # Ecma-119 9.1.5 says the date should reflect the time when the
-        # record was written, so we make a new date now and use that to
-        # write out the record.
-        self.date = dates.DirectoryRecordDate()
-        self.date.new()
 
         padlen = struct.calcsize(self.FMT) + self.len_fi
         padstr = b'\x00' * (padlen % 2)

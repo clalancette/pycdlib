@@ -97,13 +97,15 @@ class DirectoryRecordDate(object):
 
         self._initialized = True
 
-    def new(self):
-        # type: () -> None
+    def new(self, tm):
+        # type: (float) -> None
         """
-        Create a new Directory Record date based on the current time.
+        Create a new Directory Record Date.  tm is expected to be a float number
+        of seconds from the epoch, which will be used to fill in this Volume
+        Descriptor Date object.
 
         Parameters:
-         tm - An optional argument that must be None.
+         tm - Seconds since the epoch to base the new DirectoryRecordDate off of.
         Returns:
          Nothing.
         """
@@ -111,7 +113,6 @@ class DirectoryRecordDate(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record Date already initialized')
 
         # This algorithm was ported from cdrkit, genisoimage.c:iso9660_date()
-        tm = time.time()
         local = time.localtime(tm)
         self.years_since_1900 = local.tm_year - 1900
         self.month = local.tm_mon
@@ -225,14 +226,13 @@ class VolumeDescriptorDate(object):
 
         return self.date_str
 
-    def new(self, tm=0.0):
+    def new(self, tm):
         # type: (float) -> None
         """
         Create a new Volume Descriptor Date.  If tm is 0.0, then this Volume
         Descriptor Date will be full of zeros (meaning not specified).  If tm
         is not 0.0, it is expected to be a float number of seconds from the
-        epoch, at which point this Volume Descriptor Date object will be filled
-        in with that time.
+        epoch, which will be used to fill in this Volume Descriptor Date object.
 
         Parameters:
          tm - Seconds since the epoch to base the new VolumeDescriptorDate off

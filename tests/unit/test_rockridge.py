@@ -876,7 +876,7 @@ def test_rrtfrecord_new_double_initialized():
 def test_rrtfrecord_new_use_vol_desc_dates():
     tf = pycdlib.rockridge.RRTFRecord()
     tf.new(0x81)
-    assert(tf.creation_time.date_str == b'0' * 16 + b'\x00')
+    assert(type(tf.creation_time) == pycdlib.dates.VolumeDescriptorDate)
 
 def test_rrtfrecord_record_not_initialized():
     tf = pycdlib.rockridge.RRTFRecord()

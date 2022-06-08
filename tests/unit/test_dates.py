@@ -58,14 +58,14 @@ def test_dirrecorddate_record_not_initialized():
 
 def test_dirrecorddate_new_after_new():
     drdate = pycdlib.dates.DirectoryRecordDate()
-    drdate.new()
+    drdate.new(time.time())
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        drdate.new()
+        drdate.new(time.time())
     assert(str(excinfo.value) == 'Directory Record Date already initialized')
 
 def test_dirrecorddate_parse_after_new():
     drdate = pycdlib.dates.DirectoryRecordDate()
-    drdate.new()
+    drdate.new(time.time())
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         drdate.parse(b'')
     assert(str(excinfo.value) == 'Directory Record Date already initialized')
@@ -81,17 +81,17 @@ def test_dirrecorddate_new_after_parse():
     drdate = pycdlib.dates.DirectoryRecordDate()
     drdate.parse(b'\x76\x07\x12\x15\x21\x00\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        drdate.new()
+        drdate.new(time.time())
     assert(str(excinfo.value) == 'Directory Record Date already initialized')
 
 def test_dirrecorddate_record_after_new():
     drdate = pycdlib.dates.DirectoryRecordDate()
-    drdate.new()
+    drdate.new(time.time())
     assert(len(drdate.record()) == 7)
 
 def test_dirrecorddate_compare_equal():
     drdate = pycdlib.dates.DirectoryRecordDate()
-    drdate.new()
+    drdate.new(time.time())
 
     drdate2 = drdate
 
@@ -99,12 +99,12 @@ def test_dirrecorddate_compare_equal():
 
 def test_dirrecorddate_compare_not_equal():
     drdate = pycdlib.dates.DirectoryRecordDate()
-    drdate.new()
+    drdate.new(time.time())
 
     time.sleep(1)
 
     drdate2 = pycdlib.dates.DirectoryRecordDate()
-    drdate2.new()
+    drdate2.new(time.time())
 
     assert(drdate2 != drdate)
 
@@ -122,14 +122,14 @@ def test_volumedescdate_parse_invalid_string():
 
 def test_volumedescdate_new_after_new():
     voldate = pycdlib.dates.VolumeDescriptorDate()
-    voldate.new()
+    voldate.new(0.0)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        voldate.new()
+        voldate.new(0.0)
     assert(str(excinfo.value) == 'This Volume Descriptor Date object is already initialized')
 
 def test_volumedescdate_parse_after_new():
     voldate = pycdlib.dates.VolumeDescriptorDate()
-    voldate.new()
+    voldate.new(0.0)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         voldate.parse(b'')
     assert(str(excinfo.value) == 'This Volume Descriptor Date object is already initialized')
@@ -145,7 +145,7 @@ def test_volumedescdate_new_after_parse():
     voldate = pycdlib.dates.VolumeDescriptorDate()
     voldate.parse(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        voldate.new()
+        voldate.new(0.0)
     assert(str(excinfo.value) == 'This Volume Descriptor Date object is already initialized')
 
 def test_volumedescdate_parse_zero():

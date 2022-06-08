@@ -20,6 +20,7 @@ from __future__ import absolute_import
 
 import bisect
 import struct
+import time
 
 from pycdlib import dates
 from pycdlib import pycdlibexception
@@ -1955,7 +1956,7 @@ class RRTFRecord(object):
                     setattr(self, fieldname, dates.DirectoryRecordDate())
                 elif tflen == 17:
                     setattr(self, fieldname, dates.VolumeDescriptorDate())
-                getattr(self, fieldname).new()
+                getattr(self, fieldname).new(time.time())
 
         self._initialized = True
 
