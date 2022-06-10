@@ -2757,9 +2757,9 @@ class UDFLogicalVolumeDescriptor(object):
             # The generic partition map starts with 1 byte for the type and
             # 1 byte for the length.
             (map_type, map_len) = struct.unpack_from('=BB', partition_maps, offset)
-            if offset + map_len > len(partition_maps[offset:]):
+            if map_len > len(partition_maps[offset:]):
                 raise pycdlibexception.PyCdlibInvalidISO('Partition map goes beyond end of data, ISO corrupt')
-            if offset + map_len > map_table_length_left:
+            if map_len > map_table_length_left:
                 raise pycdlibexception.PyCdlibInvalidISO('Partition map goes beyond map_table_length left, ISO corrupt')
 
             if map_type == 0:
