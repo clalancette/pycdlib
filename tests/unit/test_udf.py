@@ -1798,15 +1798,15 @@ def test_file_entry_extent_location_not_initialized():
 
 def test_file_entry_new_initialized_twice():
     entry = pycdlib.udf.UDFFileEntry()
-    entry.new(0, 'dir', None, 2048)
+    entry.new(0, 'dir', None, 2048, time.time())
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        entry.new(0, 'dir', None, 2048)
+        entry.new(0, 'dir', None, 2048, time.time())
     assert(str(excinfo.value) == 'UDF File Entry already initialized')
 
 def test_file_entry_new_bad_file_type():
     entry = pycdlib.udf.UDFFileEntry()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        entry.new(0, 'foo', None, 2048)
+        entry.new(0, 'foo', None, 2048, time.time())
     assert(str(excinfo.value) == "UDF File Entry file type must be one of 'dir', 'file', or 'symlink'")
 
 def test_file_entry_set_extent_location_not_initialized():
@@ -1825,7 +1825,7 @@ def test_file_entry_add_file_ident_desc_not_initialized():
 
 def test_file_entry_add_file_ident_desc_bad_file_type():
     entry = pycdlib.udf.UDFFileEntry()
-    entry.new(0, 'file', None, 2048)
+    entry.new(0, 'file', None, 2048, time.time())
     desc = pycdlib.udf.UDFFileIdentifierDescriptor()
     desc.new(False, False, b'foo', None)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -1840,7 +1840,7 @@ def test_file_entry_remove_file_ident_desc_not_initialized():
 
 def test_file_entry_remove_file_ident_desc_file_not_found():
     entry = pycdlib.udf.UDFFileEntry()
-    entry.new(0, 'dir', None, 2048)
+    entry.new(0, 'dir', None, 2048, time.time())
     desc = pycdlib.udf.UDFFileIdentifierDescriptor()
     desc.new(False, False, b'foo', None)
     entry.add_file_ident_desc(desc, 2048)
@@ -1920,7 +1920,7 @@ def test_file_ident_parse_initialized_twice():
     tag.new(0, 0)
 
     entry = pycdlib.udf.UDFFileEntry()
-    entry.new(0, 'dir', None, 2048)
+    entry.new(0, 'dir', None, 2048, time.time())
 
     fi = pycdlib.udf.UDFFileIdentifierDescriptor()
     fi.parse(b'\x00'*16 + b'\x01\x00\x08\x00' + b'\x00'*16 + b'\x00\x00', 0, tag, entry)
@@ -1933,7 +1933,7 @@ def test_file_ident_parse_bad_file_version():
     tag.new(0, 0)
 
     entry = pycdlib.udf.UDFFileEntry()
-    entry.new(0, 'dir', None, 2048)
+    entry.new(0, 'dir', None, 2048, time.time())
 
     fi = pycdlib.udf.UDFFileIdentifierDescriptor()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
@@ -1945,7 +1945,7 @@ def test_file_ident_parse_bad_encoding():
     tag.new(0, 0)
 
     entry = pycdlib.udf.UDFFileEntry()
-    entry.new(0, 'dir', None, 2048)
+    entry.new(0, 'dir', None, 2048, time.time())
 
     fi = pycdlib.udf.UDFFileIdentifierDescriptor()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
@@ -1975,7 +1975,7 @@ def test_file_ident_record_bad_encoding():
     tag.new(0, 0)
 
     entry = pycdlib.udf.UDFFileEntry()
-    entry.new(0, 'dir', None, 2048)
+    entry.new(0, 'dir', None, 2048, time.time())
 
     fi = pycdlib.udf.UDFFileIdentifierDescriptor()
     fi.parse(b'\x00'*16 + b'\x01\x00\x08\x01' + b'\x00'*16 + b'\x00\x00\x00', 0, tag, entry)

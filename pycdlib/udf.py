@@ -3977,8 +3977,8 @@ class UDFFileEntry(object):
             return self.orig_extent_loc
         return self.new_extent_loc
 
-    def new(self, length, file_type, parent, log_block_size):
-        # type: (int, str, Optional[UDFFileEntry], int) -> None
+    def new(self, length, file_type, parent, log_block_size, date_seconds):
+        # type: (int, str, Optional[UDFFileEntry], int, float) -> None
         """
         Create a new UDF File Entry.
 
@@ -3989,6 +3989,8 @@ class UDFFileEntry(object):
                      'file', or 'symlink'.
          parent - The parent UDF File Entry for this UDF File Entry.
          log_block_size - The logical block size for extents.
+         date_seconds - Time and date, in seconds since the epoch, to use for
+                        this UDF File Entry.
         Returns:
          Nothing.
         """
@@ -4038,13 +4040,13 @@ class UDFFileEntry(object):
                 len_left -= alloc_len
 
         self.access_time = UDFTimestamp()
-        self.access_time.new(time.time())
+        self.access_time.new(date_seconds)
 
         self.mod_time = UDFTimestamp()
-        self.mod_time.new(time.time())
+        self.mod_time.new(date_seconds)
 
         self.attr_time = UDFTimestamp()
-        self.attr_time.new(time.time())
+        self.attr_time.new(date_seconds)
 
         self.extended_attr_icb = UDFLongAD()
         self.extended_attr_icb.new(0, 0)

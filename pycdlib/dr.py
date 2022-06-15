@@ -1181,6 +1181,20 @@ class DirectoryRecord(object):
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
         self.data_length = length
 
+    def set_date(self, date_seconds):
+        # type: (float) -> None
+        """
+        Set the date of this Directory Record to the given date.
+
+        Parameters:
+         date_seconds - The new date, in seconds since the epoch, to set the
+                        record to.
+        Returns:
+         Nothing.
+        """
+        self.date = dates.DirectoryRecordDate()
+        self.date.new(date_seconds)
+
     ############# START BACKWARDS COMPATIBILITY ###############################
     # We have a few downstream users that are using 'data_fp',
     # 'original_data_location', 'DATA_ON_ORIGINAL_ISO', 'DATA_IN_EXTERNAL_FP',

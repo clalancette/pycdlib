@@ -1820,9 +1820,10 @@ class PyCdlib(object):
                     False, False, self.xa, 0o040555, time.time())
         num_bytes_to_add = self._add_child_to_dr(rec)
 
-        self._create_dot(self.pvd, rec, self.rock_ridge, self.xa, 0o040555)
+        self._create_dot(self.pvd, rec, self.rock_ridge, self.xa, 0o040555,
+                         time.time())
         self._create_dotdot(self.pvd, rec, self.rock_ridge, False, self.xa,
-                            0o040555)
+                            0o040555, time.time())
 
         # We always need to add an entry to the path table record.
         ptr = path_table_record.PathTableRecord()
@@ -2280,7 +2281,7 @@ class PyCdlib(object):
                 new_record.new_file(self.pvd, self.logical_block_size,
                                     b'FAKEELT.;1',
                                     self.pvd.root_directory_record(), 0, '',
-                                    b'', False, 0, time.time())
+                                    b'', False, 0, 0)
                 self.eltorito_boot_catalog.add_dirrecord(new_record)
 
         self.interchange_level = max(self.interchange_level, ic_level)
@@ -3096,6 +3097,9 @@ class PyCdlib(object):
          rr_name - The Rock Ridge name to use for the new file if this is a
                    Rock Ridge ISO and the new path is on the ISO9660 filesystem.
          udf_new_path - The new path on the UDF filesystem to link to.
+         creation_time - The time in seconds since the epoch to assign to the
+                         newly created symlink; defaults to the current time if
+                         not specified.
         Returns:
          The number of bytes to add to the descriptors.
         """
@@ -3105,6 +3109,7 @@ class PyCdlib(object):
         rr_name = b''
         udf_new_path = None
         new_rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
+        creation_time = time.time()
         for key, value in kwargs.items():
             if key == 'iso_new_path':
                 if value is not None:
@@ -3123,6 +3128,10 @@ class PyCdlib(object):
                 if value is not None:
                     num_new += 1
                     udf_new_path = utils.normpath(value)
+            elif key == 'creation_time':
+                if not isinstance(value, int):
+                    raise pycdlibexception.PyCdlibInvalidInput('creation_time must be an integer')
+                creation_time = value
             else:
                 raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
 
@@ -3154,7 +3163,7 @@ class PyCdlib(object):
             new_rec = dr.DirectoryRecord()
             new_rec.new_file(vd, length, new_name, new_parent,
                              vd.sequence_number(), rr, rr_name, xa, file_mode,
-                             time.time())
+                             creation_time)
 
             num_bytes_to_add += self._add_child_to_dr(new_rec)
             num_bytes_to_add += self._update_rr_ce_entry(new_rec)
@@ -3172,7 +3181,8 @@ class PyCdlib(object):
             num_bytes_to_add += num_new_extents * self.logical_block_size
 
             file_entry = udfmod.UDFFileEntry()
-            file_entry.new(length, 'file', udf_parent, self.logical_block_size)
+            file_entry.new(length, 'file', udf_parent, self.logical_block_size,
+                           creation_time)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             if data_ino is None or data_ino.num_udf == 0:
@@ -3446,13 +3456,15 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInternalError('Cannot remove a UDF record with no file identifier')
         return num_bytes_to_remove + self._rm_udf_file_ident(rec.parent, rec.file_ident.fi)
 
-    def _add_joliet_dir(self, joliet_path):
-        # type: (bytes) -> int
+    def _add_joliet_dir(self, joliet_path, creation_time):
+        # type: (bytes, float) -> int
         """
         An internal method to add a joliet directory to the ISO.
 
         Parameters:
          joliet_path - The path to add to the Joliet portion of the ISO.
+         creation_time - The time in seconds since the epoch to assign to the
+                         newly created Joliet directory.
         Returns:
          The number of additional bytes needed on the ISO to fit this directory.
         """
@@ -3466,11 +3478,12 @@ class PyCdlib(object):
         rec.new_dir(self.joliet_vd, joliet_name, joliet_parent,
                     self.joliet_vd.sequence_number(), '', b'',
                     self.logical_block_size, False, False,
-                    False, -1, time.time())
+                    False, -1, creation_time)
         num_bytes_to_add = self._add_child_to_dr(rec)
 
-        self._create_dot(self.joliet_vd, rec, '', False, -1)
-        self._create_dotdot(self.joliet_vd, rec, '', False, False, -1)
+        self._create_dot(self.joliet_vd, rec, '', False, -1, creation_time)
+        self._create_dotdot(self.joliet_vd, rec, '', False, False, -1,
+                            creation_time)
 
         num_bytes_to_add += self.logical_block_size
         if self.joliet_vd.add_to_ptr_size(path_table_record.PathTableRecord.record_length(len(joliet_name))):
@@ -3719,8 +3732,8 @@ class PyCdlib(object):
 
         return num_bytes_to_remove
 
-    def _create_dot(self, vd, parent, rock_ridge, xa, file_mode):
-        # type: (headervd.PrimaryOrSupplementaryVD, dr.DirectoryRecord, str, bool, int) -> None
+    def _create_dot(self, vd, parent, rock_ridge, xa, file_mode, creation_time):
+        # type: (headervd.PrimaryOrSupplementaryVD, dr.DirectoryRecord, str, bool, int, float) -> None
         """
         An internal method to create a new 'dot' Directory Record.
 
@@ -3730,16 +3743,18 @@ class PyCdlib(object):
          rock_ridge - The Rock Ridge version to use for this entry (if any).
          xa - Whether this Directory Record should have extended attributes.
          file_mode - The mode to assign to the dot directory (only applies to Rock Ridge).
+         creation_time - The time in seconds since the epoch to assign to the
+                         newly created dot record.
         Returns:
          Nothing.
         """
         dot = dr.DirectoryRecord()
         dot.new_dot(vd, parent, vd.sequence_number(), rock_ridge,
-                    vd.logical_block_size(), xa, file_mode, time.time())
+                    vd.logical_block_size(), xa, file_mode, creation_time)
         self._add_child_to_dr(dot)
 
-    def _create_dotdot(self, vd, parent, rock_ridge, relocated, xa, file_mode):
-        # type: (headervd.PrimaryOrSupplementaryVD, dr.DirectoryRecord, str, bool, bool, int) -> dr.DirectoryRecord
+    def _create_dotdot(self, vd, parent, rock_ridge, relocated, xa, file_mode, creation_time):
+        # type: (headervd.PrimaryOrSupplementaryVD, dr.DirectoryRecord, str, bool, bool, int, float) -> dr.DirectoryRecord
         """
         An internal method to create a new 'dotdot' Directory Record.
 
@@ -3750,13 +3765,15 @@ class PyCdlib(object):
          relocated - Whether this Directory Record is a Rock Ridge relocated entry.
          xa - Whether this Directory Record should have extended attributes.
          file_mode - The mode to assign to the dot directory (only applies to Rock Ridge).
+         creation_time - The time in seconds since the epoch to assign to the
+                         newly created dot record.
         Returns:
          Nothing.
         """
         dotdot = dr.DirectoryRecord()
         dotdot.new_dotdot(vd, parent, vd.sequence_number(), rock_ridge,
                           vd.logical_block_size(), relocated, xa, file_mode,
-                          time.time())
+                          creation_time)
         self._add_child_to_dr(dotdot)
         return dotdot
 
@@ -4024,7 +4041,7 @@ class PyCdlib(object):
 
             # Create the root directory, and the 'parent' entry inside.
             self.udf_root = udfmod.UDFFileEntry()
-            self.udf_root.new(0, 'dir', None, self.logical_block_size)
+            self.udf_root.new(0, 'dir', None, self.logical_block_size, time.time())
             num_bytes_to_add += self.logical_block_size
 
             parent = udfmod.UDFFileIdentifierDescriptor()
@@ -4045,9 +4062,9 @@ class PyCdlib(object):
         num_partition_bytes_to_add += self.logical_block_size
 
         self._create_dot(self.pvd, self.pvd.root_directory_record(),
-                         self.rock_ridge, self.xa, 0o040555)
+                         self.rock_ridge, self.xa, 0o040555, time.time())
         self._create_dotdot(self.pvd, self.pvd.root_directory_record(),
-                            self.rock_ridge, False, self.xa, 0o040555)
+                            self.rock_ridge, False, self.xa, 0o040555, time.time())
 
         if self.joliet_vd is not None:
             # Create the PTR, and add the 4 extents that comprise of the LE PTR
@@ -4062,10 +4079,10 @@ class PyCdlib(object):
 
             self._create_dot(self.joliet_vd,
                              self.joliet_vd.root_directory_record(), '',
-                             False, -1)
+                             False, -1, time.time())
             self._create_dotdot(self.joliet_vd,
                                 self.joliet_vd.root_directory_record(), '',
-                                False, False, -1)
+                                False, False, -1, time.time())
 
         if self.rock_ridge:
             num_partition_bytes_to_add += self.logical_block_size
@@ -4719,8 +4736,8 @@ class PyCdlib(object):
         self._finish_remove(num_bytes_to_remove, True)
 
     def add_directory(self, iso_path=None, rr_name=None, joliet_path=None,
-                      file_mode=None, udf_path=None):
-        # type: (Optional[str], Optional[str], Optional[str], int, Optional[str]) -> None
+                      file_mode=None, udf_path=None, creation_time=None):
+        # type: (Optional[str], Optional[str], Optional[str], int, Optional[str], Optional[float]) -> None
         """
         Add a directory to the ISO.  At least one of an iso_path, joliet_path,
         or udf_path must be provided.  Providing joliet_path on a non-Joliet
@@ -4734,6 +4751,9 @@ class PyCdlib(object):
          file_mode - The POSIX file mode to use for the directory.  This only
                      applies for Rock Ridge ISOs.
          udf_path - The UDF absolute path to use for the directory.
+         creation_time - The time in seconds since the epoch to assign to the
+                         newly created directory; defaults to the current time
+                         if not specified.
         Returns:
          Nothing.
         """
@@ -4751,6 +4771,9 @@ class PyCdlib(object):
         # required for Rock Ridge and remove this assumption.
         if file_mode is None:
             file_mode = 0o040555
+
+        if creation_time is None:
+            creation_time = time.time()
 
         num_bytes_to_add = 0
         if iso_path is not None:
@@ -4785,7 +4808,7 @@ class PyCdlib(object):
                                      self.pvd.sequence_number(),
                                      self.rock_ridge, new_rr_name,
                                      self.logical_block_size, True, False,
-                                     self.xa, file_mode, time.time())
+                                     self.xa, file_mode, creation_time)
                 num_bytes_to_add += self._add_child_to_dr(fake_dir_rec)
 
                 # The fake dir record doesn't get an entry in the path table
@@ -4816,7 +4839,7 @@ class PyCdlib(object):
             rec.new_dir(self.pvd, iso9660_name, parent,
                         self.pvd.sequence_number(), self.rock_ridge, new_rr_name,
                         self.logical_block_size, False, relocated,
-                        self.xa, file_mode, time.time())
+                        self.xa, file_mode, creation_time)
             num_bytes_to_add += self._add_child_to_dr(rec)
             if rec.rock_ridge is not None:
                 if relocated and fake_dir_rec is not None and fake_dir_rec.rock_ridge is not None:
@@ -4824,7 +4847,8 @@ class PyCdlib(object):
                     rec.rock_ridge.moved_to_cl_dr = fake_dir_rec
                 num_bytes_to_add += self._update_rr_ce_entry(rec)
 
-            self._create_dot(self.pvd, rec, self.rock_ridge, self.xa, file_mode)
+            self._create_dot(self.pvd, rec, self.rock_ridge, self.xa, file_mode,
+                             creation_time)
 
             parent_file_mode = -1
             if parent.rock_ridge is not None:
@@ -4834,7 +4858,8 @@ class PyCdlib(object):
                     parent_file_mode = file_mode
 
             dotdot = self._create_dotdot(self.pvd, rec, self.rock_ridge,
-                                         relocated, self.xa, parent_file_mode)
+                                         relocated, self.xa, parent_file_mode,
+                                         creation_time)
             if dotdot.rock_ridge is not None and relocated:
                 dotdot.rock_ridge.parent_link = orig_parent
 
@@ -4847,7 +4872,8 @@ class PyCdlib(object):
             rec.set_ptr(ptr)
 
         if joliet_path is not None:
-            num_bytes_to_add += self._add_joliet_dir(self._normalize_joliet_path(joliet_path))
+            num_bytes_to_add += self._add_joliet_dir(self._normalize_joliet_path(joliet_path),
+                                                     creation_time)
 
         if udf_path is not None:
             if self.udf_root is None:
@@ -4862,7 +4888,7 @@ class PyCdlib(object):
             num_bytes_to_add += num_new_extents * self.logical_block_size
 
             file_entry = udfmod.UDFFileEntry()
-            file_entry.new(0, 'dir', udf_parent, self.logical_block_size)
+            file_entry.new(0, 'dir', udf_parent, self.logical_block_size, creation_time)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             num_bytes_to_add += self.logical_block_size
@@ -5264,8 +5290,9 @@ class PyCdlib(object):
         self._finish_remove(num_bytes_to_remove, True)
 
     def add_symlink(self, symlink_path=None, rr_symlink_name=None, rr_path=None,
-                    joliet_path=None, udf_symlink_path=None, udf_target=None):
-        # type: (Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]) -> None
+                    joliet_path=None, udf_symlink_path=None, udf_target=None,
+                    creation_time=None):
+        # type: (Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[float]) -> None
         """
         Add a symlink from rr_symlink_name to the rr_path.  The ISO must have
         either Rock Ridge or UDF support (or both).
@@ -5279,6 +5306,9 @@ class PyCdlib(object):
          udf_symlink_path - The UDF path of the symlink itself on the ISO.
          udf_target - The UDF name of the entry on the ISO that the symlink
                       points to.
+         creation_time - The time in float seconds since the epoch to assign to
+                         the newly created symlink; defaults to the current time
+                         if passed as None.
         Returns:
          Nothing.
         """
@@ -5350,6 +5380,9 @@ class PyCdlib(object):
 
         # Checks complete, we can go on to make the symlink.
 
+        if creation_time is None:
+            creation_time = time.time()
+
         num_bytes_to_add = 0
 
         if symlink_path is not None:
@@ -5365,7 +5398,7 @@ class PyCdlib(object):
                 rr_symlink_name_bytes = rr_symlink_name.encode('utf-8')
                 rec.new_symlink(self.pvd, name, parent, rr_path.encode('utf-8'),
                                 self.pvd.sequence_number(), self.rock_ridge,
-                                rr_symlink_name_bytes, self.xa, time.time())
+                                rr_symlink_name_bytes, self.xa, creation_time)
                 num_bytes_to_add += self._add_child_to_dr(rec)
 
                 num_bytes_to_add += self._update_rr_ce_entry(rec)
@@ -5397,7 +5430,7 @@ class PyCdlib(object):
 
             file_entry = udfmod.UDFFileEntry()
             file_entry.new(len(symlink_bytearray), 'symlink', udf_parent,
-                           self.logical_block_size)
+                           self.logical_block_size, creation_time)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             num_bytes_to_add += self.logical_block_size
@@ -5431,7 +5464,7 @@ class PyCdlib(object):
             joliet_rec = dr.DirectoryRecord()
             joliet_rec.new_file(self.joliet_vd, 0, joliet_name, joliet_parent,
                                 self.joliet_vd.sequence_number(), '', b'',
-                                self.xa, -1, time.time())
+                                self.xa, -1, creation_time)
             num_bytes_to_add += self._add_child_to_dr(joliet_rec)
 
         self._finish_add(0, num_bytes_to_add)
@@ -5662,6 +5695,23 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         self.isohybrid_mbr = None
+
+    def set_record_date(self, rec, date_seconds):
+        # type: (Union[dr.DirectoryRecord, udfmod.UDFFileEntry], float) -> None
+        """
+        Set the date of a directory record to a particular date.
+
+        Parameters:
+         rec - The Directory Record to set the date on.
+         date_seconds - The new date, in seconds since the epoch, to set the
+                        record to.
+        Returns:
+         Nothing.
+        """
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
+
+        rec.set_date(date_seconds)
 
     def full_path_from_dirrecord(self, rec, rockridge=False):
         # type: (Union[dr.DirectoryRecord, udfmod.UDFFileEntry], bool) -> str
