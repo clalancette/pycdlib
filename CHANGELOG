@@ -1,5 +1,15 @@
 Changelog for PyCdlib
 
+1.13.0 (2022-06-20)
+-------------------
+* Fix the use of inspect for modern Python 3
+* Add in pycdlib-explorer functionality for modify-in-place
+* Add full support for Windows raw block devices
+* Fix UDF entries for large files
+* Allow some UDF errors to print a warning instead of throwing
+* Search for UDF anchors in additional locations
+* Fix UDF partition map parsing
+
 1.12.0 (2021-08-10)
 -------------------
 * Several fixes to work with raw Windows devices
