@@ -438,7 +438,7 @@ def mangle_dir_for_iso9660(orig, iso_level):
     return truncate_basename(orig, iso_level, True)
 
 
-class Win32RawDevice:
+class Win32RawDevice(object):
     """
     Class to read and seek a Windows Raw Device IO object without bother.
     It deals with getting the full size, allowing full access to all sectors,
@@ -480,7 +480,7 @@ class Win32RawDevice:
         """Get UNC target name. Can be `E:` or `PhysicalDriveN`."""
         target = self.target
         if not target.startswith("\\\\.\\"):
-            target = rf"\\.\{target}"
+            target = "\\\\.\\" + target
         return target
 
     def get_handle(self):
@@ -573,9 +573,9 @@ class Win32RawDevice:
         while self._tell() < self.tell() + size:
             res, data = win32file.ReadFile(self.handle, sector_size, None)  # type: ignore
             if res != 0:
-                raise IOError(f"An error occurred: {res} {data}")
+                raise IOError("An error occurred: %d %s" % (res, data))
             if len(data) < sector_size:
-                raise IOError(f"Read {sector_size - len(data)} less bytes than requested...")
+                raise IOError("Read %d less bytes than requested..." % (sector_size - len(data)))
             has_data += data
         # seek to the position wanted + size read, which will then be re-aligned
         self.seek(self.tell() + size)
