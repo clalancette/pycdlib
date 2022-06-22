@@ -503,7 +503,7 @@ class Win32RawDevice(object):
         return handle
 
     def get_geometry(self):
-        # type: () -> tuple[int, ...]
+        # type: () -> Tuple[int, int, int, int, int, int, int]
         """
         Retrieves information about the physical disk's geometry.
         https://docs.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-disk_geometry_ex
@@ -525,7 +525,7 @@ class Win32RawDevice(object):
         )
         geometry = struct.unpack("6L", geometry_ex[:24])
         disk_size = struct.unpack("<Q", geometry_ex[24:])[0]
-        return (*geometry, disk_size)
+        return (geometry[0], geometry[1], geometry[2], geometry[3], geometry[4], geometry[5], disk_size)
 
     def tell(self):
         # type: () -> int

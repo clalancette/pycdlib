@@ -53,7 +53,7 @@ test-coverage:
 	xdg-open htmlcov/index.html
 
 tests:
-	-[ -x /usr/bin/python2 ] && py.test --verbose tests
+	-[ -x /usr/bin/py.test-2 ] && py.test-2 --verbose tests
 	py.test-3 --verbose tests
 
 .PHONY: clean deb docs flake8 lineprof mypy profile pylint rpm sdist slowtests srpm test-coverage tests
