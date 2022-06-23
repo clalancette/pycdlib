@@ -270,6 +270,16 @@ class DirectoryRecord(object):
             if self.len_fi % 2 == 0:
                 record_offset += 1
 
+        if self.is_root:
+            self._printable_name = '/'.encode(vd.encoding)
+        elif self.file_ident == b'\x00':
+            self._printable_name = '.'.encode(vd.encoding)
+        elif self.file_ident == b'\x01':
+            self._printable_name = '..'.encode(vd.encoding)
+        else:
+            self._printable_name = self.file_ident
+
+        if self.parent is not None:
             xa_rec = XARecord()
             if xa_rec.parse(record[record_offset:], self.len_fi):
                 self.xa_record = xa_rec
@@ -299,7 +309,8 @@ class DirectoryRecord(object):
                 self.rock_ridge.parse(record[record_offset:],
                                       is_first_dir_record_of_root,
                                       bytes_to_skip,
-                                      False)
+                                      False,
+                                      self._printable_name)
 
         if self.xattr_len != 0:
             if self.file_flags & (1 << self.FILE_FLAG_RECORD_BIT):
@@ -311,15 +322,6 @@ class DirectoryRecord(object):
             ret = ''
         else:
             ret = self.rock_ridge.rr_version
-
-        if self.is_root:
-            self._printable_name = '/'.encode(vd.encoding)
-        elif self.file_ident == b'\x00':
-            self._printable_name = '.'.encode(vd.encoding)
-        elif self.file_ident == b'\x01':
-            self._printable_name = '..'.encode(vd.encoding)
-        else:
-            self._printable_name = self.file_ident
 
         self.initialized = True
 

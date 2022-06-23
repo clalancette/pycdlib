@@ -1122,7 +1122,7 @@ class PyCdlib(object):
                     con_block = cdfp.read(ce_record.len_cont_area)
                     new_record.rock_ridge.parse(con_block, False,
                                                 new_record.rock_ridge.bytes_to_skip,
-                                                True)
+                                                True, new_record.file_identifier())
                     cdfp.seek(orig_pos)
                     block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
                                                        ce_record.offset_cont_area,

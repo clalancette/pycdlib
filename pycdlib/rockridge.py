@@ -2466,8 +2466,8 @@ class RockRidge(object):
         return getattr(self.dr_entries, name) or getattr(self.ce_entries, name)
 
     def parse(self, record, is_first_dir_record_of_root, bytes_to_skip,
-              continuation):
-        # type: (bytes, bool, int, bool) -> None
+              continuation, dr_name):
+        # type: (bytes, bool, int, bool, bytes) -> None
         """
         Method to parse a rock ridge record.
 
@@ -2481,6 +2481,8 @@ class RockRidge(object):
                          record.
          continuation - Whether the new entries should go in the continuation
                         list or in the DR list.
+         dr_name - The original DirectoryRecord name, only to be returned in the
+                   case that the Rock Ridge NM records are completely empty.
         Returns:
          Nothing.
         """
@@ -2627,7 +2629,10 @@ class RockRidge(object):
 
         namelist = [nm.posix_name for nm in self.dr_entries.nm_records]
         namelist.extend([nm.posix_name for nm in self.ce_entries.nm_records])
-        self._full_name = b''.join(namelist)
+        if len(namelist) > 0:
+            self._full_name = b''.join(namelist)
+        else:
+            self._full_name = dr_name
 
         self._initialized = True
 
