@@ -5885,7 +5885,7 @@ class PyCdlib(object):
             joliet_path = self._normalize_joliet_path(kwargs['joliet_path'])
             rec = self._find_joliet_record(joliet_path)
             path_type = 'joliet_path'
-            encoding = 'utf-16_be'
+            default_encoding = 'utf-16_be'
         elif 'udf_path' in kwargs:
             if self.udf_root is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
@@ -5893,17 +5893,17 @@ class PyCdlib(object):
             if rec is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot get entry for empty UDF File Entry')
             path_type = 'udf_path'
-            encoding = ''
+            default_encoding = ''
         elif 'rr_path' in kwargs:
             if not self.rock_ridge:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
             rec = self._find_rr_record(utils.normpath(kwargs['rr_path']))
             path_type = 'rr_path'
-            encoding = 'utf-8'
+            default_encoding = 'utf-8'
         else:
             rec = self._find_iso_record(utils.normpath(kwargs['iso_path']))
             path_type = 'iso_path'
-            encoding = 'utf-8'
+            default_encoding = 'utf-8'
 
         dirs = collections.deque([rec])
         while dirs:
@@ -5921,6 +5921,8 @@ class PyCdlib(object):
 
                 if isinstance(child, udfmod.UDFFileEntry) and child.file_ident is not None:
                     encoding = child.file_ident.encoding
+                else:
+                    encoding = default_encoding
 
                 if path_type == 'rr_path':
                     name = child.rock_ridge.name()
