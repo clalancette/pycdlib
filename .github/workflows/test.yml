@@ -49,10 +49,13 @@ jobs:
         popd
         popd
 
-    - name: flake8
+    - name: Run flake8
       run: flake8 --ignore=E501,E266 pycdlib tools/*
 
-    - name: tests
+    - name: Patch pycdlib-genisoimage for python version
+      run: ls -l
+
+    - name: Run tests
       run: py.test --verbose tests
       env:
         PATH: vendor/cdrkit-1.1.11/build/genisoimage
