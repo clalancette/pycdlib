@@ -53,7 +53,7 @@ jobs:
       run: flake8 --ignore=E501,E266 pycdlib tools/*
 
     - name: Patch pycdlib-genisoimage for python version
-      run: ls -l
+      run: sed -i -e '0,/python3/s//python/' tools/pycdlib-genisoimage
 
     - name: Run tests
       run: py.test --verbose tests
