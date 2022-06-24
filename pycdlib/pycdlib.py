@@ -416,15 +416,16 @@ def _check_path_depth(iso_path):
         raise pycdlibexception.PyCdlibInvalidInput('Directory levels too deep (maximum is 7)')
 
 
-def _yield_children(rec):
-    # type: (dr.DirectoryRecord) -> Generator
+def _yield_children(rec, rr):
+    # type: (dr.DirectoryRecord, bool) -> Generator
     """
     An internal function to gather and yield all of the children of a Directory
     Record.
 
     Parameters:
      rec - The Directory Record to get all of the children from (must be a
-           directory)
+           directory).
+     rr - Whether to follow Rock Ridge relocation entries or not.
     Yields:
      Children of this Directory Record.
     Returns:
@@ -443,7 +444,7 @@ def _yield_children(rec):
             continue
 
         last = fi
-        if child.rock_ridge is not None and child.rock_ridge.child_link_record_exists() and child.rock_ridge.cl_to_moved_dr is not None and child.rock_ridge.cl_to_moved_dr.parent is not None:
+        if rr and child.rock_ridge is not None and child.rock_ridge.child_link_record_exists() and child.rock_ridge.cl_to_moved_dr is not None and child.rock_ridge.cl_to_moved_dr.parent is not None:
             # This is a relocated entry.  We want to find the entry this was
             # relocated to; we do that by following the child_link, then going
             # up to the parent and finding the entry that links to the same one
@@ -5470,6 +5471,7 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
+        use_rr = False
         if joliet:
             rec = self._get_joliet_entry(self._normalize_joliet_path(iso_path))
         else:
@@ -5482,8 +5484,9 @@ class PyCdlib(object):
 
             if try_rr:
                 rec = self._get_rr_entry(normpath)
+                use_rr = True
 
-        for c in _yield_children(rec):
+        for c in _yield_children(rec, use_rr):
             yield c
 
     def list_children(self, **kwargs):
@@ -5525,14 +5528,16 @@ class PyCdlib(object):
             for fi_desc in udf_rec.fi_descs:
                 yield fi_desc.file_entry
         else:
+            use_rr = False
             if 'joliet_path' in kwargs:
                 rec = self._get_joliet_entry(self._normalize_joliet_path(kwargs['joliet_path']))
             elif 'rr_path' in kwargs:
                 rec = self._get_rr_entry(utils.normpath(kwargs['rr_path']))
+                use_rr = True
             else:
                 rec = self._get_iso_entry(utils.normpath(kwargs['iso_path']))
 
-            for c in _yield_children(rec):
+            for c in _yield_children(rec, use_rr):
                 yield c
 
     def get_entry(self, iso_path, joliet=False):

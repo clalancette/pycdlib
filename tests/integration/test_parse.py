@@ -3117,3 +3117,24 @@ def test_parse_udf_open_invalid_file_set_terminator(caplog, tmpdir):
     iso.open(str(outfile))
 
     do_a_test(tmpdir, outfile, check_udf_onefile)
+
+def test_parse_and_walk_rr_moved_iso_path(tmpdir):
+    indir = tmpdir.mkdir('walkrrmovedisopath')
+    outfile = str(indir) + '.iso'
+    indir.mkdir('usr').mkdir('lib').mkdir('debug').mkdir('usr').mkdir('lib').mkdir('clang').mkdir('13.0.0').mkdir('lib').mkdir('freebsd')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '3', '-no-pad',
+                     '-rational-rock', '-o', str(outfile), str(indir)])
+
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+
+    expected_dirnames = ['/', '/RR_MOVED', '/RR_MOVED/LIB', '/RR_MOVED/LIB/FREEBSD', '/USR', '/USR/LIB', '/USR/LIB/DEBUG', '/USR/LIB/DEBUG/USR', '/USR/LIB/DEBUG/USR/LIB', '/USR/LIB/DEBUG/USR/LIB/CLANG', '/USR/LIB/DEBUG/USR/LIB/CLANG/13_0.0']
+
+    # Ensure that we don't see duplicates of any directory names
+    seen_dirnames = []
+    for dirname, dirlist, filelist in iso.walk(iso_path='/'):
+        assert(dirname not in seen_dirnames)
+        seen_dirnames.append(dirname)
+
+    assert(expected_dirnames == seen_dirnames)
+    iso.close()
