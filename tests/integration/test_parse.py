@@ -1229,6 +1229,8 @@ def test_parse_open_fp_twice(tmpdir):
             iso.open_fp(infp)
     assert(str(excinfo.value) == 'This object already has an ISO; either close it or create a new object')
 
+    iso.close()
+
 def test_parse_open_fp_seek(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('modifyinplaceisolevel4onefile')
@@ -1251,6 +1253,8 @@ def test_parse_open_fp_seek(tmpdir):
         assert(infp.seek(-2, whence=2) == 2)
         assert(infp.tell() == 2)
         assert(infp.readall() == b'o\n')
+
+    iso.close()
 
 def test_parse_open_invalid_vd(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -2292,14 +2296,7 @@ def test_parse_add_file_with_semicolon(tmpdir):
     subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
                      '-relaxed-filenames', '-o', str(outfile), str(indir)])
 
-    # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyCdlib()
-
-    iso.open(str(outfile))
-
     do_a_test(tmpdir, outfile, check_onefile_with_semicolon)
-
-    iso.close()
 
 def test_parse_bad_eltorito_ident(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
@@ -3112,9 +3109,6 @@ def test_parse_udf_open_invalid_file_set_terminator(caplog, tmpdir):
     with open(str(outfile), 'r+b') as fp:
         fp.seek(0x81000)
         fp.write(b'\x00'*512)
-
-    iso = pycdlib.PyCdlib()
-    iso.open(str(outfile))
 
     do_a_test(tmpdir, outfile, check_udf_onefile)
 
