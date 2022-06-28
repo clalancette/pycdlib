@@ -3605,11 +3605,7 @@ class PyCdlib(object):
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
-        (ident_unused, rec) = self._find_udf_record(utils.normpath(udf_path))
-        if rec is None:
-            raise pycdlibexception.PyCdlibInvalidInput('Cannot get entry for empty UDF File Entry')
-
-        return rec
+        return self._find_udf_record(utils.normpath(udf_path))[1]
 
     def _check_inode_against_eltorito(self, ino):
         # type: (inode.Inode) -> None
