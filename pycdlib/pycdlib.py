@@ -5693,12 +5693,11 @@ class PyCdlib(object):
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
-        ret = b''
+        names = []  # type: List[str]
         if isinstance(rec, dr.DirectoryRecord):
             encoding = 'utf-8'
             if self.joliet_vd is not None and id(rec.vd) == id(self.joliet_vd):
                 encoding = 'utf-16_be'
-            slash = '/'.encode(encoding)
 
             # A root entry has no Rock Ridge entry, even on a Rock Ridge ISO.
             # Always return / here.
@@ -5710,11 +5709,14 @@ class PyCdlib(object):
 
             parent = rec  # type: Optional[dr.DirectoryRecord]
             while parent is not None:
-                if not parent.is_root:
+                if parent.is_root:
+                    name = b''
+                else:
                     if rockridge and parent.rock_ridge is not None:
-                        ret = slash + parent.rock_ridge.name() + ret
+                        name = parent.rock_ridge.name()
                     else:
-                        ret = slash + parent.file_identifier() + ret
+                        name = parent.file_identifier()
+                names.insert(0, name.decode(encoding))
                 parent = parent.parent
         else:
             if rec.parent is None:
@@ -5723,20 +5725,22 @@ class PyCdlib(object):
                 encoding = rec.file_ident.encoding
             else:
                 encoding = 'utf-8'
-            slash = '/'.encode(encoding)
             udfparent = rec  # type: Optional[udfmod.UDFFileEntry]
             while udfparent is not None:
                 ident = udfparent.file_identifier()
-                if ident != b'/':
-                    ret = slash + ident + ret
+                if ident == b'/':
+                    name = b''
+                else:
+                    name = ident
+                names.insert(0, name.decode(encoding))
                 udfparent = udfparent.parent
 
         if have_py_3:
             # Python 3, just return the encoded version.
-            return ret.decode(encoding)
+            return '/'.join(names)
 
         # Python 2.
-        return ret.decode(encoding).encode('utf-8')  # type: ignore
+        return '/'.join(names).encode('utf-8')  # type: ignore
 
     def duplicate_pvd(self):
         # type: () -> None
