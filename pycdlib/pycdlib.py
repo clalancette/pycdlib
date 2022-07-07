@@ -298,8 +298,8 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
                                         log_block_size)
 
     # Walk through the list, assigning extents to all of the directories.
-    child_link_recs = []  # type: List[dr.DirectoryRecord]
-    parent_link_recs = []  # type: List[dr.DirectoryRecord]
+    child_link_recs = []
+    parent_link_recs = []
     file_list = []
     ptr_index = 1
     dirs = collections.deque([root_dir_record])
@@ -444,7 +444,10 @@ def _yield_children(rec, rr):
             continue
 
         last = fi
-        if rr and child.rock_ridge is not None and child.rock_ridge.child_link_record_exists() and child.rock_ridge.cl_to_moved_dr is not None and child.rock_ridge.cl_to_moved_dr.parent is not None:
+        if rr and child.rock_ridge is not None and \
+           child.rock_ridge.child_link_record_exists() and \
+           child.rock_ridge.cl_to_moved_dr is not None and \
+           child.rock_ridge.cl_to_moved_dr.parent is not None:
             # This is a relocated entry.  We want to find the entry this was
             # relocated to; we do that by following the child_link, then going
             # up to the parent and finding the entry that links to the same one
