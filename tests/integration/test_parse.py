@@ -3132,3 +3132,21 @@ def test_parse_and_walk_rr_moved_iso_path(tmpdir):
 
     assert(expected_dirnames == seen_dirnames)
     iso.close()
+
+def test_parse_full_path_from_dirrecord_rr_moved(tmpdir):
+    indir = tmpdir.mkdir('fullpathfromdirrecordrrmoved')
+    outfile = str(indir) + '.iso'
+    indir.mkdir('usr').mkdir('lib').mkdir('debug').mkdir('usr').mkdir('lib').mkdir('clang').mkdir('13.0.0').mkdir('lib').mkdir('freebsd')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '3', '-no-pad',
+                     '-rational-rock', '-o', str(outfile), str(indir)])
+
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+
+    rec = iso.get_record(rr_path='/usr/lib/debug/usr/lib/clang/13.0.0/lib')
+
+    path = iso.full_path_from_dirrecord(rec, True)
+
+    assert(path == '/usr/lib/debug/usr/lib/clang/13.0.0/lib')
+
+    iso.close()

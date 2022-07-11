@@ -5707,17 +5707,30 @@ class PyCdlib(object):
             if rockridge and rec.rock_ridge is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot generate a Rock Ridge path on a non-Rock Ridge ISO')
 
-            parent = rec  # type: Optional[dr.DirectoryRecord]
-            while parent is not None:
-                if parent.is_root:
+            dr_rec = rec  # type: Optional[dr.DirectoryRecord]
+            while dr_rec is not None:
+                next_rec = None
+                if dr_rec.is_root:
                     name = b''
                 else:
-                    if rockridge and parent.rock_ridge is not None:
-                        name = parent.rock_ridge.name()
+                    if rockridge:
+                        if dr_rec.rock_ridge is not None:
+                            for child in dr_rec.children:
+                                if child.is_dotdot():
+                                    if child.rock_ridge is not None and child.rock_ridge.parent_link_record_exists():
+                                        next_rec = child.rock_ridge.parent_link
+                                    break
+                            name = dr_rec.rock_ridge.name()
+                        else:
+                            name = dr_rec.file_identifier()
                     else:
-                        name = parent.file_identifier()
+                        name = dr_rec.file_identifier()
+
                 names.insert(0, name.decode(encoding))
-                parent = parent.parent
+                if next_rec is not None:
+                    dr_rec = next_rec
+                else:
+                    dr_rec = dr_rec.parent
         else:
             if rec.parent is None:
                 return '/'
@@ -5725,15 +5738,15 @@ class PyCdlib(object):
                 encoding = rec.file_ident.encoding
             else:
                 encoding = 'utf-8'
-            udfparent = rec  # type: Optional[udfmod.UDFFileEntry]
-            while udfparent is not None:
-                ident = udfparent.file_identifier()
+            udf_rec = rec  # type: Optional[udfmod.UDFFileEntry]
+            while udf_rec is not None:
+                ident = udf_rec.file_identifier()
                 if ident == b'/':
                     name = b''
                 else:
                     name = ident
                 names.insert(0, name.decode(encoding))
-                udfparent = udfparent.parent
+                udf_rec = udf_rec.parent
 
         if have_py_3:
             # Python 3, just return the encoded version.
