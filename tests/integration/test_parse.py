@@ -3150,3 +3150,24 @@ def test_parse_full_path_from_dirrecord_rr_moved(tmpdir):
     assert(path == '/usr/lib/debug/usr/lib/clang/13.0.0/lib')
 
     iso.close()
+
+def test_parse_walk_rr_moved(tmpdir):
+    indir = tmpdir.mkdir('walkrrmoved')
+    outfile = str(indir) + '.iso'
+    indir.mkdir('usr').mkdir('lib').mkdir('debug').mkdir('usr').mkdir('lib').mkdir('clang').mkdir('13.0.0').mkdir('lib').mkdir('freebsd')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '3', '-no-pad',
+                     '-rational-rock', '-o', str(outfile), str(indir)])
+
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+
+    expected_dirnames = ['/', '/rr_moved', '/usr', '/usr/lib', '/usr/lib/debug', '/usr/lib/debug/usr', '/usr/lib/debug/usr/lib', '/usr/lib/debug/usr/lib/clang', '/usr/lib/debug/usr/lib/clang/13.0.0', '/usr/lib/debug/usr/lib/clang/13.0.0/lib', '/usr/lib/debug/usr/lib/clang/13.0.0/lib/freebsd']
+
+    # Ensure that we don't see duplicates of any directory names
+    seen_dirnames = []
+    for dirname, dirlist, filelist in iso.walk(rr_path='/'):
+        assert(dirname not in seen_dirnames)
+        seen_dirnames.append(dirname)
+
+    assert(expected_dirnames == seen_dirnames)
+    iso.close()

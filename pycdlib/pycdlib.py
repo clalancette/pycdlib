@@ -442,23 +442,34 @@ def _yield_children(rec, rr):
         fi = child.file_identifier()
         if fi == last:
             continue
-
         last = fi
-        if rr and child.rock_ridge is not None and \
-           child.rock_ridge.child_link_record_exists() and \
-           child.rock_ridge.cl_to_moved_dr is not None and \
-           child.rock_ridge.cl_to_moved_dr.parent is not None:
-            # This is a relocated entry.  We want to find the entry this was
-            # relocated to; we do that by following the child_link, then going
-            # up to the parent and finding the entry that links to the same one
-            # as this one.
-            cl_parent = child.rock_ridge.cl_to_moved_dr.parent
-            for cl_child in cl_parent.children:
-                if cl_child.rock_ridge is not None and cl_child.rock_ridge.name() == child.rock_ridge.name():
-                    child = cl_child
-                    break
-            # If we didn't find the relocated entry in the parent of the moved
-            # entry, weird; just yield the one we would have anyway.
+
+        skip_child = False
+        if rr:
+            if child.rock_ridge is not None:
+                for inner_child in child.children:
+                    if inner_child.is_dotdot():
+                        if inner_child.rock_ridge is not None and inner_child.rock_ridge.parent_link_record_exists():
+                            skip_child = True
+                        break
+
+                if skip_child:
+                    continue
+
+                if child.rock_ridge.child_link_record_exists() and \
+                   child.rock_ridge.cl_to_moved_dr is not None and \
+                   child.rock_ridge.cl_to_moved_dr.parent is not None:
+                    # This is a relocated entry.  We want to find the entry this
+                    # was relocated to; we do that by following the child_link,
+                    # then going up to the parent and finding the entry that
+                    # links to the same one as this one.
+                    cl_parent = child.rock_ridge.cl_to_moved_dr.parent
+                    for cl_child in cl_parent.children:
+                        if cl_child.rock_ridge is not None and cl_child.rock_ridge.name() == child.rock_ridge.name():
+                            child = cl_child
+                            break
+                    # If we didn't find the relocated entry in the parent of the
+                    # moved entry, weird; just yield the one we would have anyway.
 
         yield child
 
