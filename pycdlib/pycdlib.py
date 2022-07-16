@@ -3160,20 +3160,20 @@ class PyCdlib(object):
         new_rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
         for key, value in kwargs.items():
             if key == 'iso_new_path':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     num_new += 1
                     iso_new_path = utils.normpath(value)
                     if not self.rock_ridge and self.interchange_level < 4:
                         _check_path_depth(iso_new_path)
             elif key == 'joliet_new_path':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     num_new += 1
                     joliet_new_path = self._normalize_joliet_path(value)
             elif key == 'rr_name':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     rr_name = self._check_rr_name(value)
             elif key == 'udf_new_path':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     num_new += 1
                     udf_new_path = utils.normpath(value)
             else:
@@ -4204,7 +4204,7 @@ class PyCdlib(object):
             if key == 'blocksize' and isinstance(value, int):
                 blocksize = value
             elif key == 'iso_path':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     iso_path = utils.normpath(value)
                     num_paths += 1
             elif key == 'rr_path' and isinstance(value, str):
@@ -4216,7 +4216,7 @@ class PyCdlib(object):
                     joliet_path = utils.normpath(value)
                     num_paths += 1
             elif key == 'udf_path':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     udf_path = utils.normpath(value)
                     num_paths += 1
             else:
@@ -4264,7 +4264,7 @@ class PyCdlib(object):
             if key == 'blocksize' and isinstance(value, int):
                 blocksize = value
             elif key == 'iso_path':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     iso_path = utils.normpath(value)
                     num_paths += 1
             elif key == 'rr_path' and isinstance(value, str):
@@ -4272,11 +4272,11 @@ class PyCdlib(object):
                     rr_path = utils.normpath(value)
                     num_paths += 1
             elif key == 'joliet_path':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     joliet_path = utils.normpath(value)
                     num_paths += 1
             elif key == 'udf_path':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     udf_path = utils.normpath(value)
                     num_paths += 1
             else:
@@ -4615,12 +4615,12 @@ class PyCdlib(object):
         keys_to_remove = []
         for key, value in kwargs.items():
             if key == 'iso_old_path':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     num_old += 1
                     iso_old_path = utils.normpath(value)
                 keys_to_remove.append(key)
             elif key == 'joliet_old_path':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     num_old += 1
                     joliet_old_path = self._normalize_joliet_path(value)
                 keys_to_remove.append(key)
@@ -4632,7 +4632,7 @@ class PyCdlib(object):
                         raise pycdlibexception.PyCdlibInvalidInput('Attempting to make link to non-existent El Torito boot catalog')
                 keys_to_remove.append(key)
             elif key == 'udf_old_path':
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     num_old += 1
                     udf_old_path = utils.normpath(value)
                 keys_to_remove.append(key)
@@ -5521,7 +5521,7 @@ class PyCdlib(object):
         num_paths = 0
         for key, value in kwargs.items():
             if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     num_paths += 1
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
@@ -5594,7 +5594,7 @@ class PyCdlib(object):
         num_paths = 0
         for key, value in kwargs.items():
             if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     num_paths += 1
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
@@ -5920,7 +5920,7 @@ class PyCdlib(object):
         num_paths = 0
         for key, value in kwargs.items():
             if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     num_paths += 1
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
@@ -6019,7 +6019,7 @@ class PyCdlib(object):
         rec = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
         for key, value in kwargs.items():
             if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     num_paths += 1
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
@@ -6187,7 +6187,7 @@ class PyCdlib(object):
         num_paths = 0
         for key, value in kwargs.items():
             if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
-                if value is not None and isinstance(value, str):
+                if isinstance(value, str):
                     num_paths += 1
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
