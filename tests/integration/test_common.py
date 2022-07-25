@@ -13,6 +13,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 import pycdlib
 
+have_py_3 = True
+if sys.version_info.major == 2:
+    have_py_3 = False
+
 # Technically, Rock Ridge doesn't impose a length limitation on NM (alternate
 # name) or SL (symlinks).  However, in practice, the Linux kernel (at least
 # ext4) doesn't support any names longer than 255, and the ISO driver doesn't
@@ -639,8 +643,13 @@ def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
     internal_check_dotdot_dir_record(jroot_dir_record.children[1], rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
 def internal_check_rr_longname(iso, dir_record, extent, letter):
-    internal_check_file(dir_record, name=letter.upper()*8+b'.;1', dr_len=None, loc=extent, datalen=3, hidden=False, multi_extent=False)
-    internal_check_file_contents(iso, path='/'+letter.decode('ascii').upper()*8+'.;1', contents=letter*2+b'\n', which='iso_path')
+    bytes_name = letter.upper()*8 + b'.;1'
+    if have_py_3:
+        str_path = '/' + bytes_name.decode('ascii')
+    else:
+        str_path = '/' + bytes_name.encode('ascii')
+    internal_check_file(dir_record, name=bytes_name, dr_len=None, loc=extent, datalen=3, hidden=False, multi_extent=False)
+    internal_check_file_contents(iso, path=str_path, contents=letter*2+b'\n', which='iso_path')
     # Now check rock ridge extensions.
     assert(dir_record.rock_ridge.dr_entries.sp_record == None)
     assert(dir_record.rock_ridge.dr_entries.rr_record != None)
