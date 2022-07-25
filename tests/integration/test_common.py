@@ -643,13 +643,15 @@ def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
     internal_check_dotdot_dir_record(jroot_dir_record.children[1], rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
 
 def internal_check_rr_longname(iso, dir_record, extent, letter):
-    bytes_name = letter.upper()*8 + b'.;1'
+    bytes_iso_name = letter.upper()*8 + b'.;1'
     if have_py_3:
-        str_path = '/' + bytes_name.decode('ascii')
+        str_iso_path = '/' + bytes_iso_name.decode('ascii')
+        str_rr_path = '/' + letter.decode('ascii')*RR_MAX_FILENAME_LENGTH
     else:
-        str_path = '/' + bytes_name.encode('ascii')
-    internal_check_file(dir_record, name=bytes_name, dr_len=None, loc=extent, datalen=3, hidden=False, multi_extent=False)
-    internal_check_file_contents(iso, path=str_path, contents=letter*2+b'\n', which='iso_path')
+        str_iso_path = '/' + bytes_iso_name.encode('ascii')
+        str_rr_path = '/' + letter.encode('ascii')*RR_MAX_FILENAME_LENGTH
+    internal_check_file(dir_record, name=bytes_iso_name, dr_len=None, loc=extent, datalen=3, hidden=False, multi_extent=False)
+    internal_check_file_contents(iso, path=str_iso_path, contents=letter*2+b'\n', which='iso_path')
     # Now check rock ridge extensions.
     assert(dir_record.rock_ridge.dr_entries.sp_record == None)
     assert(dir_record.rock_ridge.dr_entries.rr_record != None)
@@ -691,7 +693,7 @@ def internal_check_rr_longname(iso, dir_record, extent, letter):
     assert(dir_record.rock_ridge.dr_entries.tf_record == None)
     assert(dir_record.rock_ridge.dr_entries.sf_record == None)
     assert(dir_record.rock_ridge.dr_entries.re_record == None)
-    internal_check_file_contents(iso, path='/'+letter.decode('ascii')*RR_MAX_FILENAME_LENGTH, contents=letter*2+b'\n', which='rr_path')
+    internal_check_file_contents(iso, path=str_rr_path, contents=letter*2+b'\n', which='rr_path')
 
 def internal_check_rr_file(dir_record, name):
     assert(dir_record.rock_ridge._initialized == True)
