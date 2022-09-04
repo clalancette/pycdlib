@@ -1032,7 +1032,10 @@ class VolumeDescriptorSetTerminator(object):
         if identifier != b'CD001':
             raise pycdlibexception.PyCdlibInvalidISO('Invalid VDST identifier')
         # According to Ecma-119, 8.3.3, the version should be 1
-        if version != 1:
+        # However, we've seen ISOs in the wild (mostly those created by
+        # makeps3iso at https://github.com/bucanero/ps3iso-utils) that set the
+        # VDST to 0, so accept that as well.
+        if version not in (0, 1):
             raise pycdlibexception.PyCdlibInvalidISO('Invalid VDST version')
         # According to Ecma-119, 8.3.4, the rest of the terminator should be 0;
         # however, we have seen ISOs in the wild that put stuff into this field.

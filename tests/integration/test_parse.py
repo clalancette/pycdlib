@@ -3171,3 +3171,19 @@ def test_parse_walk_rr_moved(tmpdir):
 
     assert(expected_dirnames == seen_dirnames)
     iso.close()
+
+def test_parse_invalid_vdst(tmpdir):
+    indir = tmpdir.mkdir('invalidvdst')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    # Now that we've made a valid ISO, open it up and perturb the VDST version
+    # field to 0.  We should allow this.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(17*2048 + 6)
+        fp.write(b'\x00')
+
+    do_a_test(tmpdir, outfile, check_onefile)
