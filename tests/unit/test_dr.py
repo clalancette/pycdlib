@@ -353,3 +353,19 @@ def test_dr_set_data_length_not_initialized():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         dr.set_data_length(0)
     assert(str(excinfo.value) == 'Directory Record not initialized')
+
+def test_dr_xattr_with_record_bit():
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    dr = pycdlib.dr.DirectoryRecord()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        dr.parse(pvd, b'\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*7 + b'\x08\x00\x00\x00\x00\x00\x00\x00\x00', None)
+    assert(str(excinfo.value) == 'Record Bit not allowed with Extended Attributes')
+
+def test_dr_xattr_with_protection_bit():
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    dr = pycdlib.dr.DirectoryRecord()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        dr.parse(pvd, b'\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*7 + b'\x10\x00\x00\x00\x00\x00\x00\x00\x00', None)
+    assert(str(excinfo.value) == 'Protection Bit not allowed with Extended Attributes')
