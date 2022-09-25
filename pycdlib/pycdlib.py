@@ -4202,23 +4202,33 @@ class PyCdlib(object):
         num_paths = 0
         for key, value in kwargs.items():
             if key == 'blocksize':
+                if not isinstance(value, int):
+                    raise pycdlibexception.PyCdlibInvalidInput('blocksize must be an integer')
                 blocksize = value
             elif key == 'iso_path':
-                if value is not None:
+                if isinstance(value, str):
                     iso_path = utils.normpath(value)
                     num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('iso_path must be a string')
             elif key == 'rr_path':
-                if value is not None:
+                if isinstance(value, str):
                     rr_path = utils.normpath(value)
                     num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('iso_path must be a string')
             elif key == 'joliet_path':
-                if value is not None:
+                if isinstance(value, str):
                     joliet_path = utils.normpath(value)
                     num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('iso_path must be a string')
             elif key == 'udf_path':
-                if value is not None:
+                if isinstance(value, str):
                     udf_path = utils.normpath(value)
                     num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('iso_path must be a string')
             else:
                 raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
 
@@ -4262,23 +4272,33 @@ class PyCdlib(object):
         num_paths = 0
         for key, value in kwargs.items():
             if key == 'blocksize':
+                if not isinstance(value, int):
+                    raise pycdlibexception.PyCdlibInvalidInput('blocksize must be an integer')
                 blocksize = value
             elif key == 'iso_path':
-                if value is not None:
+                if isinstance(value, str):
                     iso_path = utils.normpath(value)
                     num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('iso_path must be a string')
             elif key == 'rr_path':
-                if value is not None:
+                if isinstance(value, str):
                     rr_path = utils.normpath(value)
                     num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('rr_path must be a string')
             elif key == 'joliet_path':
-                if value is not None:
+                if isinstance(value, str):
                     joliet_path = utils.normpath(value)
                     num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('joliet_path must be a string')
             elif key == 'udf_path':
-                if value is not None:
+                if isinstance(value, str):
                     udf_path = utils.normpath(value)
                     num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('udf_path must be a string')
             else:
                 raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
 
