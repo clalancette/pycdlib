@@ -371,7 +371,7 @@ class DirectoryRecord(object):
         # If this is a directory, we have to manipulate the file links
         # appropriately.
         if self.parent.is_root:
-            if self.file_ident == b'\x00' or self.file_ident == b'\x01':
+            if self.file_ident in (b'\x00', b'\x01'):
                 # For the dot and dotdot children of the root, add one
                 # directly to their Rock Ridge links.
                 self.rock_ridge.add_to_file_links()
