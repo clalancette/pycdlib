@@ -369,3 +369,11 @@ def test_dr_xattr_with_protection_bit():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         dr.parse(pvd, b'\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*7 + b'\x10\x00\x00\x00\x00\x00\x00\x00\x00', None)
     assert(str(excinfo.value) == 'Protection Bit not allowed with Extended Attributes')
+
+def test_dr_file_too_big():
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    dr = pycdlib.dr.DirectoryRecord()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        dr.new_file(pvd, 2**32, b'', None, 1, '', b'', False, 0)
+    assert(str(excinfo.value) == 'Maximum supported file length is 2^32-1')
