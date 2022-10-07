@@ -401,3 +401,10 @@ def test_pvd_remove_from_ptr_size_never_happen():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         pvd.remove_from_ptr_size(0)
     assert(str(excinfo.value) == 'Extent number should never grow when removing PTR')
+
+def test_file_or_text_ident_compare_other_object():
+    file_or_text_ident = pycdlib.headervd.FileOrTextIdentifier()
+
+    file_or_text_ident.new('a'*128)
+
+    assert(file_or_text_ident != 'foo')

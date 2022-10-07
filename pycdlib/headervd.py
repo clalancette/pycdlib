@@ -990,7 +990,10 @@ class FileOrTextIdentifier(object):
 
     def __ne__(self, other):
         # type: (object) -> bool
-        return not self.__eq__(other)
+        equal = self.__eq__(other)
+        if equal == NotImplemented:
+            return NotImplemented
+        return not equal
 
 
 class VolumeDescriptorSetTerminator(object):
