@@ -391,3 +391,13 @@ def test_version_set_extent_location_not_initialized():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         version.set_extent_location(0)
     assert(str(excinfo.value) == 'This Volume Descriptor is not initialized')
+
+def test_pvd_remove_from_ptr_size_never_happen():
+    pvd = pycdlib.headervd.PrimaryOrSupplementaryVD(1)
+    pvd.parse(b'\x01CD001\x01' + b'\x00'*2041, 16)
+
+    pvd.path_tbl_size = 4097
+    pvd.path_table_num_extents = 2
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        pvd.remove_from_ptr_size(0)
+    assert(str(excinfo.value) == 'Extent number should never grow when removing PTR')

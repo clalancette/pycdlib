@@ -657,7 +657,7 @@ class PrimaryOrSupplementaryVD(object):
         need_remove_extents = False
         if new_extents > self.path_table_num_extents:
             # This should never happen.
-            raise pycdlibexception.PyCdlibInvalidInput('This should never happen')
+            raise pycdlibexception.PyCdlibInvalidInput('Extent number should never grow when removing PTR')
         if new_extents < self.path_table_num_extents:
             self.path_table_num_extents -= 2
             need_remove_extents = True
