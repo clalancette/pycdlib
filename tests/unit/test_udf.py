@@ -2541,3 +2541,18 @@ def test_parse_allocation_descriptors_invalid():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         alloc_descs = pycdlib.udf._parse_allocation_descriptors(4, b'', 0, 0, 0)
     assert(str(excinfo.value) == 'UDF Allocation Descriptor type invalid')
+
+# UDFDescriptorSequence
+def test_descriptor_sequence_append_to_list():
+    seq = pycdlib.udf.UDFDescriptorSequence()
+
+    pvd1 = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    pvd1.new()
+    seq.append_to_list('pvds', pvd1)
+
+    pvd2 = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    pvd2.new()
+    pvd2.desc_num = 1
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        seq.append_to_list('pvds', pvd2)
+    assert(str(excinfo.value) == 'Descriptors with same sequence number do not have the same contents')
