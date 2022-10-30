@@ -4179,7 +4179,7 @@ class UDFFileEntry(object):
         current_assignment = start_extent
         for desc in self.alloc_descs:
             desc.log_block_num = current_assignment
-            current_assignment += 1
+            current_assignment += utils.ceiling_div(desc.extent_length, 2048)
 
     def get_data_length(self):
         # type: () -> int
