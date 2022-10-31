@@ -2080,6 +2080,15 @@ def test_file_ident_equals_other_parent():
 
     assert(fi != fi2)
 
+def test_file_ident_equals_other_parent():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, True, b'foo', None)
+
+    fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi2.new(False, False, b'bar', None)
+
+    assert(not fi == fi2)
+
 # Space Bitmap
 def test_space_bitmap_parse_initialized_twice():
     tag = pycdlib.udf.UDFTag()
