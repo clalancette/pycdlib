@@ -201,23 +201,23 @@ def normpath(path):
     return newpath_bytes
 
 
-def gmtoffset_from_tm(tm, local):
-    # type: (float, time.struct_time) -> int
+def gmtoffset_from_tm(tm, localtime):
+    # type: (Optional[float], time.struct_time) -> int
     """
-    A function to compute the GMT offset from the time in seconds since the epoch
-    and the local time object.
+    A function to compute the GMT offset in 15 minute intervals from the time
+    in seconds since the epoch and the local time object.
 
     Parameters:
      tm - The time in seconds since the epoch.
-     local - The struct_time object representing the local time.
+     localtime - The struct_time object representing the local time.
     Returns:
-     The gmtoffset.
+     The GMT offset in 15 minute intervals.
     """
     gmtime = time.gmtime(tm)
-    tmpyear = gmtime.tm_year - local.tm_year
-    tmpyday = gmtime.tm_yday - local.tm_yday
-    tmphour = gmtime.tm_hour - local.tm_hour
-    tmpmin = gmtime.tm_min - local.tm_min
+    tmpyear = gmtime.tm_year - localtime.tm_year
+    tmpyday = gmtime.tm_yday - localtime.tm_yday
+    tmphour = gmtime.tm_hour - localtime.tm_hour
+    tmpmin = gmtime.tm_min - localtime.tm_min
 
     if tmpyday < 0:
         tmpyday = -1

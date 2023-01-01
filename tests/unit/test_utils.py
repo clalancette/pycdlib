@@ -121,7 +121,10 @@ def restore_tz(oldtz):
 
 def test_gmtoffset_from_tm():
     oldtz = save_and_set_tz('US/Eastern')
-    now = 1546914300.0
+    now = 1546914300
+    # US/Eastern is GMT-5 hours, which is 5*60 = 300 minutes behind.  Since
+    # the gmtoffset in ISO 9660 is in 15 minute intervals, this is 300/15 = 20
+    # behind.
     assert(pycdlib.utils.gmtoffset_from_tm(now, time.localtime(now)) == -20)
     restore_tz(oldtz)
 
@@ -129,12 +132,14 @@ def test_gmtoffset_from_tm_day_rollover():
     # Setup the timezone to Tokyo
     oldtz = save_and_set_tz('Asia/Tokyo')
 
+    # Asia/Tokyo is GMT+9 hours, which is 9*60 = 540 minutes ahead.  Since the
+    # gmtoffset in ISO 9660 is in 15 minute intervals, this is 540/15 = 36
+    # ahead.
+
     # This tm is carefully chosen so that the day of the week is the next day
     # in the Tokyo region.
     now = 1550417871
-    local = time.localtime(now)
-    assert(pycdlib.utils.gmtoffset_from_tm(now, local) == 36)
-
+    assert(pycdlib.utils.gmtoffset_from_tm(now, time.localtime(now)) == 36)
     restore_tz(oldtz)
 
 def test_zero_pad():
