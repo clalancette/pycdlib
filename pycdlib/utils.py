@@ -202,29 +202,24 @@ def normpath(path):
 
 
 def gmtoffset_from_tm(tm, local):
-    # type: (float, time.struct_time) -> int
+    # type: (float|None, time.struct_time) -> int
     """
     A function to compute the GMT offset from the time in seconds since the epoch
     and the local time object.
 
     Parameters:
-     tm - The time in seconds since the epoch.
+     tm - The time in seconds since the epoch, may be None for current time.
      local - The struct_time object representing the local time.
     Returns:
      The gmtoffset.
     """
     gmtime = time.gmtime(tm)
-    tmpyear = gmtime.tm_year - local.tm_year
-    tmpyday = gmtime.tm_yday - local.tm_yday
-    tmphour = gmtime.tm_hour - local.tm_hour
-    tmpmin = gmtime.tm_min - local.tm_min
+    gm_ts = time.mktime(gmtime)
+    local_ts = time.mktime(local)
 
-    if tmpyday < 0:
-        tmpyday = -1
-    else:
-        if tmpyear > 0:
-            tmpyday = 1
-    return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) // 15
+    offset_secs = local_ts - gm_ts
+    offset_hours = offset_secs /60 /60
+    return offset_hours
 
 
 def zero_pad(fp, data_size, pad_size):
