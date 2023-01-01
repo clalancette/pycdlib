@@ -213,18 +213,20 @@ def gmtoffset_from_tm(tm, localtime):
     Returns:
      The GMT offset in 15 minute intervals.
     """
-    gmtime = time.gmtime(tm)
-    tmpyear = gmtime.tm_year - localtime.tm_year
-    tmpyday = gmtime.tm_yday - localtime.tm_yday
-    tmphour = gmtime.tm_hour - localtime.tm_hour
-    tmpmin = gmtime.tm_min - localtime.tm_min
 
-    if tmpyday < 0:
-        tmpyday = -1
-    else:
-        if tmpyear > 0:
-            tmpyday = 1
-    return -(tmpmin + 60 * (tmphour + 24 * tmpyday)) // 15
+    # Note that this algorithm comes from cdrtools 3.01
+    # mkisofs/mkisofs.c::iso9660_date
+
+    gmtime = time.gmtime(tm)
+
+    tmpmin = localtime.tm_min - gmtime.tm_min
+    tmphour = localtime.tm_hour - gmtime.tm_hour
+    tmpyday = localtime.tm_yday - gmtime.tm_yday
+    tmpyear = localtime.tm_year - gmtime.tm_year
+    if tmpyear:
+        tmpyday = tmpyear
+
+    return (tmpmin + 60 * (tmphour + 24 * tmpyday)) // 15
 
 
 def zero_pad(fp, data_size, pad_size):

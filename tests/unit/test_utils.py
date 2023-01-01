@@ -142,6 +142,18 @@ def test_gmtoffset_from_tm_day_rollover():
     assert(pycdlib.utils.gmtoffset_from_tm(now, time.localtime(now)) == 36)
     restore_tz(oldtz)
 
+def test_gmtoffset_from_tm_2023_rollover():
+    oldtz = save_and_set_tz('Australia/Sydney')
+
+    # Australia/Sydney is GMT+11 hours, which is 11*60 = 660 minutes ahead.
+    # Since the gmtoffset in ISO 9660 is in 15 minute intervals, this is
+    # 660/15 = 44 ahead.
+
+    now = 1672530300
+    assert(pycdlib.utils.gmtoffset_from_tm(now, time.localtime(now)) == 44)
+
+    restore_tz(oldtz)
+
 def test_zero_pad():
     fp = BytesIO()
     pycdlib.utils.zero_pad(fp, 5, 10)
