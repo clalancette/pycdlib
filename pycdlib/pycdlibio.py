@@ -27,9 +27,9 @@ from pycdlib import pycdlibexception
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    import ctypes
-    from mmap import mmap
-    import pickle
+    import ctypes  # NOQA
+    from mmap import mmap  # NOQA
+    import pickle  # NOQA
     from typing import Any, Optional, Union  # NOQA pylint: disable=unused-import
 
 have_py_3 = True
