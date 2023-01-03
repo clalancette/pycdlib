@@ -225,7 +225,7 @@ def _interchange_level_from_filename(fullname):
     and level 3.
 
     Parameters:
-     name - The name to use to determine the interchange level.
+     fullname - The name to use to determine the interchange level.
     Returns:
      The interchange level determined from this filename.
     """
@@ -960,10 +960,10 @@ class PyCdlib(object):
         """
         An internal method to get the ISO size.  This is more complicated than
         you might think due to Windows.  There, if you try to open a 'raw'
-        device, you can only seek on 2048-byte boundaries (and you can't
-        seek to the END).  We first try to seek to the end, which is the most
-        efficient way to do it.  If that fails, we fall back to seeking and
-        reading until we get empty data, which signals the end of the ISO.
+        device, you can only seek on 2048-byte boundaries (and you can't seek to
+        the END).  We first try to seek to the end, which is the most efficient
+        way to do it.  If that fails, we fall back to seeking and reading until
+        we get empty data, which signals the end of the ISO.
 
         Parameters:
          None.
@@ -1210,7 +1210,7 @@ class PyCdlib(object):
         the output list.
 
         Parameters:
-         vd - The volume descriptor that these path table records correspond to.
+         ptr_size - The size of the PTR table to read.
          extent - The extent at which this path table record starts.
         Returns:
          A tuple consisting of the list of path table record entries and a
@@ -1949,7 +1949,7 @@ class PyCdlib(object):
         'hidden'.  Should only be called on an El Torito ISO.
 
         Parameters:
-         extent_to_inode - The map that maps extents to Inodes.
+         extent_to_inode - A map from extents to Inodes.
         Returns:
          Nothing.
         """
@@ -2150,8 +2150,8 @@ class PyCdlib(object):
     def _walk_udf_directories(self, extent_to_inode):
         # type: (Dict[int, inode.Inode]) -> None
         """
-        An internal method to walk a UDF filesystem and add all the metadata
-        to this object.
+        An internal method to walk a UDF filesystem and add all the metadata to
+        this object.
 
         Parameters:
          extent_to_inode - A map from extent numbers to Inodes.
@@ -2619,7 +2619,10 @@ class PyCdlib(object):
         Parameters:
          outfp - The file object to write to.
          data - The actual data to write.
-         enable_overwrite_check - Whether to do overwrite checking if it is enabled.  Some pieces of code explicitly want to overwrite data, so this allows them to disable the checking.
+         enable_overwrite_check - Whether to do overwrite checking if it is
+                                  enabled.  Some pieces of code explicitly want
+                                  to overwrite data, so this allows them to
+                                  disable the checking.
         Returns:
          Nothing.
         """
@@ -4140,6 +4143,7 @@ class PyCdlib(object):
 
         Parameters:
          filename - The filename containing the ISO to open up.
+         mode - The mode to use when opening the ISO file; the default is 'rb'.
         Returns:
          Nothing.
         """
@@ -4369,11 +4373,12 @@ class PyCdlib(object):
 
         Parameters:
          filename - The filename to write the data to.
-         blocksize - The blocksize to use when copying data; set to 32768 by default.
+         blocksize - The blocksize to use when copying data; the default is 32768.
          progress_cb - If not None, a function to call as the write call does its
                        work.  The callback function must have a signature of:
                        def func(done, total, opaque).
-         progress_opaque - User data to be passed to the progress callback.
+         progress_opaque - User data to be passed to the progress callback; the
+                           default is None.
         Returns:
          Nothing.
         """
@@ -4392,11 +4397,12 @@ class PyCdlib(object):
 
         Parameters:
          outfp - The file object to write the data to.
-         blocksize - The blocksize to use when copying data; set to 32768 by default.
+         blocksize - The blocksize to use when copying data; the default is 32768.
          progress_cb - If not None, a function to call as the write call does its
                        work.  The callback function must have a signature of:
                        def func(done, total, opaque).
-         progress_opaque - User data to be passed to the progress callback.
+         progress_opaque - User data to be passed to the progress callback; the
+                           default is None.
         Returns:
          Nothing.
         """
@@ -5146,6 +5152,7 @@ class PyCdlib(object):
          media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
          bootable - Whether the boot media is bootable.  The default is True.
          boot_load_seg - The load segment address of the boot image.
+         udf_bootcatfile - The name of the boot.cat file on the UDF filesystem.
         Returns:
          Nothing.
         """
