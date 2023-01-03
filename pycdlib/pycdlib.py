@@ -2015,10 +2015,8 @@ class PyCdlib(object):
         self._cdfp.seek(0, os.SEEK_END)
         last_physical_extent = (self._cdfp.tell() // self.logical_block_size) - 1
         last_pvd_extent = self.pvd.space_size - 1
-        anchor_locations = [256, last_pvd_extent - 256, last_pvd_extent]
-        if last_physical_extent != last_pvd_extent:
-            anchor_locations.append(last_physical_extent)
-            anchor_locations.append(last_physical_extent - 256)
+        anchor_locations = {256, last_pvd_extent - 256, last_pvd_extent,
+                            last_physical_extent, last_physical_extent - 256}
 
         for loc in anchor_locations:
             self._seek_to_extent(loc)
