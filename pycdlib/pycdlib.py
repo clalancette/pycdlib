@@ -2087,39 +2087,6 @@ class PyCdlib(object):
             self.udf_file_set_terminator.orig_extent_loc = current_extent
             self.udf_file_set_terminator.desc_tag.tag_location = current_extent - self.udf_main_descs.partitions[0].part_start_location
 
-    def _parse_udf_file_entry(self, abs_file_entry_extent, icb, parent):
-        # type: (int, udfmod.UDFLongAD, Optional[udfmod.UDFFileEntry]) -> Optional[udfmod.UDFFileEntry]
-        """
-        An internal method to parse a single UDF File Entry and return the
-        corresponding object.
-
-        Parameters:
-         abs_file_entry_extent - The extent number the file entry starts at.
-         icb - The ICB object for the data.
-         parent - The parent of the UDF File Entry.
-        Returns:
-         A UDF File Entry object corresponding to the on-disk File Entry.
-        """
-        self._seek_to_extent(abs_file_entry_extent)
-        icbdata = self._cdfp.read(icb.extent_length)
-
-        if all(v == 0 for v in bytearray(icbdata)):
-            # We have seen ISOs in the wild (Windows 2008 Datacenter Enterprise
-            # Standard SP2 x86 DVD) where the UDF File Identifier points to a
-            # UDF File Entry of all zeros.  In those cases, we just keep the
-            # File Identifier, and keep the UDF File Entry blank.
-            return None
-
-        desc_tag = udfmod.UDFTag()
-        desc_tag.parse(icbdata, icb.log_block_num)
-        if desc_tag.tag_ident != 261:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF File Entry Tag identifier not 261')
-
-        file_entry = udfmod.UDFFileEntry()
-        file_entry.parse(icbdata, abs_file_entry_extent, parent, desc_tag)
-
-        return file_entry
-
     def _walk_udf_directories(self, extent_to_inode):
         # type: (Dict[int, inode.Inode]) -> None
         """
@@ -2132,9 +2099,14 @@ class PyCdlib(object):
          Nothing.
         """
         part_start = self.udf_main_descs.partitions[0].part_start_location
-        self.udf_root = self._parse_udf_file_entry(part_start + self.udf_file_set.root_dir_icb.log_block_num,
-                                                   self.udf_file_set.root_dir_icb,
-                                                   None)
+
+        abs_file_entry_extent = part_start + self.udf_file_set.root_dir_icb.log_block_num
+        self._seek_to_extent(abs_file_entry_extent)
+        icbdata = self._cdfp.read(self.udf_file_set.root_dir_icb.extent_length)
+        self.udf_root = udfmod.parse_file_entry(icbdata,
+                                                abs_file_entry_extent,
+                                                self.udf_file_set.root_dir_icb.log_block_num,
+                                                None)
 
         udf_file_entries = collections.deque([self.udf_root])
         while udf_file_entries:
@@ -2167,9 +2139,12 @@ class PyCdlib(object):
                         continue
 
                     abs_file_entry_extent = part_start + file_ident.icb.log_block_num
-                    next_entry = self._parse_udf_file_entry(abs_file_entry_extent,
-                                                            file_ident.icb,
-                                                            udf_file_entry)
+                    self._seek_to_extent(abs_file_entry_extent)
+                    icbdata = self._cdfp.read(file_ident.icb.extent_length)
+                    next_entry = udfmod.parse_file_entry(icbdata,
+                                                         abs_file_entry_extent,
+                                                         file_ident.icb.log_block_num,
+                                                         udf_file_entry)
 
                     # For a non-parent, we delay adding this to the list of
                     # fi_descs until after we check whether this is a valid

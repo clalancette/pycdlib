@@ -5820,3 +5820,35 @@ def parse_logical_volume_integrity(integrity_data, current_extent, logical_block
         logical_volume_integrity_terminator.parse(current_extent + 1, desc_tag)
 
     return logical_volume_integrity, logical_volume_integrity_terminator
+
+
+def parse_file_entry(icbdata, abs_file_entry_extent, icb_log_block_num, parent):
+    # type: (bytes, int, int, Optional[UDFFileEntry]) -> Optional[UDFFileEntry]
+    """
+    An internal method to parse a single UDF File Entry and return the
+    corresponding object.
+
+    Parameters:
+     icbdata - The data to parse.
+     abs_file_entry_extent - The extent number the file entry starts at.
+     icb_log_block_num - The ICB logical block number.
+     parent - The parent of the UDF File Entry.
+    Returns:
+     A UDF File Entry object corresponding to the on-disk File Entry.
+    """
+    if all(v == 0 for v in bytearray(icbdata)):
+        # We have seen ISOs in the wild (Windows 2008 Datacenter Enterprise
+        # Standard SP2 x86 DVD) where the UDF File Identifier points to a
+        # UDF File Entry of all zeros.  In those cases, we just keep the
+        # File Identifier, and keep the UDF File Entry blank.
+        return None
+
+    desc_tag = UDFTag()
+    desc_tag.parse(icbdata, icb_log_block_num)
+    if desc_tag.tag_ident != 261:
+        raise pycdlibexception.PyCdlibInvalidISO('UDF File Entry Tag identifier not 261')
+
+    file_entry = UDFFileEntry()
+    file_entry.parse(icbdata, abs_file_entry_extent, parent, desc_tag)
+
+    return file_entry
