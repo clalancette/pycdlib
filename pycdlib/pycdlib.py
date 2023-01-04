@@ -2013,31 +2013,23 @@ class PyCdlib(object):
         self._cdfp.seek(0, os.SEEK_END)
         last_physical_extent = (self._cdfp.tell() // self.logical_block_size) - 1
         last_pvd_extent = self.pvd.space_size - 1
-        anchor_locations = {256, last_pvd_extent - 256, last_pvd_extent,
-                            last_physical_extent, last_physical_extent - 256}
+        potential_anchor_locations = {256, last_pvd_extent - 256,
+                                      last_pvd_extent, last_physical_extent,
+                                      last_physical_extent - 256}
 
-        for loc in anchor_locations:
+        for loc in potential_anchor_locations:
             self._seek_to_extent(loc)
-            anchor_data = self._cdfp.read(self.logical_block_size)
-            anchor_tag = udfmod.UDFTag()
-            try:
-                anchor_tag.parse(anchor_data, loc)
-            except pycdlibexception.PyCdlibInvalidISO:
+            potential_anchor_data = self._cdfp.read(self.logical_block_size)
+            potential_anchor = udfmod.parse_anchor(potential_anchor_data, loc)
+            if potential_anchor is None:
                 continue
 
-            if anchor_tag.tag_ident != 2:
-                continue
-
-            anchor = udfmod.UDFAnchorVolumeStructure()
-            anchor.parse(anchor_data, loc, anchor_tag)
-            self.udf_anchors.append(anchor)
+            if len(self.udf_anchors) > 0 and potential_anchor != self.udf_anchors[0]:
+                raise pycdlibexception.PyCdlibInvalidISO('Anchor points do not match')
+            self.udf_anchors.append(potential_anchor)
 
         if len(self.udf_anchors) < 2:
             raise pycdlibexception.PyCdlibInvalidISO('Expected at least 2 UDF Anchors')
-
-        for anchor in self.udf_anchors[1:]:
-            if self.udf_anchors[0] != anchor:
-                raise pycdlibexception.PyCdlibInvalidISO('Anchor points do not match')
 
         # ECMA-167, Part 3, 8.4.2 says that the anchors identify the main volume
         # descriptor sequence, so look for it here.

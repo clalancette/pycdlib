@@ -5761,3 +5761,28 @@ def parse_udf_vol_descs(vd_data, extent, logical_block_size):
             saw_zero_desc_num = True
 
     return descs
+
+
+def parse_anchor(anchor_data, anchor_location):
+    # type: (bytes, int) -> Optional[UDFAnchorVolumeStructure]
+    """
+    An internal method to parse data that may potentially be a UDF Anchor.
+
+    Parameters:
+     anchor_data - The data to parse.
+     anchor_location - The extent location of the data.
+    Returns:
+     A UDFAnchorVolumeStructure if the data represents an anchor, None otherwise.
+    """
+    anchor_tag = UDFTag()
+    try:
+        anchor_tag.parse(anchor_data, anchor_location)
+    except pycdlibexception.PyCdlibInvalidISO:
+        return None
+
+    if anchor_tag.tag_ident != 2:
+        return None
+
+    anchor = UDFAnchorVolumeStructure()
+    anchor.parse(anchor_data, anchor_location, anchor_tag)
+    return anchor
