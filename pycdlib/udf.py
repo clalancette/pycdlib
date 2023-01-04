@@ -5852,3 +5852,29 @@ def parse_file_entry(icbdata, abs_file_entry_extent, icb_log_block_num, parent):
     file_entry.parse(icbdata, abs_file_entry_extent, parent, desc_tag)
 
     return file_entry
+
+
+def parse_file_ident(data, current_extent, part_start, udf_file_entry):
+    # type: (bytes, int, int, UDFFileEntry) -> Tuple[UDFFileIdentifierDescriptor, int]
+    """
+    An internal method to parse a single UDF File Identifier and return the
+    corresponding object.
+
+    Parameters:
+     data - The data to parse.
+     current_extent - The extent number the data is located at.
+     part_start - The start of the logical partition.
+     udf_file_entry - The UDF File Entry that corresponds with this File
+                      Identifier.
+    Returns:
+     A tuple where the first item is a UDFFileIdentifierDescriptor, and the
+     second item is the number of bytes the descriptor consumed.
+    """
+    desc_tag = UDFTag()
+    desc_tag.parse(data, current_extent - part_start)
+    if desc_tag.tag_ident != 257:
+        raise pycdlibexception.PyCdlibInvalidISO('UDF File Identifier Tag identifier not 257')
+    file_ident = UDFFileIdentifierDescriptor()
+    bytes_forward = file_ident.parse(data, current_extent, desc_tag, udf_file_entry)
+
+    return file_ident, bytes_forward

@@ -2124,15 +2124,12 @@ class PyCdlib(object):
                 while offset < len(data):
                     current_extent = (abs_file_ident_extent * self.logical_block_size + offset) // self.logical_block_size
 
-                    desc_tag = udfmod.UDFTag()
-                    desc_tag.parse(data[offset:], current_extent - part_start)
-                    if desc_tag.tag_ident != 257:
-                        raise pycdlibexception.PyCdlibInvalidISO('UDF File Identifier Tag identifier not 257')
-                    file_ident = udfmod.UDFFileIdentifierDescriptor()
-                    offset += file_ident.parse(data[offset:],
-                                               current_extent,
-                                               desc_tag,
-                                               udf_file_entry)
+                    file_ident, bytes_forward = udfmod.parse_file_ident(data[offset:],
+                                                                        current_extent,
+                                                                        part_start,
+                                                                        udf_file_entry)
+                    offset += bytes_forward
+
                     if file_ident.is_parent():
                         # For a parent, no further work to do.
                         udf_file_entry.track_file_ident_desc(file_ident)
