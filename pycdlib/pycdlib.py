@@ -2052,26 +2052,11 @@ class PyCdlib(object):
             self._seek_to_extent(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location)
             integrity_data = self._cdfp.read(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_length)
 
-            offset = 0
-            current_extent = self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location
-            desc_tag = udfmod.UDFTag()
-            desc_tag.parse(integrity_data[offset:], current_extent)
-            if desc_tag.tag_ident != 9:
-                raise pycdlibexception.PyCdlibInvalidISO('UDF Volume Integrity Tag identifier not 9')
-            self.udf_logical_volume_integrity = udfmod.UDFLogicalVolumeIntegrityDescriptor()
-            self.udf_logical_volume_integrity.parse(integrity_data[offset:offset + 512],
-                                                    current_extent, desc_tag)
-
-            offset += self.logical_block_size
-            if len(integrity_data) >= (offset + self.logical_block_size):
-                current_extent += 1
-                desc_tag = udfmod.UDFTag()
-                desc_tag.parse(integrity_data[offset:], current_extent)
-                if desc_tag.tag_ident != 8:
-                    raise pycdlibexception.PyCdlibInvalidISO('UDF Logical Volume Integrity Terminator Tag identifier not 8')
-                self.udf_logical_volume_integrity_terminator = udfmod.UDFTerminatingDescriptor()
-                self.udf_logical_volume_integrity_terminator.parse(current_extent,
-                                                                   desc_tag)
+        ulvi, ulvi_term = udfmod.parse_logical_volume_integrity(integrity_data,
+                                                                self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location,
+                                                                self.logical_block_size)
+        self.udf_logical_volume_integrity = ulvi
+        self.udf_logical_volume_integrity_terminator = ulvi_term
 
         # Now look for the File Set Descriptor.
         current_extent = self.udf_main_descs.partitions[0].part_start_location

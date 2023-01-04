@@ -32,7 +32,7 @@ from pycdlib import utils
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import List, Optional, Type, Union  # NOQA pylint: disable=unused-import
+    from typing import List, Optional, Tuple, Type, Union  # NOQA pylint: disable=unused-import
     # NOTE: this import has to be here to avoid circular deps
     from pycdlib import inode  # NOQA pylint: disable=unused-import
 
@@ -5786,3 +5786,37 @@ def parse_anchor(anchor_data, anchor_location):
     anchor = UDFAnchorVolumeStructure()
     anchor.parse(anchor_data, anchor_location, anchor_tag)
     return anchor
+
+
+def parse_logical_volume_integrity(integrity_data, current_extent, logical_block_size):
+    # type: (bytes, int, int) -> Tuple[UDFLogicalVolumeIntegrityDescriptor, Optional[UDFTerminatingDescriptor]]
+    """
+    An internal method to parse Logical Volume Integrity data, and an optional
+    Logical Volume Integrity Terminator.
+
+    Parameters:
+     integrity_data - The data to parse.
+     current_extent - The extent location of the data.
+     logical_block_size - The logical block size of the ISO.
+    Returns:
+     A tuple where the first item is a UDFLogicalVolumeIntegrityDescriptor, and
+     the second item is a optional UDFTerminatorDescriptor.
+    """
+    desc_tag = UDFTag()
+    desc_tag.parse(integrity_data, current_extent)
+    if desc_tag.tag_ident != 9:
+        raise pycdlibexception.PyCdlibInvalidISO('UDF Volume Integrity Tag identifier not 9')
+    logical_volume_integrity = UDFLogicalVolumeIntegrityDescriptor()
+    logical_volume_integrity.parse(integrity_data[:512], current_extent, desc_tag)
+
+    logical_volume_integrity_terminator = None
+    offset = logical_block_size
+    if len(integrity_data) >= (offset + logical_block_size):
+        desc_tag = UDFTag()
+        desc_tag.parse(integrity_data[offset:], current_extent + 1)
+        if desc_tag.tag_ident != 8:
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Logical Volume Integrity Terminator Tag identifier not 8')
+        logical_volume_integrity_terminator = UDFTerminatingDescriptor()
+        logical_volume_integrity_terminator.parse(current_extent + 1, desc_tag)
+
+    return logical_volume_integrity, logical_volume_integrity_terminator
