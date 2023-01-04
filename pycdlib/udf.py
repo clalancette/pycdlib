@@ -18,6 +18,7 @@
 
 from __future__ import absolute_import
 
+import logging
 import random
 import struct
 import sys
@@ -90,6 +91,9 @@ crc_ccitt_table = (0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032,
 have_py_3 = True
 if sys.version_info.major == 2:
     have_py_3 = False
+
+
+_logger = logging.getLogger('pycdlib')
 
 
 def crc_ccitt(data):
@@ -5820,6 +5824,44 @@ def parse_logical_volume_integrity(integrity_data, current_extent, logical_block
         logical_volume_integrity_terminator.parse(current_extent + 1, desc_tag)
 
     return logical_volume_integrity, logical_volume_integrity_terminator
+
+
+def parse_file_set(file_set_and_term_data, current_extent, logical_block_size):
+    # type: (bytes, int, int) -> Tuple[UDFFileSetDescriptor, UDFTerminatingDescriptor]
+    """
+    An internal method to parse File Set data, and the File Set Terminator.
+
+    Parameters:
+     file_set_and_term_data - The data to parse.
+     current_extent - The extent location of the data.
+     logical_block_size - The logical block size of the ISO.
+    Returns:
+     A tuple where the first item is a UDFFileSetDescriptor, and the second item
+     is a UDFTerminatorDescriptor.
+    """
+    desc_tag = UDFTag()
+    desc_tag.parse(file_set_and_term_data[:logical_block_size], 0)
+    if desc_tag.tag_ident != 256:
+        raise pycdlibexception.PyCdlibInvalidISO('UDF File Set Tag identifier not 256')
+    file_set = UDFFileSetDescriptor()
+    file_set.parse(file_set_and_term_data[:logical_block_size],
+                   current_extent, desc_tag)
+
+    (tag_ident,) = struct.unpack_from('<H', file_set_and_term_data, logical_block_size)
+    file_set_terminator = UDFTerminatingDescriptor()
+    if tag_ident == 8:
+        desc_tag = UDFTag()
+        desc_tag.parse(file_set_and_term_data[logical_block_size:], 1)
+        file_set_terminator.parse(current_extent + 1, desc_tag)
+    else:
+        # In this case, the UDF ISO had an invalid File Set Terminator Tag.
+        # But this isn't fatal, so log a warning and continue on.
+        _logger.warning('Missing UDF File Set Terminator, continuing')
+        file_set_terminator.new()
+        file_set_terminator.orig_extent_loc = current_extent + 1
+        file_set_terminator.desc_tag.tag_location = 1
+
+    return file_set, file_set_terminator
 
 
 def parse_file_entry(icbdata, abs_file_entry_extent, icb_log_block_num, parent):

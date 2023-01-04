@@ -22,7 +22,6 @@ import bisect
 import collections
 import inspect
 import io
-import logging
 import os
 import struct
 import sys
@@ -69,7 +68,6 @@ if sys.version_info.major == 2:
 # We allow A-Z, 0-9, and _ as "d1" characters.  The below is the fastest way to
 # build that list as integers.
 _allowed_d1_characters = set(tuple(range(65, 91)) + tuple(range(48, 58)) + tuple((ord(b'_'),)))
-_logger = logging.getLogger(__name__)
 
 
 def _check_d1_characters(name):
@@ -2064,28 +2062,9 @@ class PyCdlib(object):
         # Read the data for the File Set and File Terminator together
         file_set_and_term_data = self._cdfp.read(2 * self.logical_block_size)
 
-        desc_tag = udfmod.UDFTag()
-        desc_tag.parse(file_set_and_term_data[:self.logical_block_size], 0)
-        if desc_tag.tag_ident != 256:
-            raise pycdlibexception.PyCdlibInvalidISO('UDF File Set Tag identifier not 256')
-        self.udf_file_set.parse(file_set_and_term_data[:self.logical_block_size],
-                                current_extent, desc_tag)
-
-        current_extent += 1
-        (tag_ident,) = struct.unpack_from('<H', file_set_and_term_data, self.logical_block_size)
-        self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
-        if tag_ident == 8:
-            desc_tag = udfmod.UDFTag()
-            desc_tag.parse(file_set_and_term_data[self.logical_block_size:],
-                           current_extent - self.udf_main_descs.partitions[0].part_start_location)
-            self.udf_file_set_terminator.parse(current_extent, desc_tag)
-        else:
-            # In this case, the UDF ISO had an invalid File Set Terminator Tag.
-            # But this isn't fatal, so log a warning and continue on.
-            _logger.warning('Missing UDF File Set Terminator, continuing')
-            self.udf_file_set_terminator.new()
-            self.udf_file_set_terminator.orig_extent_loc = current_extent
-            self.udf_file_set_terminator.desc_tag.tag_location = current_extent - self.udf_main_descs.partitions[0].part_start_location
+        self.udf_file_set, self.udf_file_set_terminator = udfmod.parse_file_set(file_set_and_term_data,
+                                                                                current_extent,
+                                                                                self.logical_block_size)
 
     def _walk_udf_directories(self, extent_to_inode):
         # type: (Dict[int, inode.Inode]) -> None
