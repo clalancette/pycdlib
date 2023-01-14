@@ -1,5 +1,12 @@
 Changelog for PyCdlib
 
+1.14.0 (2023-01-14)
+-------------------
+* Fix Python 2 compatibility
+* Fix iteration over deep directories
+* Relax some error checking to allow non-standards-compliant ISOs to be read
+* Fix year rollover in the Australia timezone
+
 1.13.0 (2022-06-20)
 -------------------
 * Fix the use of inspect for modern Python 3
