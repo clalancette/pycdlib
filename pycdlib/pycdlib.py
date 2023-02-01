@@ -6008,12 +6008,7 @@ class PyCdlib(object):
                 else:
                     name = child.file_identifier()
 
-                if have_py_3:
-                    # Python 3, just return the decoded version.
-                    encoded = name.decode(encoding)
-                else:
-                    # Python 2.
-                    encoded = name.decode(encoding).encode('utf-8')
+                encoded = name.decode(encoding)
 
                 if child.is_dir():
                     dirlist.append(encoded)
