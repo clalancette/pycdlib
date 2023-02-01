@@ -2683,7 +2683,7 @@ class PyCdlib(object):
                 if have_py_3:
                     arglen = len(inspect.getfullargspec(self.progress_cb).args)
                 else:
-                    arglen = len(inspect.getargspec(self.progress_cb).args)  # pylint: disable=W1505
+                    arglen = len(inspect.getargspec(self.progress_cb).args)  # type: ignore # pylint: disable=W1505,E1101
 
                 if arglen == 2:
                     self._call = lambda done, total, opaque: self.progress_cb(done, total)  # type: ignore

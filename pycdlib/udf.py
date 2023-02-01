@@ -2468,7 +2468,7 @@ class UDFShortAD(object):
 
         self.log_block_num = tag_location
 
-    def length(self):  # pylint: disable=no-self-use
+    def length(self):
         # type: () -> int
         """
         Method to return the length of the UDF Short Allocation Descriptor.
@@ -2573,7 +2573,7 @@ class UDFLongAD(object):
         self.log_block_num = tag_location
         self.impl_use = b'\x00\x00' + struct.pack('<L', new_location)
 
-    def length(self):  # pylint: disable=no-self-use
+    def length(self):
         # type: () -> int
         """
         Method to return the length of the UDF Long Allocation Descriptor.
