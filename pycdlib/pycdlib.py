@@ -5933,6 +5933,7 @@ class PyCdlib(object):
          rr_path - The absolute Rock Ridge path to the starting entry on the ISO.
          joliet_path - The absolute Joliet path to the starting entry on the ISO.
          udf_path - The absolute UDF path to the starting entry on the ISO.
+         encoding - The encoding to use for returned strings.
         Yields:
          3-tuples of (path-to-here, dirlist, filelist)
         Returns:
@@ -5942,10 +5943,13 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
         num_paths = 0
+        user_encoding = None
         for key, value in kwargs.items():
             if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
                 if value is not None:
                     num_paths += 1
+            elif key == 'encoding':
+                user_encoding = value
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
 
@@ -5991,10 +5995,13 @@ class PyCdlib(object):
                 if child is None or child.is_dot() or child.is_dotdot():
                     continue
 
-                if isinstance(child, udfmod.UDFFileEntry) and child.file_ident is not None:
-                    encoding = child.file_ident.encoding
+                if user_encoding is not None:
+                    encoding = user_encoding
                 else:
-                    encoding = default_encoding
+                    if isinstance(child, udfmod.UDFFileEntry) and child.file_ident is not None:
+                        encoding = child.file_ident.encoding
+                    else:
+                        encoding = default_encoding
 
                 if path_type == 'rr_path':
                     name = child.rock_ridge.name()
@@ -6002,7 +6009,7 @@ class PyCdlib(object):
                     name = child.file_identifier()
 
                 if have_py_3:
-                    # Python 3, just return the encoded version.
+                    # Python 3, just return the decoded version.
                     encoded = name.decode(encoding)
                 else:
                     # Python 2.

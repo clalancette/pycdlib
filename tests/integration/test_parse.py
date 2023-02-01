@@ -3187,3 +3187,33 @@ def test_parse_invalid_vdst(tmpdir):
         fp.write(b'\x00')
 
     do_a_test(tmpdir, outfile, check_onefile)
+
+def test_parse_walk_shiftjis(tmpdir):
+    # The filename below is Shift-JIS encoded, and in Japanese is: 検索ブラウザ.exe
+    # (according to Google translate, 'search browser.exe')
+    # 16 bytes
+    shiftjis_filename = b'\x8c\x9f\x8d\xf5\x83\x75\x83\x89\x83\x45\x83\x55\x2e\x65\x78\x65'
+
+    indir = tmpdir.mkdir('shiftjis')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foofoofoofoo.exe'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '3', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(23*2048 + 101)
+        fp.write(shiftjis_filename)
+
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+
+    expected_filenames = [shiftjis_filename.decode('shiftjis') + ';1']
+
+    # Ensure that we don't see duplicates of any directory names
+    seen_filenames = []
+    for dirname, dirlist, filelist in iso.walk(iso_path='/', encoding='shiftjis'):
+        seen_filenames.extend(filelist)
+
+    assert(expected_filenames == seen_filenames)
+    iso.close()
