@@ -171,9 +171,20 @@ class PrimaryOrSupplementaryVD(object):
         if path_table_size_le != utils.swab_32bit(path_table_size_be):
             raise pycdlibexception.PyCdlibInvalidISO('Little-endian and big-endian path table size disagree')
         self.path_tbl_size = path_table_size_le
-        self.path_table_num_extents = utils.ceiling_div(self.path_tbl_size, 4096) * 2
 
         self.path_table_location_be = utils.swab_32bit(self.path_table_location_be)
+
+        # Here we calculate the number of extents that the path tables take.
+        # This is simply the difference between the beginning of the BE path table
+        # and the LE path table. We have to calculate it like this because while
+        # most ISOs in the wild use 4096 between these groups, some ISOs do not.
+        # FIXME: In point of fact, this is *also* wrong.  There is no guarantee
+        # that these two are adjacent, so calculating the difference between them
+        # is kind of meaningless.  The right answer here is to get rid of
+        # self.path_table_num_extents altogether, though it is unclear to me how
+        # to specify to reshuffle_extents exactly how much space we should allocate
+        # for the path tables.
+        self.path_table_num_extents = self.path_table_location_be - self.path_table_location_le
 
         self.encoding = 'ascii'
         if self.escape_sequences in (b'%/@'.ljust(32, b'\x00'), b'%/C'.ljust(32, b'\x00'), b'%/E'.ljust(32, b'\x00')):

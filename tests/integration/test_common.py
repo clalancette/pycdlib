@@ -5771,3 +5771,17 @@ def check_isolevel4_deep_directory(iso, filesize):
     internal_check_ptr(dir7_record.ptr, name=b'dir7', len_di=4, loc=None, parent=7)
 
     internal_check_file_contents(iso, path='/dir1/dir2/dir3/dir4/dir5/dir6/dir7/foo', contents=b'foo\n', which='iso_path')
+
+def check_onefile_one_extent_path_tables(iso, filesize):
+    assert(filesize == 47104)
+
+    internal_check_pvd(iso.pvd, extent=16, size=23, ptbl_size=10, ptbl_location_le=19, ptbl_location_be=20)
+
+    internal_check_terminator(iso.vdsts, extent=17)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=21, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=3, data_length=2048, extent_location=21, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'FOO.;1', dr_len=40, loc=22, datalen=4, hidden=False, multi_extent=False)
+    internal_check_file_contents(iso, path='/FOO.;1', contents=b'foo\n', which='iso_path')

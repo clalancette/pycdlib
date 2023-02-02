@@ -3217,3 +3217,36 @@ def test_parse_walk_shiftjis(tmpdir):
 
     assert(expected_filenames == seen_filenames)
     iso.close()
+
+def test_parse_one_extent_path_tables(tmpdir):
+    indir = tmpdir.mkdir('onefileonextentpathtables')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    # genisoimage always creates ISOs with two extent path tables.  For this
+    # test, we need to cut out the empty second extent from the path tables.
+    # Read the whole thing into memory, and then cut out those bits.
+    with open(str(outfile), 'rb') as infp:
+        contents = infp.read()
+
+    shrunk = bytearray(contents[:0xa000] + contents[0xa800:0xb000] + contents[0xb800:])
+
+    # The things we need to shrink by two extents to make a valid ISO are the
+    # PVD space size, the root dir record location, the path table root dir
+    # location, the dot file record, the dotdot file record, and the FOO file
+    # record.
+    # We also need to move the PTR BE location up one extent.
+
+    for offset in (0x8050, 0x8057, 0x809e, 0x80a5, 0x9802, 0xa005, 0xa802, 0xa809, 0xa824, 0xa82b, 0xa846, 0xa84d):
+        shrunk[offset] = shrunk[offset] - 2
+
+    # Move the PTR BE up one extent
+    shrunk[0x8097] = 0x14
+
+    with open(str(outfile), 'wb') as outfp:
+        outfp.write(shrunk)
+
+    do_a_test(tmpdir, outfile, check_onefile_one_extent_path_tables)
