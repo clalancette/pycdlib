@@ -2052,11 +2052,11 @@ class PyCdlib(object):
             self._seek_to_extent(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location)
             integrity_data = self._cdfp.read(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_length)
 
-        ulvi, ulvi_term = udfmod.parse_logical_volume_integrity(integrity_data,
-                                                                self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location,
-                                                                self.logical_block_size)
-        self.udf_logical_volume_integrity = ulvi
-        self.udf_logical_volume_integrity_terminator = ulvi_term
+            ulvi, ulvi_term = udfmod.parse_logical_volume_integrity(integrity_data,
+                                                                    self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location,
+                                                                    self.logical_block_size)
+            self.udf_logical_volume_integrity = ulvi
+            self.udf_logical_volume_integrity_terminator = ulvi_term
 
         # Now look for the File Set Descriptor.
         current_extent = self.udf_main_descs.partitions[0].part_start_location
