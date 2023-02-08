@@ -3218,6 +3218,36 @@ def test_parse_walk_shiftjis(tmpdir):
     assert(expected_filenames == seen_filenames)
     iso.close()
 
+def test_parse_walk_vietnamese(tmpdir):
+    # The filename below is UTF8 encoded, and in Vietnamese is: Yêu cầu ưu đãi
+    # (according to Google translate, 'request offer')
+    # 20 bytes
+    vietnamese_filename = b'\x59\xc3\xaa\x75\x20\x63\xe1\xba\xa7\x75\x20\xc6\xb0\x75\x20\xc4\x91\xc3\xa3\x69'
+
+    indir = tmpdir.mkdir('vietnamese')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foodfoodfoodfood.foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '3', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(23*2048 + 101)
+        fp.write(vietnamese_filename)
+
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+
+    expected_filenames = [vietnamese_filename.decode('utf8') + ';1']
+
+    # Ensure that we don't see duplicates of any directory names
+    seen_filenames = []
+    for dirname, dirlist, filelist in iso.walk(iso_path='/'):
+        seen_filenames.extend(filelist)
+
+    assert(expected_filenames == seen_filenames)
+    iso.close()
+
 def test_parse_one_extent_path_tables(tmpdir):
     indir = tmpdir.mkdir('onefileonextentpathtables')
     outfile = str(indir)+'.iso'
