@@ -4386,9 +4386,9 @@ class PyCdlib:
 
         self._finish_add(0, num_bytes_to_add)
 
-    def modify_file_in_place(self, fp, length, iso_path, rr_name=None,  # pylint: disable=unused-argument
-                             joliet_path=None, udf_path=None):          # pylint: disable=unused-argument
-        # type: (BinaryIO, int, str, Optional[str], Optional[str], Optional[str]) -> None
+    def modify_file_in_place(self, fp, length, iso_path=None, rr_name=None,  # pylint: disable=unused-argument
+                             joliet_path=None, udf_path=None):
+        # type: (BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[str]) -> None
         """
         An API to modify a file in place on the ISO.  This can be extremely fast
         (much faster than calling the write method), but has many restrictions.
@@ -4425,7 +4425,20 @@ class PyCdlib:
         if hasattr(self._cdfp, 'mode') and not self._cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
             raise pycdlibexception.PyCdlibInvalidInput('To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
 
-        child = self._find_iso_record(utils.normpath(iso_path))
+        child = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
+        num_paths = 0
+        if iso_path is not None:
+            child = self._find_iso_record(utils.normpath(iso_path))
+            num_paths += 1
+        elif joliet_path is not None:
+            child = self._find_joliet_record(joliet_path)
+            num_paths += 1
+        elif udf_path is not None:
+            (ident_unused, child) = self._find_udf_record(utils.normpath(udf_path))
+            num_paths += 1
+
+        if child is None or num_paths != 1:
+            raise pycdlibexception.PyCdlibInvalidInput('Exactly one of iso_path, joliet_path, and udf_path must be supplied')
 
         old_num_extents = utils.ceiling_div(child.get_data_length(),
                                             self.logical_block_size)
