@@ -4386,7 +4386,7 @@ class PyCdlib:
 
         self._finish_add(0, num_bytes_to_add)
 
-    def modify_file_in_place(self, fp, length, iso_path=None, rr_name=None,  # pylint: disable=unused-argument
+    def modify_file_in_place(self, fp, length, iso_path=None, rr_path=None,
                              joliet_path=None, udf_path=None):
         # type: (BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[str]) -> None
         """
@@ -4413,7 +4413,7 @@ class PyCdlib:
          fp - The file object to use for the contents of the new file.
          length - The length of the new data for the file.
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_name - The Rock Ridge name of the file destination on the ISO.
+         rr_path - The absolute Rock Ridge path of the file destination on the ISO.
          joliet_path - The Joliet absolute path to the file destination on the ISO.
          udf_path - The UDF absolute path to the file destination on the ISO.
         Returns:
@@ -4429,6 +4429,9 @@ class PyCdlib:
         num_paths = 0
         if iso_path is not None:
             child = self._find_iso_record(utils.normpath(iso_path))
+            num_paths += 1
+        elif rr_path is not None:
+            child = self._find_rr_record(utils.normpath(rr_path))
             num_paths += 1
         elif joliet_path is not None:
             child = self._find_joliet_record(joliet_path)
