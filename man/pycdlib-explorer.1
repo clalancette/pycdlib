@@ -50,6 +50,12 @@ require.
 Show the contents of the current working directory. The format of the output is:
 TYPE(F=file, D=directory) NAME.
 .TP
+.B "modify_file_in_place <iso_path> <src_filename>"
+Replace the contents of the file referred to in \fBiso_path\fR with the contents
+from \fBsrc_filename\fR.
+Warning: This command modifies the opened ISO file in-place.
+Also, the \fBsrc_filename\fR must occupy the same number of extents (2048-byte blocks) as the original file.
+.TP
 .B "mkdir <iso_path> [rr_name=<rr_name>] [joliet_path=<joliet_path>]"
 Make a new directory called \fBiso_path\fR.
 If the ISO is a Rock Ridge ISO, \fBrr_name\fR must be specified; otherwise, it must not be.

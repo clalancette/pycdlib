@@ -401,7 +401,6 @@ class PyCdlibCmdLoop(cmd.Cmd):
         print('> modify_file_in_place <iso_path> <src_filename>')
         print('Replace the contents of the file within the ISO specified in <iso_path> with that of <src_filename>.')
         print('Warning: This command modifies the opened ISO file in-place.')
-        print('You must start %s with the `--read-write` flag to enable this.' % (sys.argv[0]))
         print('<src_filename> must occupy the same number of extents as the original file.')
 
     def do_modify_file_in_place(self, line):
