@@ -336,19 +336,19 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print('The write command supports one and only one parameter.')
             return False
 
-        out_name = split[0]
-
-        self.iso.write(out_name)
+        self.iso.write(split[0])
 
         return False
 
     def help_add_file(self):
         """The help method for the 'add_file' command."""
-        print('> add_file <iso_path> <src_filename> [rr_name=<rr_name>] [joliet_path=<joliet_path>]')
+        print('> add_file <iso_path> <src_filename> [rr_name=<rr_name>] [joliet_path=<joliet_path>] [udf_path=<udf_path>]')
         print('Add the contents of <src_filename> to the ISO at the location specified in <iso_path>.')
         print('If the ISO is a Rock Ridge ISO, <rr_name> must be specified; otherwise, it must not be.')
         print('If the ISO is not a Joliet ISO, <joliet_path> must not be specified.  If the ISO is a')
-        print('Joliet ISO, <joliet_path> is optional, but highly recommended to supply.')
+        print('Joliet ISO, <joliet_path> is optional, but highly recommended.')
+        print('If the ISO is not a UDF ISO, <udf_path> must not be specified.  If the ISO is a')
+        print('UDF ISO, <udf_path> is optional, but highly recommended.')
 
     def do_add_file(self, line):
         """
@@ -364,11 +364,12 @@ class PyCdlibCmdLoop(cmd.Cmd):
         src_path = split[1]
         rr_name = None
         joliet_path = None
+        udf_path = None
 
         for arg in split[2:]:
             keyval = arg.split('=')
             if len(keyval) != 2:
-                print('Invalid key/val pair, must be rr_name=<rr_name> or joliet_path=<joliet_path>')
+                print('Invalid key/val pair, must be rr_name=<rr_name>, joliet_path=<joliet_path>, or udf_path=<udf_path>')
                 return False
 
             key = keyval[0]
@@ -378,8 +379,10 @@ class PyCdlibCmdLoop(cmd.Cmd):
                 rr_name = val
             elif key == 'joliet_path':
                 joliet_path = val
+            elif key == 'udf_path':
+                udf_path = val
             else:
-                print('Unknown key, must be rr_name=<rr_name> or joliet_path=<joliet_path>')
+                print('Unknown key, must be rr_name=<rr_name>, joliet_path=<joliet_path>, or udf_path=<udf_path>')
                 return False
 
         if self.iso.has_rock_ridge() and rr_name is None:
@@ -390,7 +393,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
             tmp = self.cwds['iso9660'] + '/' + iso_path
             iso_path = pycdlib.utils.normpath(tmp).decode('ascii')
 
-        self.iso.add_file(src_path, iso_path, rr_name=rr_name, joliet_path=joliet_path)
+        self.iso.add_file(src_path, iso_path, rr_name=rr_name, joliet_path=joliet_path, udf_path=udf_path)
 
         return False
 
