@@ -68,12 +68,12 @@ class PyCdlibCmdLoop(cmd.Cmd):
     def do_quit(self, line):
         """The other command to quit the program."""
         if line:
-            print('No parameters allowed for quit')
+            self.help_quit()
             return False
         return True
 
     def do_EOF(self, line):  # pylint: disable=unused-argument
-        """Handel EOF on the terminal."""
+        """Handle EOF on the terminal."""
         print()
         return True
 
@@ -107,7 +107,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
             print(self.print_mode)
             return False
         if splitlen != 1:
-            print('Only a single parameter allowed for print_mode')
+            self.help_print_mode()
             return False
 
         if split[0] not in self.PRINT_MODES:
@@ -149,7 +149,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
     def do_ls(self, line):
         """The command to list the contents of a directory."""
         if line:
-            print('No parameters allowed for ls')
+            self.help_ls()
             return False
 
         diriter = self.iso.list_children(**{self.pathname: self.cwds[self.print_mode]})
@@ -198,7 +198,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         """
         split = shlex.split(line)
         if len(split) != 1:
-            print('The cd command supports one and only one parameter')
+            self.help_cd()
             return False
 
         directory = split[0]
@@ -227,7 +227,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         """
         split = shlex.split(line)
         if len(split) != 2:
-            print('The get command must be passed two parameters.')
+            self.help_get()
             return False
 
         iso_file = split[0]
@@ -249,7 +249,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
     def do_cwd(self, line):
         """The command to find out what the current working directory is."""
         if line:
-            print('No parameters allowed for cwd')
+            self.help_cwd()
             return False
 
         print(self.cwds[self.print_mode])
@@ -267,7 +267,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         current working directory in a convenient tree-like form.
         """
         if line:
-            print('No parameters allowed for tree')
+            self.help_tree()
             return False
 
         utf8_corner = '└──'
@@ -333,7 +333,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         """
         split = shlex.split(line)
         if len(split) != 1:
-            print('The write command supports one and only one parameter.')
+            self.help_write()
             return False
 
         self.iso.write(split[0])
@@ -439,7 +439,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         """
         split = shlex.split(line)
         if len(split) != 1:
-            print('The rm_file command takes one and only one parameter (iso path).')
+            self.help_rm_file()
             return False
 
         iso_path = split[0]
@@ -514,7 +514,7 @@ class PyCdlibCmdLoop(cmd.Cmd):
         """
         split = shlex.split(line)
         if len(split) != 1:
-            print('The rmdir command takes one and only one parameter (iso path).')
+            self.help_rmdir()
             return False
 
         iso_path = split[0]
