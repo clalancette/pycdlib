@@ -349,6 +349,14 @@ def test_tag_eq():
 
     assert(tag == tag2)
 
+def test_tag_eq_not_same_object_type():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    not_a_tag = object()
+
+    assert(tag != not_a_tag)
+
 # Anchor
 def test_anchor_parse_initialized_twice():
     anchor = pycdlib.udf.UDFAnchorVolumeStructure()
@@ -383,6 +391,14 @@ def test_anchor_set_extent_location_not_initialized():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         anchor.set_extent_location(0, 0, 0)
     assert(str(excinfo.value) == 'UDF Anchor Volume Structure not initialized')
+
+def test_anchor_eq_not_same_object_type():
+    anchor = pycdlib.udf.UDFAnchorVolumeStructure()
+    anchor.new()
+
+    not_an_anchor = object()
+
+    assert(anchor != not_an_anchor)
 
 # Volume Descriptor Pointer
 def test_vdp_parse_initialized_twice():
@@ -530,6 +546,14 @@ def test_timestamp_equal():
 
     assert(ts == ts2)
 
+def test_timestamp_eq_not_same_object_type():
+    ts = pycdlib.udf.UDFTimestamp()
+    ts.new(time.time())
+
+    not_a_ts = object()
+
+    assert(ts != not_a_ts)
+
 # EntityID
 def test_entityid_parse_initialized_twice():
     entity = pycdlib.udf.UDFEntityID()
@@ -584,6 +608,14 @@ def test_entityid_equals():
 
     assert(entity == entity2)
 
+def test_entityid_eq_not_same_object_type():
+    entity = pycdlib.udf.UDFEntityID()
+    entity.new(0)
+
+    not_an_entity = object()
+
+    assert(entity != not_an_entity)
+
 # Charspec
 def test_charspec_parse_initialized_twice():
     charspec = pycdlib.udf.UDFCharspec()
@@ -632,6 +664,14 @@ def test_charspec_equal():
 
     assert(charspec == charspec2)
 
+def test_charspec_eq_not_same_object_type():
+    charspec = pycdlib.udf.UDFCharspec()
+    charspec.new(0, b'\x00'*63)
+
+    not_a_charspec = object()
+
+    assert(charspec != not_a_charspec)
+
 # ExtentAD
 def test_extentad_parse_initialized_twice():
     extentad = pycdlib.udf.UDFExtentAD()
@@ -673,6 +713,14 @@ def test_extentad_equals():
     extentad2.new(0, 0)
 
     assert(extentad == extentad2)
+
+def test_extentad_eq_not_same_object_type():
+    extentad = pycdlib.udf.UDFExtentAD()
+    extentad.new(0, 0)
+
+    not_an_extentad = object()
+
+    assert(extentad != not_an_extentad)
 
 # PVD
 def test_pvd_parse_initialized_twice():
@@ -776,6 +824,14 @@ def test_pvd_equals():
 
     assert(pvd == pvd2)
 
+def test_pvd_eq_not_same_object_type():
+    pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    pvd.new()
+
+    not_a_pvd = object()
+
+    assert(pvd != not_a_pvd)
+
 # Implementation Use Volume Descriptor Implementation Use
 def test_impl_use_impl_use_parse_initialized_twice():
     impl = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
@@ -797,7 +853,7 @@ def test_impl_use_impl_use_new_initialized_twice():
         impl.new()
     assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
 
-def test_impl_use_impl_use_new_equals():
+def test_impl_use_impl_use_equals():
     impl = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
     impl.new()
 
@@ -805,6 +861,14 @@ def test_impl_use_impl_use_new_equals():
     impl2.new()
 
     assert(impl == impl2)
+
+def test_impl_use_impl_use_eq_not_same_object_type():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
+    impl.new()
+
+    not_an_impl = object()
+
+    assert(impl != not_an_impl)
 
 # Implementation Use
 def test_impl_use_parse_initialized_twice():
@@ -858,6 +922,14 @@ def test_impl_use_equals():
 
     assert(impl == impl2)
 
+def test_impl_use_eq_not_same_object_type():
+    impl = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
+    impl.new()
+
+    not_an_impl = object()
+
+    assert(impl != not_an_impl)
+
 # Partition Header Descriptor
 def test_part_header_parse_initialized_twice():
     header = pycdlib.udf.UDFPartitionHeaderDescriptor()
@@ -887,6 +959,14 @@ def test_part_header_equals():
     header2.new()
 
     assert(header == header2)
+
+def test_part_header_eq_not_same_object_type():
+    header = pycdlib.udf.UDFPartitionHeaderDescriptor()
+    header.new()
+
+    not_a_header = object()
+
+    assert(header != not_a_header)
 
 # Partition Volume
 def test_part_parse_initialized_twice():
@@ -972,6 +1052,14 @@ def test_part_equals():
     part2.new(3)
 
     assert(part == part2)
+
+def test_part_eq_not_same_object_type():
+    part = pycdlib.udf.UDFPartitionVolumeDescriptor()
+    part.new(3)
+
+    not_a_part = object()
+
+    assert(part != not_a_part)
 
 # Type 0 Partition Map
 def test_type_zero_part_map_parse_initialized_twice():
@@ -1180,6 +1268,14 @@ def test_shortad_set_extent_location():
     ad.set_extent_location(0, 1)
     assert(ad.log_block_num == 1)
 
+def test_shortad_eq_not_same_object_type():
+    ad = pycdlib.udf.UDFShortAD()
+    ad.new(0)
+
+    not_an_ad = object()
+
+    assert(ad != not_an_ad)
+
 # Long AD
 def test_longad_parse_initialized_twice():
     ad = pycdlib.udf.UDFLongAD()
@@ -1219,6 +1315,14 @@ def test_longad_equals():
     ad2.new(0, 0)
 
     assert(ad == ad2)
+
+def test_longad_eq_not_same_object_type():
+    ad = pycdlib.udf.UDFLongAD()
+    ad.new(0, 0)
+
+    not_an_ad = object()
+
+    assert(ad != not_an_ad)
 
 # Inline AD
 def test_inlinead_parse_initialized_twice():
@@ -1417,6 +1521,14 @@ def test_logvoldesc_equals():
 
     assert(logvol == logvol2)
 
+def test_logvoldesc_eq_not_same_object_type():
+    logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
+    logvol.new()
+
+    not_a_logvol = object()
+
+    assert(logvol != not_a_logvol)
+
 # Unallocated Space
 def test_unallocated_parse_initialized_twice():
     un = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
@@ -1482,6 +1594,14 @@ def test_unallocated_equals():
     un2.new()
 
     assert(un == un2)
+
+def test_unallocated_eq_not_same_object_type():
+    un = pycdlib.udf.UDFUnallocatedSpaceDescriptor()
+    un.new()
+
+    not_a_un = object()
+
+    assert(un != not_a_un)
 
 # Terminating Descriptor
 def test_terminating_parse_initialized_twice():
@@ -1741,6 +1861,18 @@ def test_icbtag_new_bad_file_type():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         icb.new('foo')
     assert(str(excinfo.value) == "Invalid file type for ICB; must be one of 'dir', 'file', or 'symlink'")
+
+def test_icbtag_parse_bad_strategy_type():
+    icb = pycdlib.udf.UDFICBTag()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        icb.parse(b'\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'UDF ICB Tag invalid strategy type')
+
+def test_icbtag_parse_bad_reserved():
+    icb = pycdlib.udf.UDFICBTag()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        icb.parse(b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    assert(str(excinfo.value) == 'UDF ICB Tag reserved not 0')
 
 # File Entry
 def test_file_entry_parse_initialized_twice():
@@ -2088,7 +2220,25 @@ def test_file_ident_equals_other_parent():
     fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
     fi2.new(False, False, b'bar', None)
 
-    assert(not fi == fi2)
+    assert(fi != fi2)
+
+def test_file_ident_eq_not_same_object_type():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, True, b'foo', None)
+
+    not_an_fi = object()
+
+    assert(fi != not_an_fi)
+
+def test_file_ident_eq_not_other_parent():
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    # isdir, isparent, name, parent
+    fi.new(False, False, b'foo', None)
+
+    fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi2.new(False, True, b'bar', None)
+
+    assert(fi != fi2)
 
 # Space Bitmap
 def test_space_bitmap_parse_initialized_twice():
@@ -2296,7 +2446,7 @@ def test_indirect_new():
     assert(indirect.desc_tag.tag_ident == 259)
 
 # Terminating
-def test_terminating_parse_initialized_twice():
+def test_terminal_entry_parse_initialized_twice():
     tag = pycdlib.udf.UDFTag()
     tag.new(0, 0)
 
@@ -2306,7 +2456,7 @@ def test_terminating_parse_initialized_twice():
         term.parse(b'\x00'*16 + b'\x00'*20, tag)
     assert(str(excinfo.value) == 'UDF Terminal Entry already initialized')
 
-def test_terminating_parse():
+def test_terminal_entry_parse():
     tag = pycdlib.udf.UDFTag()
     tag.new(0, 0)
 
@@ -2314,13 +2464,13 @@ def test_terminating_parse():
     term.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', tag)
     assert(term.desc_tag.tag_ident == 0)
 
-def test_terminating_record_not_initialized():
+def test_terminal_entry_record_not_initialized():
     term = pycdlib.udf.UDFTerminalEntry()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         term.record()
     assert(str(excinfo.value) == 'UDF Terminal Entry not initialized')
 
-def test_terminating_record():
+def test_terminal_entry_record():
     tag = pycdlib.udf.UDFTag()
     tag.new(0, 0)
 
@@ -2328,14 +2478,14 @@ def test_terminating_record():
     term.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', tag)
     assert(term.record() == b'\x00\x00\x02\x00\x68\x00\x00\x00\xd2\x80\x14\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
 
-def test_terminating_new_initialized_twice():
+def test_terminal_entry_new_initialized_twice():
     term = pycdlib.udf.UDFTerminalEntry()
     term.new('dir')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         term.new('dir')
     assert(str(excinfo.value) == 'UDF Terminal Entry already initialized')
 
-def test_terminating_new():
+def test_terminal_entry_new():
     term = pycdlib.udf.UDFTerminalEntry()
     term.new('dir')
     assert(term.desc_tag.tag_ident == 260)

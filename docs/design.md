@@ -37,7 +37,7 @@ PyCdlib has an extensive test suite of hundreds of tests that get run on each re
 - In new integration tests, a new ISO is created using the PyCdlib [new](pycdlib-api.html#PyCdlib-new) method, and the ISO is manipulated in specific ways. Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
 - In hybrid integration tests, specific sequences of files and directories are created, and then an ISO is generated using genisoimage from [cdrkit](https://launchpad.net/cdrkit). Then the PyCdlib [open](pycdlib-api.html#PyCdlib-open) method is used to open up the resulting file, and the ISO is manipulated in specific ways. Various aspects of these newly created files are compared against known examples to ensure that things were created as they should be.
 
-PyCdlib currently has 96% code coverage from the tests, and anytime a new bug is found, a test is written to ensure that the bug can’t happen again.
+PyCdlib currently has 95% code coverage from the tests, and anytime a new bug is found, a test is written to ensure that the bug can’t happen again.
 
 ---
 
