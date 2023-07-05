@@ -1,14 +1,9 @@
-from __future__ import absolute_import
-
-import pytest
 import os
 import sys
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
 import struct
 import time
+
+import pytest
 
 prefix = '.'
 for i in range(0, 3):
@@ -22,9 +17,8 @@ import pycdlib.dates
 import pycdlib.pycdlibexception
 
 def test_string_to_timestruct_invalid_input_type():
-    if sys.version_info >= (3, 0):
-        with pytest.raises(AttributeError) as exc_info:
-            ts = pycdlib.dates.string_to_timestruct('')
+    with pytest.raises(AttributeError) as exc_info:
+        ts = pycdlib.dates.string_to_timestruct('')
 
 def test_string_to_timestruct_blank_bytes():
     ts = pycdlib.dates.string_to_timestruct(b'')

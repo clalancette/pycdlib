@@ -16,8 +16,6 @@
 
 """Implementation of header Volume Descriptors for Ecma-119/ISO9660."""
 
-from __future__ import absolute_import
-
 import struct
 import time
 
@@ -40,7 +38,7 @@ VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR = 255
 allzero = b'\x00' * 2048
 
 
-class PrimaryOrSupplementaryVD(object):
+class PrimaryOrSupplementaryVD:
     """
     A class representing a Primary or Supplementary Volume Descriptor on this
     ISO.  These are the first things on the ISO that are parsed, and contain all
@@ -919,7 +917,7 @@ def joliet_vd_factory(joliet, sys_ident, vol_ident, set_size, seqnum,
     return svd
 
 
-class FileOrTextIdentifier(object):
+class FileOrTextIdentifier:
     """
     A class to represent a file or text identifier as specified in Ecma-119
     section 8.4.20 (Primary Volume Descriptor Publisher Identifier),
@@ -1007,7 +1005,7 @@ class FileOrTextIdentifier(object):
         return not equal
 
 
-class VolumeDescriptorSetTerminator(object):
+class VolumeDescriptorSetTerminator:
     """
     A class that represents a Volume Descriptor Set Terminator.  The VDST
     signals the end of volume descriptors on the ISO.
@@ -1136,7 +1134,7 @@ def vdst_factory():
     return vdst
 
 
-class BootRecord(object):
+class BootRecord:
     """A class representing an ISO9660 Boot Record."""
     __slots__ = ('_initialized', 'boot_system_identifier', 'boot_identifier',
                  'boot_system_use', 'orig_extent_loc', 'new_extent_loc')
@@ -1267,7 +1265,7 @@ class BootRecord(object):
         self.new_extent_loc = extent
 
 
-class VersionVolumeDescriptor(object):
+class VersionVolumeDescriptor:
     """
     A class representing a Version Volume Descriptor.  This volume descriptor is
     not mentioned in any of the standards, but is included by genisoimage, so it

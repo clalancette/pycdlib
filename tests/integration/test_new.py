@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-
 import io
-import pytest
 import os
 import sys
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
 import struct
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -20,7 +15,7 @@ from test_common import *
 
 def do_a_test(iso, check_func, tmpdir=None):
     if tmpdir is None:
-        out = BytesIO()
+        out = io.BytesIO()
 
         def do_getlen(obj):
             return len(obj.getvalue())
@@ -65,7 +60,7 @@ def test_new_onefile():
     iso.new()
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     do_a_test(iso, check_onefile)
 
@@ -88,9 +83,9 @@ def test_new_twofiles():
     iso.new()
     # Add new files.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     barstr = b'bar\n'
-    iso.add_fp(BytesIO(barstr), len(barstr), '/BAR.;1')
+    iso.add_fp(io.BytesIO(barstr), len(barstr), '/BAR.;1')
 
     do_a_test(iso, check_twofiles)
 
@@ -102,9 +97,9 @@ def test_new_twofiles2():
     iso.new()
     # Add new files.
     barstr = b'bar\n'
-    iso.add_fp(BytesIO(barstr), len(barstr), '/BAR.;1')
+    iso.add_fp(io.BytesIO(barstr), len(barstr), '/BAR.;1')
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     do_a_test(iso, check_twofiles)
 
@@ -142,7 +137,7 @@ def test_new_onefileonedir():
     iso.new()
     # Add new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     # Add new directory.
     iso.add_directory('/DIR1')
 
@@ -158,7 +153,7 @@ def test_new_onefileonedir2():
     iso.add_directory('/DIR1')
     # Add new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     do_a_test(iso, check_onefileonedir)
 
@@ -170,12 +165,12 @@ def test_new_onefile_onedirwithfile():
     iso.new()
     # Add new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     # Add new directory.
     iso.add_directory('/DIR1')
     # Add new sub-file.
     barstr = b'bar\n'
-    iso.add_fp(BytesIO(barstr), len(barstr), '/DIR1/BAR.;1')
+    iso.add_fp(io.BytesIO(barstr), len(barstr), '/DIR1/BAR.;1')
 
     do_a_test(iso, check_onefile_onedirwithfile)
 
@@ -241,7 +236,7 @@ def test_new_twoextentfile():
             outstr += struct.pack('=B', i)
     outstr += struct.pack('=B', 0)
 
-    iso.add_fp(BytesIO(outstr), len(outstr), '/BIGFILE.;1')
+    iso.add_fp(io.BytesIO(outstr), len(outstr), '/BIGFILE.;1')
 
     do_a_test(iso, check_twoextentfile)
 
@@ -269,7 +264,7 @@ def test_new_twoleveldeepfile():
     iso.add_directory('/DIR1')
     iso.add_directory('/DIR1/SUBDIR1')
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/SUBDIR1/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR1/SUBDIR1/FOO.;1')
 
     do_a_test(iso, check_twoleveldeepfile)
 
@@ -306,7 +301,7 @@ def test_new_toodeepdir():
     assert(str(excinfo.value) == 'Directory levels too deep (maximum is 7)')
 
     # Now make sure we can re-open the written ISO.
-    out = BytesIO()
+    out = io.BytesIO()
     iso.write_fp(out)
     pycdlib.PyCdlib().open_fp(out)
 
@@ -326,11 +321,11 @@ def test_new_toodeepfile():
     iso.add_directory('/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7')
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/FOO.;1')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR1/DIR2/DIR3/DIR4/DIR5/DIR6/DIR7/FOO.;1')
     assert(str(excinfo.value) == 'Directory levels too deep (maximum is 7)')
 
     # Now make sure we can re-open the written ISO.
-    out = BytesIO()
+    out = io.BytesIO()
     iso.write_fp(out)
     pycdlib.PyCdlib().open_fp(out)
 
@@ -343,11 +338,11 @@ def test_new_removefile():
 
     # Add new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     # Add second new file.
     barstr = b'bar\n'
-    iso.add_fp(BytesIO(barstr), len(barstr), '/BAR.;1')
+    iso.add_fp(io.BytesIO(barstr), len(barstr), '/BAR.;1')
 
     # Remove the second file.
     iso.rm_file('/BAR.;1')
@@ -363,7 +358,7 @@ def test_new_removedir():
 
     # Add new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     # Add new directory.
     iso.add_directory('/DIR1')
@@ -381,7 +376,7 @@ def test_new_eltorito():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     do_a_test(iso, check_eltorito_nofiles)
@@ -394,7 +389,7 @@ def test_new_rm_eltorito():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     iso.rm_eltorito()
@@ -410,11 +405,11 @@ def test_new_eltorito_twofile():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AA.;1')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AA.;1')
 
     do_a_test(iso, check_eltorito_twofile)
 
@@ -436,7 +431,7 @@ def test_new_rr_onefile():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     do_a_test(iso, check_rr_onefile)
 
@@ -449,11 +444,11 @@ def test_new_rr_twofile():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     # Add a new file.
     barstr = b'bar\n'
-    iso.add_fp(BytesIO(barstr), len(barstr), '/BAR.;1', rr_name='bar')
+    iso.add_fp(io.BytesIO(barstr), len(barstr), '/BAR.;1', rr_name='bar')
 
     do_a_test(iso, check_rr_twofile)
 
@@ -466,7 +461,7 @@ def test_new_rr_onefileonedir():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     # Add new directory.
     iso.add_directory('/DIR1', rr_name='dir1')
@@ -482,14 +477,14 @@ def test_new_rr_onefileonedirwithfile():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     # Add new directory.
     iso.add_directory('/DIR1', rr_name='dir1')
 
     # Add a new file.
     barstr = b'bar\n'
-    iso.add_fp(BytesIO(barstr), len(barstr), '/DIR1/BAR.;1', rr_name='bar')
+    iso.add_fp(io.BytesIO(barstr), len(barstr), '/DIR1/BAR.;1', rr_name='bar')
 
     do_a_test(iso, check_rr_onefileonedirwithfile)
 
@@ -502,7 +497,7 @@ def test_new_rr_symlink():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     iso.add_symlink('/SYM.;1', 'sym', 'foo')
 
@@ -520,7 +515,7 @@ def test_new_rr_symlink2():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', rr_name='foo')
 
     iso.add_symlink('/SYM.;1', 'sym', 'dir1/foo')
 
@@ -567,7 +562,7 @@ def test_new_rr_verylongname():
     iso.new(rock_ridge='1.09')
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH)
 
     do_a_test(iso, check_rr_verylongname)
 
@@ -579,7 +574,7 @@ def test_new_rr_verylongname_joliet():
     iso.new(rock_ridge='1.09', joliet=3)
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH, joliet_path='/'+'a'*64)
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH, joliet_path='/'+'a'*64)
 
     do_a_test(iso, check_rr_verylongname_joliet)
 
@@ -591,25 +586,25 @@ def test_new_rr_manylongname():
     iso.new(rock_ridge='1.09')
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH)
 
     bbstr = b'bb\n'
-    iso.add_fp(BytesIO(bbstr), len(bbstr), '/BBBBBBBB.;1', rr_name='b'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(bbstr), len(bbstr), '/BBBBBBBB.;1', rr_name='b'*RR_MAX_FILENAME_LENGTH)
 
     ccstr = b'cc\n'
-    iso.add_fp(BytesIO(ccstr), len(ccstr), '/CCCCCCCC.;1', rr_name='c'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(ccstr), len(ccstr), '/CCCCCCCC.;1', rr_name='c'*RR_MAX_FILENAME_LENGTH)
 
     ddstr = b'dd\n'
-    iso.add_fp(BytesIO(ddstr), len(ddstr), '/DDDDDDDD.;1', rr_name='d'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(ddstr), len(ddstr), '/DDDDDDDD.;1', rr_name='d'*RR_MAX_FILENAME_LENGTH)
 
     eestr = b'ee\n'
-    iso.add_fp(BytesIO(eestr), len(eestr), '/EEEEEEEE.;1', rr_name='e'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(eestr), len(eestr), '/EEEEEEEE.;1', rr_name='e'*RR_MAX_FILENAME_LENGTH)
 
     ffstr = b'ff\n'
-    iso.add_fp(BytesIO(ffstr), len(ffstr), '/FFFFFFFF.;1', rr_name='f'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(ffstr), len(ffstr), '/FFFFFFFF.;1', rr_name='f'*RR_MAX_FILENAME_LENGTH)
 
     ggstr = b'gg\n'
-    iso.add_fp(BytesIO(ggstr), len(ggstr), '/GGGGGGGG.;1', rr_name='g'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(ggstr), len(ggstr), '/GGGGGGGG.;1', rr_name='g'*RR_MAX_FILENAME_LENGTH)
 
     do_a_test(iso, check_rr_manylongname)
 
@@ -621,28 +616,28 @@ def test_new_rr_manylongname2():
     iso.new(rock_ridge='1.09')
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH)
 
     bbstr = b'bb\n'
-    iso.add_fp(BytesIO(bbstr), len(bbstr), '/BBBBBBBB.;1', rr_name='b'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(bbstr), len(bbstr), '/BBBBBBBB.;1', rr_name='b'*RR_MAX_FILENAME_LENGTH)
 
     ccstr = b'cc\n'
-    iso.add_fp(BytesIO(ccstr), len(ccstr), '/CCCCCCCC.;1', rr_name='c'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(ccstr), len(ccstr), '/CCCCCCCC.;1', rr_name='c'*RR_MAX_FILENAME_LENGTH)
 
     ddstr = b'dd\n'
-    iso.add_fp(BytesIO(ddstr), len(ddstr), '/DDDDDDDD.;1', rr_name='d'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(ddstr), len(ddstr), '/DDDDDDDD.;1', rr_name='d'*RR_MAX_FILENAME_LENGTH)
 
     eestr = b'ee\n'
-    iso.add_fp(BytesIO(eestr), len(eestr), '/EEEEEEEE.;1', rr_name='e'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(eestr), len(eestr), '/EEEEEEEE.;1', rr_name='e'*RR_MAX_FILENAME_LENGTH)
 
     ffstr = b'ff\n'
-    iso.add_fp(BytesIO(ffstr), len(ffstr), '/FFFFFFFF.;1', rr_name='f'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(ffstr), len(ffstr), '/FFFFFFFF.;1', rr_name='f'*RR_MAX_FILENAME_LENGTH)
 
     ggstr = b'gg\n'
-    iso.add_fp(BytesIO(ggstr), len(ggstr), '/GGGGGGGG.;1', rr_name='g'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(ggstr), len(ggstr), '/GGGGGGGG.;1', rr_name='g'*RR_MAX_FILENAME_LENGTH)
 
     hhstr = b'hh\n'
-    iso.add_fp(BytesIO(hhstr), len(hhstr), '/HHHHHHHH.;1', rr_name='h'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(hhstr), len(hhstr), '/HHHHHHHH.;1', rr_name='h'*RR_MAX_FILENAME_LENGTH)
 
     do_a_test(iso, check_rr_manylongname2)
 
@@ -654,7 +649,7 @@ def test_new_rr_verylongnameandsymlink():
     iso.new(rock_ridge='1.09')
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH)
 
     iso.add_symlink('/BBBBBBBB.;1', 'b'*RR_MAX_FILENAME_LENGTH, 'a'*RR_MAX_FILENAME_LENGTH)
 
@@ -668,20 +663,20 @@ def test_new_alternating_subdir():
     iso.new()
 
     ddstr = b'dd\n'
-    iso.add_fp(BytesIO(ddstr), len(ddstr), '/DD.;1')
+    iso.add_fp(io.BytesIO(ddstr), len(ddstr), '/DD.;1')
 
     bbstr = b'bb\n'
-    iso.add_fp(BytesIO(bbstr), len(bbstr), '/BB.;1')
+    iso.add_fp(io.BytesIO(bbstr), len(bbstr), '/BB.;1')
 
     iso.add_directory('/CC')
 
     iso.add_directory('/AA')
 
     subdirfile1 = b'sub1\n'
-    iso.add_fp(BytesIO(subdirfile1), len(subdirfile1), '/AA/SUB1.;1')
+    iso.add_fp(io.BytesIO(subdirfile1), len(subdirfile1), '/AA/SUB1.;1')
 
     subdirfile2 = b'sub2\n'
-    iso.add_fp(BytesIO(subdirfile2), len(subdirfile2), '/CC/SUB2.;1')
+    iso.add_fp(io.BytesIO(subdirfile2), len(subdirfile2), '/CC/SUB2.;1')
 
     do_a_test(iso, check_alternating_subdir)
 
@@ -713,7 +708,7 @@ def test_new_joliet_onefile():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     do_a_test(iso, check_joliet_onefile)
 
@@ -725,7 +720,7 @@ def test_new_joliet_onefileonedir():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     iso.add_directory('/DIR1', joliet_path='/dir1')
 
@@ -748,7 +743,7 @@ def test_new_joliet_and_rr_onefile():
     iso.new(joliet=3, rock_ridge='1.09')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/foo')
 
     do_a_test(iso, check_joliet_and_rr_onefile)
 
@@ -772,7 +767,7 @@ def test_new_rr_and_eltorito_nofiles():
     iso.new(rock_ridge='1.09')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     do_a_test(iso, check_rr_and_eltorito_nofiles)
@@ -785,11 +780,11 @@ def test_new_rr_and_eltorito_onefile():
     iso.new(rock_ridge='1.09')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     do_a_test(iso, check_rr_and_eltorito_onefile)
 
@@ -801,7 +796,7 @@ def test_new_rr_and_eltorito_onedir():
     iso.new(rock_ridge='1.09')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     iso.add_directory('/DIR1', rr_name='dir1')
@@ -818,7 +813,7 @@ def test_new_rr_and_eltorito_onedir2():
     iso.add_directory('/DIR1', rr_name='dir1')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     do_a_test(iso, check_rr_and_eltorito_onedir)
@@ -831,7 +826,7 @@ def test_new_joliet_and_eltorito_nofiles():
     iso.new(joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     do_a_test(iso, check_joliet_and_eltorito_nofiles)
@@ -844,11 +839,11 @@ def test_new_joliet_and_eltorito_onefile():
     iso.new(joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     do_a_test(iso, check_joliet_and_eltorito_onefile)
 
@@ -860,7 +855,7 @@ def test_new_joliet_and_eltorito_onedir():
     iso.new(joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     iso.add_directory('/DIR1', joliet_path='/dir1')
@@ -875,7 +870,7 @@ def test_new_isohybrid():
     iso.new()
     # Add Eltorito
     isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
-    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
+    iso.add_fp(io.BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
     iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1', boot_load_size=4)
     # Now add the syslinux data
     iso.add_isohybrid()
@@ -890,11 +885,11 @@ def test_new_isohybrid_mac():
     iso.new()
     # Add Eltorito
     isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
-    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
+    iso.add_fp(io.BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
     efibootstr = b'a'
-    iso.add_fp(BytesIO(efibootstr), len(efibootstr), '/EFIBOOT.IMG;1')
+    iso.add_fp(io.BytesIO(efibootstr), len(efibootstr), '/EFIBOOT.IMG;1')
     macbootstr = b'b'
-    iso.add_fp(BytesIO(macbootstr), len(macbootstr), '/MACBOOT.IMG;1')
+    iso.add_fp(io.BytesIO(macbootstr), len(macbootstr), '/MACBOOT.IMG;1')
 
     iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1', boot_load_size=4, boot_info_table=True)
     iso.add_eltorito('/MACBOOT.IMG;1', efi=True)
@@ -910,9 +905,9 @@ def test_new_isohybrid_uefi():
     iso.new()
     # Add Eltorito
     isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
-    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
+    iso.add_fp(io.BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
     efibootstr = b'a'
-    iso.add_fp(BytesIO(efibootstr), len(efibootstr), '/EFIBOOT.IMG;1')
+    iso.add_fp(io.BytesIO(efibootstr), len(efibootstr), '/EFIBOOT.IMG;1')
 
     iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1', boot_load_size=4, boot_info_table=True)
     iso.add_eltorito('/EFIBOOT.IMG;1', efi=True)
@@ -929,11 +924,11 @@ def test_new_isohybrid_mac_uefi():
     iso.new()
     # Add Eltorito
     isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
-    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
+    iso.add_fp(io.BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
     efibootstr = b'a'
-    iso.add_fp(BytesIO(efibootstr), len(efibootstr), '/EFIBOOT.IMG;1')
+    iso.add_fp(io.BytesIO(efibootstr), len(efibootstr), '/EFIBOOT.IMG;1')
     macbootstr = b'b'
-    iso.add_fp(BytesIO(macbootstr), len(macbootstr), '/MACBOOT.IMG;1')
+    iso.add_fp(io.BytesIO(macbootstr), len(macbootstr), '/MACBOOT.IMG;1')
 
     iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1', boot_load_size=4, boot_info_table=True)
     iso.add_eltorito('/MACBOOT.IMG;1', efi=True)
@@ -951,7 +946,7 @@ def test_new_joliet_rr_and_eltorito_nofiles():
     iso.new(rock_ridge='1.09', joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot', joliet_path='/boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     do_a_test(iso, check_joliet_rr_and_eltorito_nofiles)
@@ -964,11 +959,11 @@ def test_new_joliet_rr_and_eltorito_onefile():
     iso.new(rock_ridge='1.09', joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot', joliet_path='/boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/foo')
 
     do_a_test(iso, check_joliet_rr_and_eltorito_onefile)
 
@@ -980,7 +975,7 @@ def test_new_joliet_rr_and_eltorito_onedir():
     iso.new(rock_ridge='1.09', joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot', joliet_path='/boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     iso.add_directory('/DIR1', rr_name='dir1', joliet_path='/dir1')
@@ -995,7 +990,7 @@ def test_new_rr_rmfile():
     iso.new(rock_ridge='1.09')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     iso.rm_file('/FOO.;1', rr_name='foo')
 
@@ -1022,7 +1017,7 @@ def test_new_joliet_rmfile():
     iso.new(joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
 
     iso.rm_file('/BOOT.;1', joliet_path='/boot')
 
@@ -1076,7 +1071,7 @@ def test_new_xa_onefile():
     iso.new(xa=True)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     do_a_test(iso, check_xa_onefile)
 
@@ -1125,7 +1120,7 @@ def test_new_xa_joliet_onefile():
     iso.new(joliet=3, xa=True)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     do_a_test(iso, check_xa_joliet_onefile)
 
@@ -1157,7 +1152,7 @@ def test_new_isolevel4_onefile():
     iso.new(interchange_level=4)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
 
     do_a_test(iso, check_isolevel4_onefile)
 
@@ -1180,7 +1175,7 @@ def test_new_isolevel4_eltorito():
     iso.new(interchange_level=4)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/boot')
     iso.add_eltorito('/boot', '/boot.cat')
 
     do_a_test(iso, check_isolevel4_eltorito)
@@ -1202,14 +1197,14 @@ def test_new_everything():
     iso.add_directory('/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8', rr_name='dir8', joliet_path='/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot', rr_name='boot', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/boot', rr_name='boot', joliet_path='/boot')
     iso.add_eltorito('/boot', '/boot.cat', boot_info_table=True)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/foo', rr_name='foo', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/foo', rr_name='foo', joliet_path='/foo')
 
     barstr = b'bar\n'
-    iso.add_fp(BytesIO(barstr), len(barstr), '/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar', rr_name='bar', joliet_path='/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar')
+    iso.add_fp(io.BytesIO(barstr), len(barstr), '/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar', rr_name='bar', joliet_path='/dir1/dir2/dir3/dir4/dir5/dir6/dir7/dir8/bar')
 
     iso.add_symlink('/sym', 'sym', 'foo', joliet_path='/sym')
 
@@ -1235,7 +1230,7 @@ def test_new_rr_xa_onefile():
     iso.new(rock_ridge='1.09', xa=True)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     do_a_test(iso, check_rr_xa_onefile)
 
@@ -1258,7 +1253,7 @@ def test_new_rr_joliet_symlink():
     iso.new(rock_ridge='1.09', joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/foo')
 
     iso.add_symlink('/SYM.;1', 'sym', 'foo', joliet_path='/sym')
 
@@ -1300,11 +1295,11 @@ def test_new_eltorito_multi_boot():
     iso.new(interchange_level=4)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/boot')
     iso.add_eltorito('/boot', '/boot.cat')
 
     boot2str = b'boot2\n'
-    iso.add_fp(BytesIO(boot2str), len(boot2str), '/boot2')
+    iso.add_fp(io.BytesIO(boot2str), len(boot2str), '/boot2')
     iso.add_eltorito('/boot2', '/boot.cat')
 
     do_a_test(iso, check_eltorito_multi_boot)
@@ -1317,7 +1312,7 @@ def test_new_eltorito_boot_table():
     iso.new(interchange_level=4)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/boot')
     iso.add_eltorito('/boot', '/boot.cat', boot_info_table=True)
 
     do_a_test(iso, check_eltorito_boot_info_table)
@@ -1330,7 +1325,7 @@ def test_new_eltorito_boot_table_large():
     iso.new(interchange_level=4)
 
     bootstr = b'boot'*20
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/boot')
     iso.add_eltorito('/boot', '/boot.cat', boot_info_table=True)
 
     do_a_test(iso, check_eltorito_boot_info_table_large)
@@ -1343,7 +1338,7 @@ def test_new_hard_link():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     # Add a directory.
     iso.add_directory('/DIR1')
@@ -1382,7 +1377,7 @@ def test_new_add_fp_not_initialized():
 
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
 def test_new_add_fp_no_rr_name():
@@ -1392,7 +1387,7 @@ def test_new_add_fp_no_rr_name():
 
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     assert(str(excinfo.value) == 'Rock Ridge name must be supplied for a Rock Ridge new path')
 
     iso.close()
@@ -1404,7 +1399,7 @@ def test_new_add_fp_rr_name():
 
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
     assert(str(excinfo.value) == 'A rock ridge name can only be specified for a rock-ridge ISO')
 
     iso.close()
@@ -1415,7 +1410,7 @@ def test_new_add_fp_no_joliet_name():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     do_a_test(iso, check_onefile_joliet_no_file)
 
@@ -1428,7 +1423,7 @@ def test_new_add_fp_joliet_name():
 
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
     assert(str(excinfo.value) == 'A Joliet path can only be specified for a Joliet ISO')
 
     iso.close()
@@ -1440,7 +1435,7 @@ def test_new_add_fp_joliet_name_too_long():
 
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/'+'a'*65)
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/'+'a'*65)
     assert(str(excinfo.value) == 'Joliet names can be a maximum of 64 characters')
 
     iso.close()
@@ -1486,7 +1481,7 @@ def test_new_add_isohybrid_bad_boot_load_size():
     iso.new()
 
     isolinuxstr = b'\x00'*0x801
-    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
+    iso.add_fp(io.BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
 
     iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -1502,7 +1497,7 @@ def test_new_add_isohybrid_bad_file_signature():
 
     # Add a new file.
     isolinuxstr = b'\x00'*0x44
-    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
+    iso.add_fp(io.BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
     iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1', boot_load_size=4)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_isohybrid()
@@ -1566,7 +1561,7 @@ def test_new_rr_symlink_no_rr():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_symlink('/SYM.;1', 'sym', 'foo')
@@ -1620,7 +1615,7 @@ def test_new_write_fp_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
 
-    out = BytesIO()
+    out = io.BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.write_fp(out)
     assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
@@ -1647,7 +1642,7 @@ def test_new_joliet_isolevel4():
     iso.new(interchange_level=4, joliet=3)
     # Add new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/foo', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/foo', joliet_path='/foo')
     # Add new directory.
     iso.add_directory('/dir1', joliet_path='/dir1')
 
@@ -1661,7 +1656,7 @@ def test_new_eltorito_hide():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
     iso.rm_hard_link(iso_path='/BOOT.CAT;1')
 
@@ -1675,7 +1670,7 @@ def test_new_eltorito_nofiles_hide_joliet():
     iso.new(joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
     iso.rm_hard_link(joliet_path='/boot.cat')
     iso.rm_hard_link(iso_path='/BOOT.CAT;1')
@@ -1690,7 +1685,7 @@ def test_new_eltorito_nofiles_hide_joliet_only():
     iso.new(joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
     # After add_fp:
     #  boot - 1 link (1 Joliet)
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
@@ -1712,7 +1707,7 @@ def test_new_eltorito_nofiles_hide_iso_only():
     iso.new(joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
     iso.rm_hard_link(iso_path='/BOOT.CAT;1')
 
@@ -1725,7 +1720,7 @@ def test_new_hard_link_reshuffle():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.add_hard_link(iso_new_path='/BAR.;1', iso_old_path='/FOO.;1')
 
@@ -1776,7 +1771,7 @@ def test_new_invalid_filename_character():
     # Add a new file.
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/FO#.;1')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/FO#.;1')
     assert(str(excinfo.value) == 'ISO9660 filenames must consist of characters A-Z, 0-9, and _')
 
 def test_new_invalid_filename_semicolons():
@@ -1786,7 +1781,7 @@ def test_new_invalid_filename_semicolons():
     # Add a new file.
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/FO0;1.;1')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/FO0;1.;1')
     assert(str(excinfo.value) == 'ISO9660 filenames must contain exactly one semicolon')
 
 def test_new_invalid_filename_version():
@@ -1796,7 +1791,7 @@ def test_new_invalid_filename_version():
     # Add a new file.
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;32768')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;32768')
     assert(str(excinfo.value) == 'ISO9660 filenames must have a version between 1 and 32767')
 
 def test_new_invalid_filename_dotonly():
@@ -1806,7 +1801,7 @@ def test_new_invalid_filename_dotonly():
     # Add a new file.
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/.')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/.')
     assert(str(excinfo.value) == 'ISO9660 filenames must have a non-empty name or extension')
 
 def test_new_invalid_filename_toolong():
@@ -1816,7 +1811,7 @@ def test_new_invalid_filename_toolong():
     # Add a new file.
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/THISISAVERYLONGNAME.;1')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/THISISAVERYLONGNAME.;1')
     assert(str(excinfo.value) == 'ISO9660 filenames at interchange level 1 cannot have more than 8 characters or 3 characters in the extension')
 
 def test_new_invalid_extension_toolong():
@@ -1826,7 +1821,7 @@ def test_new_invalid_extension_toolong():
     # Add a new file.
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/NAME.LONGEXT;1')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/NAME.LONGEXT;1')
     assert(str(excinfo.value) == 'ISO9660 filenames at interchange level 1 cannot have more than 8 characters or 3 characters in the extension')
 
 def test_new_invalid_dirname():
@@ -1888,7 +1883,7 @@ def test_new_hard_link_no_eltorito():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_hard_link(boot_catalog_old=True)
@@ -1942,7 +1937,7 @@ def test_new_hard_link_eltorito():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     iso.rm_hard_link('/BOOT.CAT;1')
@@ -2013,7 +2008,7 @@ def test_new_rm_hard_link_remove_file():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
 
     iso.rm_hard_link(iso_path='/BOOT.;1')
 
@@ -2027,7 +2022,7 @@ def test_new_rm_hard_link_joliet_remove_file():
     iso.new(joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
 
     iso.rm_hard_link(iso_path='/BOOT.;1')
     iso.rm_hard_link(joliet_path='/boot')
@@ -2042,7 +2037,7 @@ def test_new_rm_hard_link_rm_second():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
     iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAZ.;1')
 
@@ -2059,7 +2054,7 @@ def test_new_rm_hard_link_rm_joliet_first():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     iso.rm_hard_link(joliet_path='/foo')
     iso.rm_hard_link(iso_path='/FOO.;1')
@@ -2074,7 +2069,7 @@ def test_new_rm_hard_link_rm_joliet_and_links():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
     iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
     iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAZ.;1')
 
@@ -2093,7 +2088,7 @@ def test_new_rm_hard_link_isolevel4():
     iso.new(interchange_level=4)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.rm_hard_link(iso_path='/FOO.;1')
 
@@ -2107,7 +2102,7 @@ def test_add_hard_link_joliet_to_joliet():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
     iso.add_hard_link(joliet_old_path='/foo', joliet_new_path='/bar')
 
     iso.close()
@@ -2145,7 +2140,7 @@ def test_new_eltorito_boot_table_large_odd():
     iso.new(interchange_level=4)
 
     bootstr = b'boo'*27
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/boot')
     iso.add_eltorito('/boot', '/boot.cat', boot_info_table=True)
 
     do_a_test(iso, check_eltorito_boot_info_table_large_odd)
@@ -2193,10 +2188,10 @@ def test_new_zero_byte_file():
     iso.new(interchange_level=1)
 
     foostr = b''
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     barstr = b'bar\n'
-    iso.add_fp(BytesIO(barstr), len(barstr), '/BAR.;1')
+    iso.add_fp(io.BytesIO(barstr), len(barstr), '/BAR.;1')
 
     do_a_test(iso, check_zero_byte_file)
 
@@ -2208,7 +2203,7 @@ def test_new_eltorito_hide_boot():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     iso.rm_hard_link(iso_path='/BOOT.;1')
@@ -2225,7 +2220,7 @@ def test_new_full_path_from_dirrecord():
     iso.add_directory('/DIR1')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/DIR1/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/DIR1/BOOT.;1')
 
     full_path = None
     for child in iso.list_children(iso_path='/DIR1'):
@@ -2251,7 +2246,7 @@ def test_new_rock_ridge_one_point_twelve():
     iso.new(rock_ridge='1.12')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
 
     iso.close()
 
@@ -2261,7 +2256,7 @@ def test_new_duplicate_pvd():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.duplicate_pvd()
 
@@ -2282,15 +2277,15 @@ def test_new_eltorito_multi_multi_boot():
     iso.new(interchange_level=4)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/boot')
     iso.add_eltorito('/boot', '/boot.cat')
 
     boot2str = b'boot2\n'
-    iso.add_fp(BytesIO(boot2str), len(boot2str), '/boot2')
+    iso.add_fp(io.BytesIO(boot2str), len(boot2str), '/boot2')
     iso.add_eltorito('/boot2', '/boot.cat')
 
     boot3str = b'boot3\n'
-    iso.add_fp(BytesIO(boot3str), len(boot3str), '/boot3')
+    iso.add_fp(io.BytesIO(boot3str), len(boot3str), '/boot3')
     iso.add_eltorito('/boot3', '/boot.cat')
 
     do_a_test(iso, check_eltorito_multi_multi_boot)
@@ -2303,11 +2298,11 @@ def test_new_duplicate_pvd_not_same():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.duplicate_pvd()
 
-    out = BytesIO()
+    out = io.BytesIO()
     iso.write_fp(out)
 
     iso.close()
@@ -2347,7 +2342,7 @@ def test_new_rr_exceedinglylongname():
     iso.new(rock_ridge='1.09')
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*500)
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*500)
 
     do_a_test(iso, infinitenamechecks)
 
@@ -2362,7 +2357,7 @@ def test_new_rr_symlink_path():
     iso.new(rock_ridge='1.09')
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='aaaaaaaa')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='aaaaaaaa')
 
     iso.add_symlink('/BBBBBBBB.;1', 'bbbbbbbb', 'aaaaaaaa')
 
@@ -2376,7 +2371,7 @@ def test_new_rr_symlink_path_not_symlink():
     iso.new(rock_ridge='1.09')
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='aaaaaaaa')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='aaaaaaaa')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.pvd.root_dir_record.children[2].rock_ridge.symlink_path()
@@ -2391,7 +2386,7 @@ def test_new_rr_verylongnameandsymlink_symlink_path():
     iso.new(rock_ridge='1.09')
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH)
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='a'*RR_MAX_FILENAME_LENGTH)
 
     iso.add_symlink('/BBBBBBBB.;1', 'b'*RR_MAX_FILENAME_LENGTH, 'a'*RR_MAX_FILENAME_LENGTH)
 
@@ -2408,7 +2403,7 @@ def test_new_rr_verylongsymlink_symlink_path():
     iso.new(rock_ridge='1.09')
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='aaaaaaaa')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='aaaaaaaa')
 
     iso.add_symlink('/BBBBBBBB.;1', 'bbbbbbbb', 'a'*RR_MAX_FILENAME_LENGTH)
 
@@ -2425,7 +2420,7 @@ def test_new_rr_extremelylongsymlink_symlink_path():
     iso.new(rock_ridge='1.09')
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='aaaaaaaa')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', rr_name='aaaaaaaa')
 
     iso.add_symlink('/BBBBBBBB.;1', 'bbbbbbbb', 'a'*500)
 
@@ -2448,7 +2443,7 @@ def test_new_rr_onefile_onetwelve():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     do_a_test(iso, check_rr_onefile_onetwelve)
 
@@ -2459,7 +2454,7 @@ def test_new_set_hidden_file():
     iso.new()
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1')
     iso.set_hidden('/AAAAAAAA.;1')
 
     do_a_test(iso, check_hidden_file)
@@ -2482,7 +2477,7 @@ def test_new_set_hidden_joliet_file():
     iso.new(joliet=3)
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', joliet_path='/aaaaaaaa')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', joliet_path='/aaaaaaaa')
     iso.set_hidden(joliet_path='/aaaaaaaa')
 
     do_a_test(iso, check_hidden_joliet_file)
@@ -2505,7 +2500,7 @@ def test_new_set_hidden_rr_onefileonedir():
     iso.new(rock_ridge='1.09')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
     iso.set_hidden(rr_path='/foo')
 
     iso.add_directory('/DIR1', rr_name='dir1')
@@ -2520,7 +2515,7 @@ def test_new_clear_hidden_joliet_file():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
     iso.clear_hidden(joliet_path='/foo')
 
     do_a_test(iso, check_joliet_onefile)
@@ -2543,7 +2538,7 @@ def test_new_clear_hidden_rr_onefileonedir():
     iso.new(rock_ridge='1.09')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
     iso.clear_hidden(rr_path='/foo')
 
     iso.add_directory('/DIR1', rr_name='dir1')
@@ -2558,7 +2553,7 @@ def test_new_set_hidden_not_initialized():
     iso.new()
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1')
     iso.close()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.set_hidden('/AAAAAAAA.;1')
@@ -2569,7 +2564,7 @@ def test_new_clear_hidden_file():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     iso.clear_hidden('/FOO.;1')
 
     do_a_test(iso, check_onefile)
@@ -2592,7 +2587,7 @@ def test_new_clear_hidden_not_initialized():
     iso.new()
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1')
     iso.close()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.clear_hidden('/AAAAAAAA.;1')
@@ -2615,10 +2610,10 @@ def test_new_duplicate_rrmoved_name():
     iso.add_directory('/A/B/C/D/E/F/H/1', rr_name='1')
 
     firststr = b'first\n'
-    iso.add_fp(BytesIO(firststr), len(firststr), '/A/B/C/D/E/F/G/1/FIRST.;1', rr_name='first')
+    iso.add_fp(io.BytesIO(firststr), len(firststr), '/A/B/C/D/E/F/G/1/FIRST.;1', rr_name='first')
 
     secondstr = b'second\n'
-    iso.add_fp(BytesIO(secondstr), len(secondstr), '/A/B/C/D/E/F/H/1/SECOND.;1', rr_name='second')
+    iso.add_fp(io.BytesIO(secondstr), len(secondstr), '/A/B/C/D/E/F/H/1/SECOND.;1', rr_name='second')
 
     do_a_test(iso, check_rr_two_dirs_same_level)
 
@@ -2630,7 +2625,7 @@ def test_new_eltorito_hd_emul():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*446 + b'\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x55' + b'\xaa'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='hdemul')
 
     do_a_test(iso, check_eltorito_hd_emul)
@@ -2643,7 +2638,7 @@ def test_new_eltorito_hd_emul_too_short():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*446
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='hdemul')
     assert(str(excinfo.value) == 'Could not read entire HD MBR, must be at least 512 bytes')
@@ -2656,7 +2651,7 @@ def test_new_eltorito_hd_emul_bad_keybyte1():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*446 + b'\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x56' + b'\xaa'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='hdemul')
     assert(str(excinfo.value) == 'Invalid magic on HD MBR')
@@ -2669,7 +2664,7 @@ def test_new_eltorito_hd_emul_bad_keybyte2():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*446 + b'\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x55' + b'\xab'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='hdemul')
     assert(str(excinfo.value) == 'Invalid magic on HD MBR')
@@ -2682,7 +2677,7 @@ def test_new_eltorito_hd_emul_multiple_part():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*446 + b'\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*16 + b'\x55' + b'\xaa'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='hdemul')
     assert(str(excinfo.value) == 'Boot image has multiple partitions')
@@ -2695,7 +2690,7 @@ def test_new_eltorito_hd_emul_no_part():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*446 + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x55' + b'\xaa'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='hdemul')
     assert(str(excinfo.value) == 'Boot image has no partitions')
@@ -2708,7 +2703,7 @@ def test_new_eltorito_hd_emul_bad_sec():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*446 + b'\x00\x00\x00\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x55' + b'\xaa'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='hdemul')
 
     do_a_test(iso, check_eltorito_hd_emul_bad_sec)
@@ -2721,7 +2716,7 @@ def test_new_eltorito_hd_emul_invalid_geometry():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*446 + b'\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x55' + b'\xaa'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='hdemul')
 
     do_a_test(iso, check_eltorito_hd_emul_invalid_geometry)
@@ -2734,7 +2729,7 @@ def test_new_eltorito_hd_emul_not_bootable():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*446 + b'\x00\x01\x01\x00\x02\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*16 + b'\x00'*16 + b'\x00'*16 + b'\x55' + b'\xaa'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='hdemul', bootable=False)
 
     do_a_test(iso, check_eltorito_hd_emul_not_bootable)
@@ -2747,7 +2742,7 @@ def test_new_eltorito_floppy12():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*(2400*512)
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='floppy', bootable=True)
 
     do_a_test(iso, check_eltorito_floppy12)
@@ -2760,7 +2755,7 @@ def test_new_eltorito_floppy144():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*(2880*512)
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='floppy', bootable=True)
 
     do_a_test(iso, check_eltorito_floppy144)
@@ -2773,7 +2768,7 @@ def test_new_eltorito_floppy288():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*(5760*512)
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='floppy', bootable=True)
 
     do_a_test(iso, check_eltorito_floppy288)
@@ -2786,7 +2781,7 @@ def test_new_eltorito_bad_floppy():
     iso.new(interchange_level=1)
 
     bootstr = b'\x00'*(576*512)
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', media_name='floppy', bootable=True)
     assert(str(excinfo.value) == 'Invalid sector count for floppy media type; must be 2400, 2880, or 5760')
@@ -2799,11 +2794,11 @@ def test_new_eltorito_multi_hidden():
     iso.new(interchange_level=4)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/boot')
     iso.add_eltorito('/boot', '/boot.cat')
 
     boot2str = b'boot2\n'
-    iso.add_fp(BytesIO(boot2str), len(boot2str), '/boot2')
+    iso.add_fp(io.BytesIO(boot2str), len(boot2str), '/boot2')
     iso.add_eltorito('/boot2', '/boot.cat')
 
     iso.rm_hard_link(iso_path='/boot2')
@@ -2817,7 +2812,7 @@ def test_new_eltorito_rr_verylongname():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge='1.09')
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot')
 
     iso.add_eltorito('/BOOT.;1', '/AAAAAAAA.;1', rr_bootcatname='a'*RR_MAX_FILENAME_LENGTH)
 
@@ -2831,14 +2826,14 @@ def test_new_isohybrid_file_before():
     iso.new()
     # Add Eltorito
     isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
-    iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
+    iso.add_fp(io.BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
     iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1', boot_load_size=4)
     # Now add the syslinux data
     iso.add_isohybrid()
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     do_a_test(iso, check_isohybrid_file_before)
 
@@ -2857,7 +2852,7 @@ def test_new_eltorito_rr_joliet_verylongname():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge='1.09', joliet=3)
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', rr_name='boot', joliet_path='/boot')
 
     iso.add_eltorito('/BOOT.;1', '/AAAAAAAA.;1', rr_bootcatname='a'*RR_MAX_FILENAME_LENGTH, joliet_bootcatfile='/'+'a'*64)
 
@@ -2915,7 +2910,7 @@ def test_new_overflow_root_dir_record():
 
     for letter in ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'o'):
         thisstr = b'\n'
-        iso.add_fp(BytesIO(thisstr), len(thisstr), '/'+letter.upper()*7+'.;1', rr_name=letter*20, joliet_path='/'+letter*20)
+        iso.add_fp(io.BytesIO(thisstr), len(thisstr), '/'+letter.upper()*7+'.;1', rr_name=letter*20, joliet_path='/'+letter*20)
 
     do_a_test(iso, check_overflow_root_dir_record)
 
@@ -2928,11 +2923,11 @@ def test_new_overflow_correct_extents():
 
     thisstr = b'\n'
     for letter in ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'):
-        iso.add_fp(BytesIO(thisstr), len(thisstr), '/'+letter.upper()*8+'.;1', rr_name=letter*136, joliet_path='/'+letter*64)
+        iso.add_fp(io.BytesIO(thisstr), len(thisstr), '/'+letter.upper()*8+'.;1', rr_name=letter*136, joliet_path='/'+letter*64)
 
-    iso.add_fp(BytesIO(thisstr), len(thisstr), '/OOOOOOOO.;1', rr_name='o'*57, joliet_path='/'+'o'*57)
+    iso.add_fp(io.BytesIO(thisstr), len(thisstr), '/OOOOOOOO.;1', rr_name='o'*57, joliet_path='/'+'o'*57)
 
-    iso.add_fp(BytesIO(thisstr), len(thisstr), '/P.;1', rr_name='p', joliet_path='/p')
+    iso.add_fp(io.BytesIO(thisstr), len(thisstr), '/P.;1', rr_name='p', joliet_path='/p')
 
     do_a_test(iso, check_overflow_correct_extents)
 
@@ -2945,12 +2940,12 @@ def test_new_overflow_correct_extents2():
 
     thisstr = b'\n'
 
-    iso.add_fp(BytesIO(thisstr), len(thisstr), '/P.;1', rr_name='p', joliet_path='/p')
+    iso.add_fp(io.BytesIO(thisstr), len(thisstr), '/P.;1', rr_name='p', joliet_path='/p')
 
-    iso.add_fp(BytesIO(thisstr), len(thisstr), '/OOOOOOOO.;1', rr_name='o'*57, joliet_path='/'+'o'*57)
+    iso.add_fp(io.BytesIO(thisstr), len(thisstr), '/OOOOOOOO.;1', rr_name='o'*57, joliet_path='/'+'o'*57)
 
     for letter in ('n', 'm', 'l', 'k', 'j', 'i', 'h', 'g', 'f', 'e', 'd', 'c', 'b', 'a'):
-        iso.add_fp(BytesIO(thisstr), len(thisstr), '/'+letter.upper()*8+'.;1', rr_name=letter*136, joliet_path='/'+letter*64)
+        iso.add_fp(io.BytesIO(thisstr), len(thisstr), '/'+letter.upper()*8+'.;1', rr_name=letter*136, joliet_path='/'+letter*64)
 
     do_a_test(iso, check_overflow_correct_extents)
 
@@ -2989,7 +2984,7 @@ def test_new_always_consistent():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     iso.rm_hard_link(joliet_path='/foo')
 
@@ -2999,13 +2994,13 @@ def test_new_always_consistent():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     iso.rm_file('/FOO.;1', joliet_path='/foo')
 
     iso.rm_directory('/DIR1', joliet_path='/dir1')
 
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
     iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1')
 
     iso.rm_eltorito()
@@ -3074,7 +3069,7 @@ def test_new_duplicate_pvd_always_consistent():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.duplicate_pvd()
 
@@ -3089,7 +3084,7 @@ def test_new_rr_symlink_always_consistent():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     iso.add_symlink('/SYM.;1', 'sym', 'foo')
 
@@ -3103,7 +3098,7 @@ def test_new_eltorito_always_consistent():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     do_a_test(iso, check_eltorito_nofiles)
@@ -3134,11 +3129,11 @@ def test_new_eltorito_multi_boot_always_consistent():
     iso.new(interchange_level=4)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/boot')
     iso.add_eltorito('/boot', '/boot.cat')
 
     boot2str = b'boot2\n'
-    iso.add_fp(BytesIO(boot2str), len(boot2str), '/boot2')
+    iso.add_fp(io.BytesIO(boot2str), len(boot2str), '/boot2')
     iso.add_eltorito('/boot2', '/boot.cat')
 
     do_a_test(iso, check_eltorito_multi_boot)
@@ -3151,7 +3146,7 @@ def test_new_rm_joliet_hard_link():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     iso.rm_hard_link(joliet_path='/foo')
 
@@ -3185,7 +3180,7 @@ def test_new_add_joliet_directory_isolevel4():
     iso.new(interchange_level=4, joliet=3)
     # Add new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/foo', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/foo', joliet_path='/foo')
     # Add new directory.
     iso.add_directory('/dir1')
     iso.add_joliet_directory('/dir1')
@@ -3290,10 +3285,10 @@ def test_new_rr_deep_weird_layout():
     iso.add_directory('/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/SIDEPACK', rr_name='sidepackage')
 
     strstr = b'from __future__ import absolute_import, print_functino\nimport string\nprint(string)\n'
-    iso.add_fp(BytesIO(strstr), len(strstr), '/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/STRING.PY;1', rr_name='string.py')
+    iso.add_fp(io.BytesIO(strstr), len(strstr), '/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/STRING.PY;1', rr_name='string.py')
 
     initstr = b'"""a side package with nothing in it\n"""\n'
-    iso.add_fp(BytesIO(initstr), len(initstr), '/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/SIDEPACK/__INIT__.PY;1', rr_name='__init__.py')
+    iso.add_fp(io.BytesIO(initstr), len(initstr), '/ASTROID/ASTROID/TESTS/TESTDATA/PYTHON3/DATA/ABSIMP/SIDEPACK/__INIT__.PY;1', rr_name='__init__.py')
 
     do_a_test(iso, check_rr_deep_weird_layout)
 
@@ -3343,7 +3338,7 @@ def test_new_duplicate_pvd_joliet():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.duplicate_pvd()
 
@@ -3416,7 +3411,7 @@ def test_new_get_and_write_dir():
 
     iso.add_directory('/DIR1')
 
-    out = BytesIO()
+    out = io.BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_and_write_fp('/DIR1', out)
     assert(str(excinfo.value) == 'Cannot write out a directory')
@@ -3429,9 +3424,9 @@ def test_new_get_and_write_joliet():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     iso.get_and_write_fp('/foo', out)
     assert(out.getvalue() == b'foo\n')
 
@@ -3443,9 +3438,9 @@ def test_new_get_and_write_iso9660():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     iso.get_and_write_fp('/FOO.;1', out)
     assert(out.getvalue() == b'foo\n')
 
@@ -3457,9 +3452,9 @@ def test_new_get_and_write_rr():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     iso.get_and_write_fp('/foo', out)
     assert(out.getvalue() == b'foo\n')
 
@@ -3471,9 +3466,9 @@ def test_new_get_and_write_iso9660_no_rr():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
-    out = BytesIO()
+    out = io.BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_and_write_fp('/BAR.;1', out)
     assert(str(excinfo.value) == 'Could not find path')
@@ -3552,36 +3547,36 @@ def test_new_different_joliet_name():
     iso.new(joliet=3, rock_ridge='1.09')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/bar')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/bar')
 
     foojstr = b'foojoliet\n'
-    iso.add_fp(BytesIO(foojstr), len(foojstr), '/FOOJ.;1', rr_name='fooj', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foojstr), len(foojstr), '/FOOJ.;1', rr_name='fooj', joliet_path='/foo')
 
     do_a_test(iso, check_joliet_different_names)
 
     # Check that we can get the content for the first file using its various names
-    out = BytesIO()
+    out = io.BytesIO()
     iso.get_file_from_iso_fp(out, iso_path='/FOO.;1')
     assert(out.getvalue() == b'foo\n')
 
-    out2 = BytesIO()
+    out2 = io.BytesIO()
     iso.get_file_from_iso_fp(out2, rr_path='/foo')
     assert(out2.getvalue() == b'foo\n')
 
-    out3 = BytesIO()
+    out3 = io.BytesIO()
     iso.get_file_from_iso_fp(out3, joliet_path='/bar')
     assert(out3.getvalue() == b'foo\n')
 
     # Check that we can get the content for the second file using its various names
-    out4 = BytesIO()
+    out4 = io.BytesIO()
     iso.get_file_from_iso_fp(out4, iso_path='/FOOJ.;1')
     assert(out4.getvalue() == b'foojoliet\n')
 
-    out5 = BytesIO()
+    out5 = io.BytesIO()
     iso.get_file_from_iso_fp(out5, rr_path='/fooj')
     assert(out5.getvalue() == b'foojoliet\n')
 
-    out6 = BytesIO()
+    out6 = io.BytesIO()
     iso.get_file_from_iso_fp(out6, joliet_path='/foo')
     assert(out6.getvalue() == b'foojoliet\n')
 
@@ -3592,16 +3587,16 @@ def test_new_different_rr_isolevel4_name():
     iso.new(interchange_level=4, rock_ridge='1.09')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/foo', rr_name='bar')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/foo', rr_name='bar')
 
     barstr = b'bar\n'
-    iso.add_fp(BytesIO(barstr), len(barstr), '/bar', rr_name='foo')
+    iso.add_fp(io.BytesIO(barstr), len(barstr), '/bar', rr_name='foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     iso.get_file_from_iso_fp(out, iso_path='/foo')
     assert(out.getvalue() == b'foo\n')
 
-    out2 = BytesIO()
+    out2 = io.BytesIO()
     iso.get_file_from_iso_fp(out2, rr_path='/bar')
     assert(out2.getvalue() == b'foo\n')
 
@@ -3734,9 +3729,9 @@ def test_new_get_file_from_iso_invalid_path():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
-    out = BytesIO()
+    out = io.BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso_fp(out, iso_path='/FOO.;1/BAR.;1')
     assert(str(excinfo.value) == 'Could not find path')
@@ -3748,9 +3743,9 @@ def test_new_get_file_from_iso_invalid_joliet_path():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso_fp(out, joliet_path='/foo/bar')
     assert(str(excinfo.value) == 'Could not find path')
@@ -3762,9 +3757,9 @@ def test_new_get_file_from_iso_joliet_path_not_absolute():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso_fp(out, joliet_path='foo')
     assert(str(excinfo.value) == 'Must be a path starting with /')
@@ -3776,9 +3771,9 @@ def test_new_get_file_from_iso_joliet_path_not_found():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso_fp(out, joliet_path='/bar')
     assert(str(excinfo.value) == 'Could not find path')
@@ -3790,9 +3785,9 @@ def test_new_get_file_from_iso_blocksize():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     iso.get_file_from_iso_fp(out, joliet_path='/foo', blocksize=16384)
 
     assert(out.getvalue() == b'foo\n')
@@ -3804,9 +3799,9 @@ def test_new_get_file_from_iso_no_joliet():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
-    out = BytesIO()
+    out = io.BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso_fp(out, joliet_path='/foo')
     assert(str(excinfo.value) == 'Cannot fetch a joliet_path from a non-Joliet ISO')
@@ -3818,9 +3813,9 @@ def test_new_get_file_from_iso_no_rr():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
-    out = BytesIO()
+    out = io.BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso_fp(out, rr_path='/foo')
     assert(str(excinfo.value) == 'Cannot fetch a rr_path from a non-Rock Ridge ISO')
@@ -3832,7 +3827,7 @@ def test_new_set_hidden_no_paths():
     iso.new()
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.set_hidden()
     assert(str(excinfo.value) == 'Must provide exactly one of iso_path, rr_path, or joliet_path')
@@ -3844,7 +3839,7 @@ def test_new_clear_hidden_no_paths():
     iso.new()
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.clear_hidden()
     assert(str(excinfo.value) == 'Must provide exactly one of iso_path, rr_path, or joliet_path')
@@ -3856,7 +3851,7 @@ def test_new_set_hidden_too_many_paths():
     iso.new(joliet=3)
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', joliet_path='/aaaaaaaa')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', joliet_path='/aaaaaaaa')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.set_hidden(iso_path='/AAAAAAAA.;1', joliet_path='/aaaaaaaa')
     assert(str(excinfo.value) == 'Must provide exactly one of iso_path, rr_path, or joliet_path')
@@ -3868,7 +3863,7 @@ def test_new_clear_hidden_too_many_paths():
     iso.new(joliet=3)
 
     aastr = b'aa\n'
-    iso.add_fp(BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', joliet_path='/aaaaaaaa')
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1', joliet_path='/aaaaaaaa')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.clear_hidden(iso_path='/AAAAAAAA.;1', joliet_path='/aaaaaaaa')
     assert(str(excinfo.value) == 'Must provide exactly one of iso_path, rr_path, or joliet_path')
@@ -3901,7 +3896,7 @@ def test_new_full_path_rockridge():
     iso.add_directory(iso_path='/DIR1', rr_name='dir1')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/DIR1/BOOT.;1', rr_name='boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/DIR1/BOOT.;1', rr_name='boot')
 
     full_path = None
     for child in iso.list_children(rr_path='/dir1'):
@@ -3920,7 +3915,7 @@ def test_new_list_children_joliet_subdir():
     iso.add_directory(iso_path='/DIR1', joliet_path='/dir1')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/DIR1/BOOT.;1', joliet_path='/dir1/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/DIR1/BOOT.;1', joliet_path='/dir1/boot')
 
     full_path = None
     for child in iso.list_children(joliet_path='/dir1'):
@@ -3942,12 +3937,12 @@ password: password
 chpasswd: { expire: False }
 ssh_pwauth: True
 '''
-    iso.add_fp(BytesIO(user_data_str), len(user_data_str), '/user-data', rr_name='user-data', joliet_path='/user-data')
+    iso.add_fp(io.BytesIO(user_data_str), len(user_data_str), '/user-data', rr_name='user-data', joliet_path='/user-data')
 
     meta_data_str = b'''\
 local-hostname: cloudimg
 '''
-    iso.add_fp(BytesIO(meta_data_str), len(meta_data_str), '/meta-data', rr_name='meta-data', joliet_path='/meta-data')
+    iso.add_fp(io.BytesIO(meta_data_str), len(meta_data_str), '/meta-data', rr_name='meta-data', joliet_path='/meta-data')
 
     do_a_test(iso, check_joliet_ident_encoding)
 
@@ -3961,7 +3956,7 @@ def test_new_duplicate_pvd_isolevel4():
     iso.new(interchange_level=4)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.duplicate_pvd()
 
@@ -3974,7 +3969,7 @@ def test_new_joliet_hidden_iso_file():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     iso.rm_hard_link(iso_path='/FOO.;1')
 
@@ -3987,7 +3982,7 @@ def test_new_add_file_hard_link_rm_file():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/LINK.;1')
 
@@ -4004,7 +3999,7 @@ def test_new_file_mode_not_rock_ridge():
     foostr = b'foo\n'
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', file_mode=0o0100444)
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', file_mode=0o0100444)
     assert(str(excinfo.value) == 'Can only specify a file mode for Rock Ridge ISOs')
 
     iso.close()
@@ -4015,7 +4010,7 @@ def test_new_eltorito_hide_boot_link():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_hard_link(iso_old_path='/BOOT.;1', iso_new_path='/BOOTLINK.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
@@ -4030,7 +4025,7 @@ def test_new_iso_only_add_rm_hard_link():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
 
@@ -4048,7 +4043,7 @@ def test_new_rm_hard_link_twice():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
 
     iso.rm_hard_link(iso_path='/BAR.;1')
@@ -4064,7 +4059,7 @@ def test_new_rm_hard_link_twice2():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
 
     iso.rm_hard_link(iso_path='/FOO.;1')
@@ -4080,7 +4075,7 @@ def test_new_rm_eltorito_leave_file():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1')
 
@@ -4095,7 +4090,7 @@ def test_new_add_eltorito_rm_file():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
 
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
@@ -4111,11 +4106,11 @@ def test_new_eltorito_multi_boot_rm_file():
     iso.new(interchange_level=4)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/boot')
     iso.add_eltorito('/boot', '/boot.cat')
 
     boot2str = b'boot2\n'
-    iso.add_fp(BytesIO(boot2str), len(boot2str), '/boot2')
+    iso.add_fp(io.BytesIO(boot2str), len(boot2str), '/boot2')
     iso.add_eltorito('/boot2', '/boot.cat')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -4131,11 +4126,11 @@ def test_new_get_file_from_iso_symlink():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     iso.add_symlink('/SYM.;1', 'sym', 'foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso_fp(out, iso_path='/SYM.;1')
@@ -4211,7 +4206,7 @@ def test_new_udf_onefile():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     do_a_test(iso, check_udf_onefile)
 
@@ -4225,7 +4220,7 @@ def test_new_udf_onefileonedir():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     do_a_test(iso, check_udf_onefileonedir)
 
@@ -4237,7 +4232,7 @@ def test_new_udf_rm_file():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.rm_file('/FOO.;1', udf_path='/foo')
 
@@ -4277,7 +4272,7 @@ def test_new_udf_iso_hidden():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.rm_hard_link(iso_path='/FOO.;1')
 
@@ -4291,7 +4286,7 @@ def test_new_udf_hard_link():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.add_hard_link(iso_old_path='/FOO.;1', udf_new_path='/foo')
 
@@ -4305,7 +4300,7 @@ def test_new_udf_rm_add_hard_link():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.rm_hard_link(iso_path='/FOO.;1')
 
@@ -4321,7 +4316,7 @@ def test_new_udf_hidden():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.rm_hard_link(udf_path='/foo')
 
@@ -4445,7 +4440,7 @@ def test_new_lookup_after_rmfile():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     rec = iso.get_record(iso_path='/FOO.;1')
     assert(rec.file_identifier() == b'FOO.;1')
@@ -4480,7 +4475,7 @@ def test_new_udf_lookup_after_rmfile():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     rec = iso.get_record(udf_path='/foo')
 
@@ -4497,7 +4492,7 @@ def test_new_full_path_no_rr():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     rec = iso.get_record(iso_path='/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -4514,7 +4509,7 @@ def test_new_list_children_udf():
     iso.add_directory('/DIR1', udf_path='/dir1')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/DIR1/BOOT.;1', udf_path='/dir1/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/DIR1/BOOT.;1', udf_path='/dir1/boot')
 
     full_path = None
     for child in iso.list_children(udf_path='/dir1'):
@@ -4532,7 +4527,7 @@ def test_new_udf_list_children_file():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         for c in iso.list_children(udf_path='/foo'):
@@ -4547,7 +4542,7 @@ def test_new_list_children_file():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         for c in iso.list_children(iso_path='/FOO.;1'):
@@ -4562,7 +4557,7 @@ def test_new_list_children_joliet_file():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         for c in iso.list_children(joliet_path='/foo'):
@@ -4612,7 +4607,7 @@ def test_new_rm_link_udf_path_not_udf():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_hard_link(udf_path='/foo')
@@ -4639,7 +4634,7 @@ def test_new_add_link_udf_path_not_udf():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_hard_link(iso_old_path='/FOO.;1', udf_new_path='/foo')
@@ -4654,7 +4649,7 @@ def test_new_add_fp_udf_path_not_udf():
 
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+        iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
     assert(str(excinfo.value) == 'Can only specify a UDF path for a UDF ISO')
 
     iso.close()
@@ -4664,9 +4659,9 @@ def test_new_get_file_from_iso_fp_udf_path_not_udf():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
-    out = BytesIO()
+    out = io.BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso_fp(out, udf_path='/foo')
     assert(str(excinfo.value) == 'Cannot fetch a udf_path from a non-UDF ISO')
@@ -4702,7 +4697,7 @@ def test_new_udf_symlink():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.add_symlink('/BAR.;1', udf_symlink_path='/bar', udf_target='foo')
 
@@ -4717,7 +4712,7 @@ def test_new_udf_symlink_in_dir():
     iso.add_directory('/DIR1', udf_path='/dir1')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', udf_path='/dir1/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', udf_path='/dir1/foo')
 
     iso.add_symlink('/BAR.;1', udf_symlink_path='/bar', udf_target='dir1/foo')
 
@@ -4822,7 +4817,7 @@ def test_new_rr_rm_symlink():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     iso.add_symlink('/SYM.;1', 'sym', 'foo')
 
@@ -4839,7 +4834,7 @@ def test_new_udf_rm_link_symlink():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     # Add: any new extents for FI container (0) + log_block_size (File Entry) + file_entry.info_len
     iso.add_symlink('/SYM.;1', udf_symlink_path='/sym', udf_target='/foo')
@@ -4858,7 +4853,7 @@ def test_new_udf_rr_symlink():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', udf_path='/foo')
 
     # Add: any new extents for FI container (0) + log_block_size (File Entry) + file_entry.info_len
     iso.add_symlink('/SYM.;1', rr_symlink_name='sym', rr_path='foo', udf_symlink_path='/sym', udf_target='foo')
@@ -4888,7 +4883,7 @@ def test_new_udf_hardlink():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.add_hard_link(udf_old_path='/foo', udf_new_path='/bar')
 
@@ -4901,7 +4896,7 @@ def test_new_multi_hard_link():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
 
@@ -4916,7 +4911,7 @@ def test_new_multi_hard_link2():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
 
@@ -4931,7 +4926,7 @@ def test_new_joliet_with_version():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo.;1')
 
     do_a_test(iso, check_joliet_with_version)
 
@@ -4942,7 +4937,7 @@ def test_new_link_joliet_to_iso():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
     iso.rm_hard_link(iso_path='/FOO.;1')
 
     iso.add_hard_link(joliet_old_path='/foo', iso_new_path='/FOO.;1')
@@ -4956,7 +4951,7 @@ def test_new_udf_joliet_onefile():
     iso.new(joliet=3, udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo', udf_path='/foo')
 
     do_a_test(iso, check_udf_joliet_onefile)
 
@@ -4967,7 +4962,7 @@ def test_new_link_joliet_to_udf():
     iso.new(joliet=3, udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     iso.add_hard_link(joliet_old_path='/foo', udf_new_path='/foo')
 
@@ -4980,7 +4975,7 @@ def test_new_link_udf_to_joliet():
     iso.new(joliet=3, udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.add_hard_link(udf_old_path='/foo', joliet_new_path='/foo')
 
@@ -4994,7 +4989,7 @@ def test_new_joliet_hard_link_eltorito():
     iso.new(joliet=3)
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     iso.rm_hard_link('/BOOT.CAT;1')
@@ -5012,7 +5007,7 @@ def test_new_udf_hard_link_eltorito():
     iso.new(udf='2.60')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1', udf_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', udf_path='/boot')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     iso.rm_hard_link('/BOOT.CAT;1')
@@ -5031,7 +5026,7 @@ def test_new_bogus_symlink():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_symlink('/SYM.;1', 'sym')
@@ -5046,7 +5041,7 @@ def test_new_joliet_symlink_no_joliet():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_symlink('/SYM.;1', 'sym', 'foo', joliet_path='/foo')
@@ -5061,7 +5056,7 @@ def test_new_eltorito_udf_rm_eltorito():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1')
 
@@ -5078,7 +5073,7 @@ def test_new_add_eltorito_udf_path_no_udf():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1', udf_bootcatfile='/foo')
@@ -5093,7 +5088,7 @@ def test_new_add_eltorito_joliet_path_no_joliet():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1', joliet_bootcatfile='/foo')
@@ -5108,7 +5103,7 @@ def test_new_rm_file_linked_by_eltorito_bootcat():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1')
 
@@ -5131,7 +5126,7 @@ def test_new_udf_rm_hard_link_multi_links():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/bar')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/bar')
 
     iso.add_hard_link(udf_old_path='/bar', udf_new_path='/foo')
     iso.add_hard_link(udf_old_path='/bar', udf_new_path='/baz')
@@ -5148,7 +5143,7 @@ def test_new_hard_link_invalid_new_keyword():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_hard_link(iso_old_path='/FOO.;1', blah='some')
@@ -5163,7 +5158,7 @@ def test_new_udf_dotdot_symlink():
     iso.add_directory('/DIR1', udf_path='/dir1')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.add_symlink('/DIR1/SYM.;1', udf_symlink_path='/dir1/sym', udf_target='../foo')
 
@@ -5176,7 +5171,7 @@ def test_new_udf_dot_symlink():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.add_symlink('/SYM.;1', udf_symlink_path='/sym', udf_target='./foo')
 
@@ -5190,10 +5185,10 @@ def test_new_udf_zero_byte_file():
     iso.new(udf='2.60')
 
     foostr = b''
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     barstr = b'bar\n'
-    iso.add_fp(BytesIO(barstr), len(barstr), '/BAR.;1', udf_path='/bar')
+    iso.add_fp(io.BytesIO(barstr), len(barstr), '/BAR.;1', udf_path='/bar')
 
     do_a_test(iso, check_udf_zero_byte_file)
 
@@ -5216,10 +5211,10 @@ def test_new_udf_onefile_onedirwithfile():
     iso.add_directory('/DIR1', udf_path='/dir1')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     barstr = b'bar\n'
-    iso.add_fp(BytesIO(barstr), len(barstr), '/DIR1/BAR.;1', udf_path='/dir1/bar')
+    iso.add_fp(io.BytesIO(barstr), len(barstr), '/DIR1/BAR.;1', udf_path='/dir1/bar')
 
     do_a_test(iso, check_udf_onefile_onedirwithfile)
 
@@ -5230,9 +5225,9 @@ def test_new_udf_get_invalid():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.get_file_from_iso_fp(out, udf_path='/foo/some')
     assert(str(excinfo.value) == 'Could not find path')
@@ -5244,7 +5239,7 @@ def test_new_zero_byte_hard_link():
     iso.new()
 
     foostr = b''
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/BAR.;1')
 
     do_a_test(iso, check_zero_byte_hard_link)
@@ -5256,7 +5251,7 @@ def test_new_udf_zero_byte_hard_link():
     iso.new(udf='2.60')
 
     foostr = b''
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
     iso.add_hard_link(udf_old_path='/foo', udf_new_path='/bar')
 
     do_a_test(iso, check_udf_zero_byte_hard_link)
@@ -5268,7 +5263,7 @@ def test_new_unicode_name():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/F__O.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/F__O.;1')
 
     do_a_test(iso, check_unicode_name)
 
@@ -5279,7 +5274,7 @@ def test_new_unicode_name_isolevel4():
     iso.new(interchange_level=4)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/föo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/föo')
 
     do_a_test(iso, check_unicode_name_isolevel4)
 
@@ -5290,7 +5285,7 @@ def test_new_unicode_name_joliet():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/F__O.;1', joliet_path='/föo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/F__O.;1', joliet_path='/föo')
 
     do_a_test(iso, check_unicode_name_joliet)
 
@@ -5301,7 +5296,7 @@ def test_new_unicode_name_udf():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/F__O.;1', udf_path='/föo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/F__O.;1', udf_path='/föo')
 
     do_a_test(iso, check_unicode_name_udf)
 
@@ -5312,7 +5307,7 @@ def test_new_unicode_name_two_byte():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/F___O.;1')
 
     do_a_test(iso, check_unicode_name_two_byte)
 
@@ -5323,7 +5318,7 @@ def test_new_unicode_name_two_byte_isolevel4():
     iso.new(interchange_level=4)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/fᴔo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/fᴔo')
 
     do_a_test(iso, check_unicode_name_two_byte_isolevel4)
 
@@ -5334,7 +5329,7 @@ def test_new_unicode_name_two_byte_joliet():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1', joliet_path='/fᴔo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/F___O.;1', joliet_path='/fᴔo')
 
     do_a_test(iso, check_unicode_name_two_byte_joliet)
 
@@ -5345,7 +5340,7 @@ def test_new_unicode_name_two_byte_udf():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1', udf_path='/fᴔo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/F___O.;1', udf_path='/fᴔo')
 
     do_a_test(iso, check_unicode_name_two_byte_udf)
 
@@ -5356,7 +5351,7 @@ def test_new_unicode_name_two_byte_isolevel4_list_children():
     iso.new(interchange_level=4)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/fᴔo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/fᴔo')
 
     full_path = None
     for child in iso.list_children(iso_path='/'):
@@ -5374,7 +5369,7 @@ def test_new_unicode_name_two_byte_joliet_list_children():
     iso.new(joliet=3)
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1', joliet_path='/fᴔo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/F___O.;1', joliet_path='/fᴔo')
 
     full_path = None
     for child in iso.list_children(joliet_path='/'):
@@ -5392,7 +5387,7 @@ def test_new_unicode_name_two_byte_udf_list_children():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1', udf_path='/fᴔo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/F___O.;1', udf_path='/fᴔo')
 
     full_path = None
     for child in iso.list_children(udf_path='/'):
@@ -5421,12 +5416,12 @@ def test_new_udf_get_symlink_file():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.add_symlink('/BAR.;1', udf_symlink_path='/bar', udf_target='/foo')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.get_file_from_iso_fp(BytesIO(), udf_path='/bar')
+        iso.get_file_from_iso_fp(io.BytesIO(), udf_path='/bar')
     assert(str(excinfo.value) == 'Can only write out a file')
 
     iso.close()
@@ -5436,7 +5431,7 @@ def test_new_udf_unicode_symlink():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/F___O.;1', udf_path='/fᴔo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/F___O.;1', udf_path='/fᴔo')
 
     iso.add_symlink('/BAR.;1', udf_symlink_path='/bar', udf_target='fᴔo')
 
@@ -5449,7 +5444,7 @@ def test_new_udf_bad_tag_location():
     iso = pycdlib.PyCdlib()
     iso.new(udf='2.60')
 
-    out = BytesIO()
+    out = io.BytesIO()
     iso.write_fp(out)
 
     iso.close()
@@ -5480,11 +5475,11 @@ def test_new_eltorito_rm_multi_boot():
     iso.new()
 
     bootstr = b'foo\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/FOO.;1')
     iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1')
 
     boot2str = b'boot2\n'
-    iso.add_fp(BytesIO(boot2str), len(boot2str), '/BOOT2.;1')
+    iso.add_fp(io.BytesIO(boot2str), len(boot2str), '/BOOT2.;1')
     iso.add_eltorito('/BOOT2.;1', '/BOOT.CAT;1')
 
     iso.rm_eltorito()
@@ -5533,10 +5528,10 @@ def test_new_walk_iso():
     iso.add_directory('/DIR1')
     iso.add_directory('/DIR1/SUBDIR1')
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR1/FOO.;1')
 
     iso.add_directory('/DIR2')
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR2/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR2/FOO.;1')
 
     iso.add_directory('/DIR3')
     iso.add_directory('/DIR3/SUBDIR3')
@@ -5567,10 +5562,10 @@ def test_new_walk_rr():
     iso.add_directory('/DIR1', rr_name='dir1')
     iso.add_directory('/DIR1/SUBDIR1', rr_name='subdir1')
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', rr_name='foo')
 
     iso.add_directory('/DIR2', rr_name='dir2')
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR2/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR2/FOO.;1', rr_name='foo')
 
     iso.add_directory('/DIR3', rr_name='dir3')
     iso.add_directory('/DIR3/SUBDIR3', rr_name='subdir3')
@@ -5601,10 +5596,10 @@ def test_new_walk_joliet():
     iso.add_directory('/DIR1', joliet_path='/dir1')
     iso.add_directory('/DIR1/SUBDIR1', joliet_path='/dir1/subdir1')
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', joliet_path='/dir1/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', joliet_path='/dir1/foo')
 
     iso.add_directory('/DIR2', joliet_path='/dir2')
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR2/FOO.;1', joliet_path='/dir2/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR2/FOO.;1', joliet_path='/dir2/foo')
 
     iso.add_directory('/DIR3', joliet_path='/dir3')
     iso.add_directory('/DIR3/SUBDIR3', joliet_path='/dir3/subdir3')
@@ -5635,10 +5630,10 @@ def test_new_walk_udf():
     iso.add_directory('/DIR1', udf_path='/dir1')
     iso.add_directory('/DIR1/SUBDIR1', udf_path='/dir1/subdir1')
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', udf_path='/dir1/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', udf_path='/dir1/foo')
 
     iso.add_directory('/DIR2', udf_path='/dir2')
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR2/FOO.;1', udf_path='/dir2/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR2/FOO.;1', udf_path='/dir2/foo')
 
     iso.add_directory('/DIR3', udf_path='/dir3')
     iso.add_directory('/DIR3/SUBDIR3', udf_path='/dir3/subdir3')
@@ -5743,10 +5738,10 @@ def test_new_walk_iso_remove_dirlist_entry():
     iso.add_directory('/DIR1')
     iso.add_directory('/DIR1/SUBDIR1')
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR1/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR1/FOO.;1')
 
     iso.add_directory('/DIR2')
-    iso.add_fp(BytesIO(foostr), len(foostr), '/DIR2/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR2/FOO.;1')
 
     iso.add_directory('/DIR3')
     iso.add_directory('/DIR3/SUBDIR3')
@@ -5776,7 +5771,7 @@ def test_new_walk_filename():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         for dirname, dirlist, filelist in iso.walk(iso_path='/FOO.;1'):
@@ -5788,7 +5783,7 @@ def test_new_walk_udf_filename():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         for dirname, dirlist, filelist in iso.walk(udf_path='/foo'):
@@ -5811,7 +5806,7 @@ def test_new_open_file_from_iso_invalid_kwarg():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.open_file_from_iso(foo_path='/FOO.;1')
@@ -5824,7 +5819,7 @@ def test_new_open_file_from_iso_too_many_kwarg():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.open_file_from_iso(iso_path='/FOO.;1', udf_path='/foo')
@@ -5837,7 +5832,7 @@ def test_new_open_file_from_iso_too_few_kwarg():
     iso.new(udf='2.60')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.open_file_from_iso()
@@ -5850,7 +5845,7 @@ def test_new_open_file_from_iso_invalid_joliet():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.open_file_from_iso(joliet_path='/foo')
@@ -5863,7 +5858,7 @@ def test_new_open_file_from_iso_invalid_rr():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.open_file_from_iso(rr_path='/foo')
@@ -5876,7 +5871,7 @@ def test_new_open_file_from_iso_invalid_udf():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.open_file_from_iso(udf_path='/foo')
@@ -5937,7 +5932,7 @@ def test_new_open_file_from_iso_ctxt_manager():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         assert(infp.read() == b'foo\n')
@@ -5950,7 +5945,7 @@ def test_new_open_file_from_iso_past_eof():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         infp.seek(20)
@@ -5964,7 +5959,7 @@ def test_new_open_file_from_iso_single():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         assert(infp.read(1) == b'f')
@@ -5977,7 +5972,7 @@ def test_new_open_file_from_iso_past_half_past_eof():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         infp.seek(2)
@@ -5991,7 +5986,7 @@ def test_new_open_file_from_iso_readall():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         assert(infp.readall() == b'foo\n')
@@ -6004,7 +5999,7 @@ def test_new_open_file_from_iso_readall_past_eof():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         infp.seek(20)
@@ -6018,7 +6013,7 @@ def test_new_open_file_from_iso_readall_half_past_eof():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         infp.seek(2)
@@ -6032,7 +6027,7 @@ def test_new_open_file_from_iso_seek_invalid_offset():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -6046,7 +6041,7 @@ def test_new_open_file_from_iso_seek_invalid_whence():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -6060,7 +6055,7 @@ def test_new_open_file_from_iso_seek_whence_begin():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         infp.seek(1, whence=0)
@@ -6074,7 +6069,7 @@ def test_new_open_file_from_iso_seek_whence_negative_begin():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -6088,7 +6083,7 @@ def test_new_open_file_from_iso_seek_whence_begin_beyond_eof():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         infp.seek(10, whence=0)
@@ -6103,7 +6098,7 @@ def test_new_open_file_from_iso_seek_whence_curr():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         infp.seek(1, whence=1)
@@ -6120,7 +6115,7 @@ def test_new_open_file_from_iso_seek_whence_curr_before_start():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -6134,7 +6129,7 @@ def test_new_open_file_from_iso_seek_whence_curr_negative():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         assert(infp.readall() == b'foo\n')
@@ -6150,7 +6145,7 @@ def test_new_open_file_from_iso_seek_whence_end():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         infp.seek(-2, whence=2)
@@ -6165,7 +6160,7 @@ def test_new_open_file_from_iso_seek_whence_end_before_start():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -6179,7 +6174,7 @@ def test_new_open_file_from_iso_not_open():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         infp.close()
@@ -6215,7 +6210,7 @@ def test_new_open_file_from_iso_length():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         assert(infp.length() == 4)
@@ -6227,7 +6222,7 @@ def test_new_open_file_from_iso_readable():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         assert(infp.readable())
@@ -6239,7 +6234,7 @@ def test_new_open_file_from_iso_seekable():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         assert(infp.seekable())
@@ -6251,7 +6246,7 @@ def test_new_open_file_from_iso_readinto():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         arr = bytearray(4)
@@ -6265,7 +6260,7 @@ def test_new_open_file_from_iso_readinto_partial():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         arr = bytearray(2)
@@ -6281,7 +6276,7 @@ def test_new_open_file_from_iso_readinto_past_eof():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
         infp.seek(4)
@@ -6296,15 +6291,15 @@ def test_new_udf_cyrillic():
     iso.new(udf='2.60')
 
     teststr = b''
-    iso.add_fp(BytesIO(teststr), len(teststr), '/TEST.TXT;1', udf_path='/test.txt')
+    iso.add_fp(io.BytesIO(teststr), len(teststr), '/TEST.TXT;1', udf_path='/test.txt')
 
     iso.add_directory('/__', udf_path='/РЭ')
     iso.add_directory('/__/PORT', udf_path='/РЭ/Port')
     iso.add_directory('/__/________', udf_path='/РЭ/Руководства')
 
-    iso.add_fp(BytesIO(teststr), len(teststr), '/__/PORT/________.TXT;1', udf_path='/РЭ/Port/виртуальный порт.txt')
+    iso.add_fp(io.BytesIO(teststr), len(teststr), '/__/PORT/________.TXT;1', udf_path='/РЭ/Port/виртуальный порт.txt')
 
-    iso.add_fp(BytesIO(teststr), len(teststr), '/__/________/________.TXT;1', udf_path='/РЭ/Руководства/Руководство по.txt')
+    iso.add_fp(io.BytesIO(teststr), len(teststr), '/__/________/________.TXT;1', udf_path='/РЭ/Руководства/Руководство по.txt')
 
     do_a_test(iso, check_udf_unicode)
 
@@ -6316,7 +6311,7 @@ def test_new_eltorito_get_bootcat():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     do_a_test(iso, check_eltorito_get_bootcat)
@@ -6329,7 +6324,7 @@ def test_new_eltorito_invalid_platform_id():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', None, None, None, 0xff)
     assert(str(excinfo.value) == 'Invalid platform ID (must be one of 0, 1, 2, or 0xef)')
@@ -6342,7 +6337,7 @@ def test_new_eltorito_uefi():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', None, None, None, 0xef)
 
     do_a_test(iso, check_eltorito_uefi)
@@ -6376,7 +6371,7 @@ def test_new_open_file_from_iso_eltorito_boot_catalog():
     iso.new()
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
     iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -6391,7 +6386,7 @@ def test_new_add_fp_all_none():
 
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_fp(BytesIO(foostr), len(foostr))
+        iso.add_fp(io.BytesIO(foostr), len(foostr))
     assert(str(excinfo.value) == "At least one of 'iso_path', 'joliet_path', or 'udf_path' must be provided")
 
     iso.close()
@@ -6402,7 +6397,7 @@ def test_new_rm_joliet_only():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     iso.rm_file(joliet_path='/foo')
 
@@ -6416,7 +6411,7 @@ def test_new_rm_udf_only():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.rm_file(udf_path='/foo')
 
@@ -6429,7 +6424,7 @@ def test_new_udf_zero_byte_rm_file():
     iso.new(udf='2.60')
 
     foostr = b''
-    iso.add_fp(BytesIO(foostr), len(foostr), udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), udf_path='/foo')
 
     iso.rm_file(udf_path='/foo')
 
@@ -6442,7 +6437,7 @@ def test_new_rm_file_no_udf():
     iso.new(joliet=3)
 
     foostr = b''
-    iso.add_fp(BytesIO(foostr), len(foostr), joliet_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), joliet_path='/foo')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.rm_file(udf_path='/foo')
@@ -6469,7 +6464,7 @@ def test_new_eltorito_udf_rm_eltorito():
 
     # Add a new file.
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 
     iso.add_eltorito('/FOO.;1', '/BOOT.CAT;1')
 
@@ -6485,11 +6480,11 @@ def test_new_udf_eltorito_multi_boot_rm_file():
     iso.new(interchange_level=4, udf='2.60')
 
     bootstr = b'boot\n'
-    iso.add_fp(BytesIO(bootstr), len(bootstr), '/boot', udf_path='/boot')
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/boot', udf_path='/boot')
     iso.add_eltorito('/boot', '/boot.cat')
 
     boot2str = b'boot2\n'
-    iso.add_fp(BytesIO(boot2str), len(boot2str), '/boot2', udf_path='/boot2')
+    iso.add_fp(io.BytesIO(boot2str), len(boot2str), '/boot2', udf_path='/boot2')
     iso.add_eltorito('/boot2', '/boot.cat')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -6503,7 +6498,7 @@ def test_new_rr_file_mode():
     iso.new(rock_ridge='1.09')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     assert(iso.file_mode(rr_path='/foo') == 0o0100444)
 
@@ -6521,7 +6516,7 @@ def test_new_rr_file_mode_bad_kwarg():
     iso.new(rock_ridge='1.09')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.file_mode(foo_path='/foo')
@@ -6534,7 +6529,7 @@ def test_new_rr_file_mode_multiple_kwarg():
     iso.new(rock_ridge='1.09')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.file_mode(rr_path='/foo', iso_path='/FOO.;1')
@@ -6547,7 +6542,7 @@ def test_new_rr_file_mode_not_rr():
     iso.new()
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.file_mode(rr_path='/foo')
@@ -6583,7 +6578,7 @@ def test_new_isolevel4_deep_directory():
     iso.add_directory('/dir1/dir2/dir3/dir4/dir5/dir6/dir7')
 
     foostr = b'foo\n'
-    iso.add_fp(BytesIO(foostr), len(foostr), '/dir1/dir2/dir3/dir4/dir5/dir6/dir7/foo')
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/dir1/dir2/dir3/dir4/dir5/dir6/dir7/foo')
 
     do_a_test(iso, check_isolevel4_deep_directory)
 

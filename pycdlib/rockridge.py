@@ -16,8 +16,6 @@
 
 """Classes and utilities to support Rock Ridge extensions."""
 
-from __future__ import absolute_import
-
 import bisect
 import struct
 
@@ -42,7 +40,7 @@ EXT_DES_112 = b'THE IEEE P1282 PROTOCOL PROVIDES SUPPORT FOR POSIX FILE SYSTEM S
 EXT_SRC_112 = b'PLEASE CONTACT THE IEEE STANDARDS DEPARTMENT, PISCATAWAY, NJ, USA FOR THE P1282 SPECIFICATION'
 
 
-class RRSPRecord(object):
+class RRSPRecord:
     """
     A class that represents a Rock Ridge Sharing Protocol record.  This record
     indicates that the sharing protocol is in use, and how many bytes to skip
@@ -130,7 +128,7 @@ class RRSPRecord(object):
         return 7
 
 
-class RRRRRecord(object):
+class RRRRRecord:
     """
     A class that represents a Rock Ridge Rock Ridge record.  This optional
     record indicates which other Rock Ridge fields are present.
@@ -245,7 +243,7 @@ class RRRRRecord(object):
         return 5
 
 
-class RRCERecord(object):
+class RRCERecord:
     """
     A class that represents a Rock Ridge Continuation Entry record.  This
     record represents additional information that did not fit in the standard
@@ -401,7 +399,7 @@ class RRCERecord(object):
         return 28
 
 
-class RRPXRecord(object):
+class RRPXRecord:
     """
     A class that represents a Rock Ridge POSIX File Attributes record.  This
     record contains information about the POSIX file mode, file links,
@@ -554,7 +552,7 @@ class RRPXRecord(object):
         raise pycdlibexception.PyCdlibInternalError('Invalid rr_version')
 
 
-class RRERRecord(object):
+class RRERRecord:
     """A class that represents a Rock Ridge Extensions Reference record."""
     __slots__ = ('_initialized', 'ext_id', 'ext_des', 'ext_src', 'ext_ver')
 
@@ -664,7 +662,7 @@ class RRERRecord(object):
         return 8 + len(ext_id) + len(ext_des) + len(ext_src)
 
 
-class RRESRecord(object):
+class RRESRecord:
     """A class that represents a Rock Ridge Extension Selector record."""
     __slots__ = ('_initialized', 'extension_sequence')
 
@@ -747,7 +745,7 @@ class RRESRecord(object):
         return 5
 
 
-class RRPNRecord(object):
+class RRPNRecord:
     """
     A class that represents a Rock Ridge POSIX Device Number record.  This
     record represents a device major and minor special file.
@@ -851,7 +849,7 @@ class RRPNRecord(object):
         return 20
 
 
-class RRSLRecord(object):
+class RRSLRecord:
     """
     A class that represents a Rock Ridge Symbolic Link record.  This record
     represents some or all of a symbolic link.  For a symbolic link, Rock Ridge
@@ -861,7 +859,7 @@ class RRSLRecord(object):
     """
     __slots__ = ('_initialized', 'symlink_components', 'flags')
 
-    class Component(object):
+    class Component:
         """A class that represents one component of a Symbolic Link Record."""
         __slots__ = ('flags', 'curr_length', 'data')
 
@@ -1261,7 +1259,7 @@ class RRSLRecord(object):
         return length
 
 
-class RRALRecord(object):
+class RRALRecord:
     """
     A class that represents an Arbitrary Attribute Interchange Protocol record.
     This is an unoffical extension by libisofs: https://dev.lovelyhq.com/libburnia/libisofs/src/commit/d297ce3aed5935e469bb108a36b7d6e31763a075/doc/susp_aaip_2_0.txt
@@ -1271,7 +1269,7 @@ class RRALRecord(object):
     """
     __slots__ = ('_initialized', 'flags', 'components')
 
-    class Component(object):
+    class Component:
         """A class that represents one component of an Arbitrary Attribute."""
         __slots__ = ('flags', 'curr_length', 'data')
 
@@ -1544,7 +1542,7 @@ class RRALRecord(object):
         return length
 
 
-class RRNMRecord(object):
+class RRNMRecord:
     """A class that represents a Rock Ridge Alternate Name record."""
     __slots__ = ('_initialized', 'posix_name_flags', 'posix_name')
 
@@ -1652,7 +1650,7 @@ class RRNMRecord(object):
         return 5 + len(rr_name)
 
 
-class RRCLRecord(object):
+class RRCLRecord:
     """
     A class that represents a Rock Ridge Child Link record.  This record
     represents the logical block where a deeply nested directory was relocated
@@ -1760,7 +1758,7 @@ class RRCLRecord(object):
         return 12
 
 
-class RRPLRecord(object):
+class RRPLRecord:
     """
     A class that represents a Rock Ridge Parent Link record.  This record
     represents the logical block where a deeply nested directory was located
@@ -1867,7 +1865,7 @@ class RRPLRecord(object):
         return 12
 
 
-class RRTFRecord(object):
+class RRTFRecord:
     """
     A class that represents a Rock Ridge Time Stamp record.  This record
     represents the creation timestamp, the access time timestamp, the
@@ -2009,7 +2007,7 @@ class RRTFRecord(object):
         return 5 + tf_each_size * tf_num
 
 
-class RRSFRecord(object):
+class RRSFRecord:
     """
     A class that represents a Rock Ridge Sparse File record.  This record
     represents the full file size of a sparsely-populated file.
@@ -2138,7 +2136,7 @@ class RRSFRecord(object):
         raise pycdlibexception.PyCdlibInternalError('Invalid rr_version')
 
 
-class RRRERecord(object):
+class RRRERecord:
     """
     A class that represents a Rock Ridge Relocated Directory record.  This
     record is used to mark an entry as having been relocated because it was
@@ -2224,7 +2222,7 @@ class RRRERecord(object):
         return 4
 
 
-class RRSTRecord(object):
+class RRSTRecord:
     """
     A class that represents a Rock Ridge System Terminator record.  This
     record is used to terminate the SUSP/Rock Ridge records in a Directory
@@ -2310,7 +2308,7 @@ class RRSTRecord(object):
         return 4
 
 
-class RRPDRecord(object):
+class RRPDRecord:
     """
     A class that represents a Rock Ridge Platform Dependent record.  This
     record is used to add platform-specific information to a Directory
@@ -2395,7 +2393,7 @@ class RRPDRecord(object):
         return 4 + len(padding)
 
 
-class RockRidgeEntries(object):
+class RockRidgeEntries:
     """
     A simple class container to hold a long list of possible Rock Ridge
     records.
@@ -2436,7 +2434,7 @@ class RockRidgeEntries(object):
 # than 8.3.  Rock Ridge depends on the System Use and Sharing Protocol (SUSP),
 # which defines some standards on how to use the System Area.
 
-class RockRidge(object):
+class RockRidge:
     """A class representing Rock Ridge entries."""
     __slots__ = ('_initialized', 'dr_entries', 'ce_entries', 'cl_to_moved_dr',
                  'moved_to_cl_dr', 'parent_link', 'rr_version', 'ce_block',
@@ -3586,7 +3584,7 @@ class RockRidge(object):
         self.ce_block = block
 
 
-class RockRidgeContinuationEntry(object):
+class RockRidgeContinuationEntry:
     """
     A class representing one 'abstract' Rock Ridge Continuation Entry.
     These entries are strictly for keeping tabs of the offset and size
@@ -3629,7 +3627,7 @@ class RockRidgeContinuationEntry(object):
         return self._offset < other.offset
 
 
-class RockRidgeContinuationBlock(object):
+class RockRidgeContinuationBlock:
     """
     A class representing one 'abstract' Rock Ridge Continuation Block.
     A Continuation Block is one extent holding many Rock Ridge Continuation

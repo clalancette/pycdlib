@@ -21,8 +21,6 @@ The main code for the pycdlib-extract-files tool, which can extract all or a
 subset of files from an ISO.
 """
 
-from __future__ import print_function
-
 import argparse
 import collections
 import os

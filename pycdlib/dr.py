@@ -18,8 +18,6 @@
 The class to support ISO9660 Directory Records.
 """
 
-from __future__ import absolute_import
-
 import bisect
 import struct
 
@@ -31,13 +29,13 @@ from pycdlib import utils
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import BinaryIO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
+    from typing import Any, IO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
     # NOTE: these imports have to be here to avoid circular deps
     from pycdlib import headervd  # NOQA pylint: disable=unused-import
     from pycdlib import path_table_record  # NOQA pylint: disable=unused-import
 
 
-class XARecord(object):
+class XARecord:
     """
     A class that represents an ISO9660 Extended Attribute record as defined
     in the Philips Yellow Book standard.
@@ -149,7 +147,7 @@ class XARecord(object):
         return 14
 
 
-class DirectoryRecord(object):
+class DirectoryRecord:
     """A class that represents an ISO9660 directory record."""
     __slots__ = ('initialized', 'new_extent_loc', 'ptr', 'extents_to_here',
                  'offset_to_here', 'data_continuation', 'vd', 'children',
@@ -1190,7 +1188,7 @@ class DirectoryRecord(object):
 
     @property
     def data_fp(self):
-        # type: () -> Optional[Union[BinaryIO, str]]
+        # type: () -> Optional[Union[IO[Any], str]]
         """Backwards compatibility property for 'data_fp'."""
         if self.inode is None:
             return None

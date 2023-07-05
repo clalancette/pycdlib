@@ -1,14 +1,9 @@
-from __future__ import absolute_import
-
-import pytest
 import os
 import sys
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
 import struct
 import time
+
+import pytest
 
 prefix = '.'
 for i in range(0, 3):

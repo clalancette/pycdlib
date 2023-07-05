@@ -16,20 +16,18 @@
 
 """PyCdlib Inode class."""
 
-from __future__ import absolute_import
-
 from pycdlib import pycdlibexception
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import BinaryIO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
+    from typing import Any, BinaryIO, IO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
     # NOTE: this import has to be here to avoid circular deps
     from pycdlib import dr  # NOQA pylint: disable=unused-import
     from pycdlib import eltorito  # NOQA pylint: disable=unused-import
     from pycdlib import udf  # NOQA pylint: disable=unused-import
 
 
-class Inode(object):
+class Inode:
     """
     A class that represents an inode, the pointer to a piece of data
     (not metadata) on an ISO.
@@ -52,7 +50,7 @@ class Inode(object):
         self.new_extent_loc = -1
 
     def new(self, length, fp, manage_fp, offset):
-        # type: (int, Union[BinaryIO, str], bool, int) -> None
+        # type: (int, Union[IO[Any], str], bool, int) -> None
         """
         Initialize a new Inode.
 
@@ -74,7 +72,7 @@ class Inode(object):
         self._initialized = True
 
     def parse(self, extent, length, fp, log_block_size):
-        # type: (int, int, BinaryIO, int) -> None
+        # type: (int, int, IO[Any], int) -> None
         """
         Parse an existing Inode.  This just saves off the extent for later use.
 
@@ -179,7 +177,7 @@ class Inode(object):
         self.fp_offset = 0
 
 
-class InodeOpenData(object):
+class InodeOpenData:
     """A class to be a contextmanager for opening data on a DirectoryRecord object."""
     __slots__ = ('ino', 'logical_block_size', 'data_fp')
 

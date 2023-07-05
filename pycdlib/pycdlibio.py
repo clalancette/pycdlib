@@ -16,11 +16,7 @@
 
 """PyCdlibIO class."""
 
-from __future__ import absolute_import
-
-import array
 import io
-import sys
 
 from pycdlib import inode
 from pycdlib import pycdlibexception
@@ -32,10 +28,6 @@ if False:  # pylint: disable=using-constant-test
     from mmap import mmap  # NOQA pylint: disable=unused-import
     import pickle  # NOQA pylint: disable=unused-import
     from typing import Any, Optional, Union  # NOQA pylint: disable=unused-import
-
-have_py_3 = True
-if sys.version_info.major == 2:
-    have_py_3 = False
 
 
 class PyCdlibIO(io.RawIOBase):
@@ -120,23 +112,12 @@ class PyCdlibIO(io.RawIOBase):
 
         readsize = self._length - self._offset
         if readsize > 0:
-            if have_py_3:
-                mv = memoryview(b)
-                m = mv.cast('B')
-                readsize = min(readsize, len(m))
-                data = self._fp.read(readsize)
-                n = len(data)
-                m[:n] = data
-            else:
-                readsize = min(readsize, len(b))  # type: ignore
-                data = self._fp.read(readsize)
-                n = len(data)
-                try:
-                    b[:n] = data  # type: ignore
-                except TypeError as err:
-                    if not isinstance(b, array.array):
-                        raise err
-                    b[:n] = array.array(b'b', data)  # type: ignore
+            mv = memoryview(b)
+            m = mv.cast('B')
+            readsize = min(readsize, len(m))
+            data = self._fp.read(readsize)
+            n = len(data)
+            m[:n] = data
         else:
             n = 0
 

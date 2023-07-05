@@ -21,8 +21,6 @@ The main code for the pycdlib-explorer tool, which can open, read, write,
 and otherwise manipulate ISOs in an interactive way.
 """
 
-from __future__ import print_function
-
 import cmd
 import collections
 import os

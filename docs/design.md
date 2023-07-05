@@ -12,7 +12,6 @@ The original motivation for writing the library was to replace the subprocess ca
 * Support for all of the common optical disk filesystems and their extensions.
 * Compatibility with the large corpus of existing ISOs (this implies reading ISOs that violate the standards).
 * Relatively simple API.
-* Python 2 and Python 3 compatibility.
 * Expansive test coverage.
 * In-place modification of existing ISOs, something that none of the other libraries support.
 * Performance approaching that of genisoimage.

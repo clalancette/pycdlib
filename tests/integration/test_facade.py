@@ -1,14 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import
-
-import pytest
+import io
 import os
 import sys
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+
+import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
@@ -24,7 +20,7 @@ def test_facade_iso9660_get_file_from_iso(tmpdir):
     facade = iso.get_iso9660_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     foofile = os.path.join(str(tmpdir), 'foo')
     facade.get_file_from_iso(foofile, '/FOO.;1')
@@ -41,9 +37,9 @@ def test_facade_iso9660_get_file_from_iso_fp():
     facade = iso.get_iso9660_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/FOO.;1')
 
     assert(out.getvalue() == b'foo\n')
@@ -57,9 +53,9 @@ def test_facade_iso9660_add_fp():
     facade = iso.get_iso9660_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/FOO.;1')
 
     assert(out.getvalue() == b'foo\n')
@@ -73,9 +69,9 @@ def test_facade_iso9660_add_fp_with_rr():
     facade = iso.get_iso9660_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/FOO.;1')
 
     assert(out.getvalue() == b'foo\n')
@@ -90,7 +86,7 @@ def test_facade_iso9660_add_fp_with_rr_bad_name():
 
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        facade.add_fp(BytesIO(foostr), len(foostr), 'FOO.;1')
+        facade.add_fp(io.BytesIO(foostr), len(foostr), 'FOO.;1')
     assert(str(excinfo.value) == "iso_path must start with '/'")
 
     iso.close()
@@ -107,7 +103,7 @@ def test_facade_iso9660_add_file(tmpdir):
 
     facade.add_file(str(testout), '/FOO.;1')
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/FOO.;1')
 
     assert(out.getvalue() == b'foo\n')
@@ -126,7 +122,7 @@ def test_facade_iso9660_add_file_with_rr(tmpdir):
 
     facade.add_file(str(testout), '/FOO.;1')
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/FOO.;1')
 
     assert(out.getvalue() == b'foo\n')
@@ -166,7 +162,7 @@ def test_facade_iso9660_rm_file():
     facade = iso.get_iso9660_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     rec = facade.get_record('/')
     assert(len(rec.children) == 3)
 
@@ -203,7 +199,7 @@ def test_facade_iso9660_list_children():
     facade.add_directory('/DIR1')
 
     bootstr = b'boot\n'
-    facade.add_fp(BytesIO(bootstr), len(bootstr), '/DIR1/BOOT.;1')
+    facade.add_fp(io.BytesIO(bootstr), len(bootstr), '/DIR1/BOOT.;1')
 
     full_path = None
     for child in facade.list_children('/DIR1'):
@@ -253,7 +249,7 @@ def test_facade_iso9660_open_file_from_iso():
     facade = iso.get_iso9660_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     with facade.open_file_from_iso('/FOO.;1') as infp:
         assert(infp.read() == b'foo\n')
@@ -276,7 +272,7 @@ def test_facade_joliet_get_file_from_iso(tmpdir):
     facade = iso.get_joliet_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
 
     foofile = os.path.join(str(tmpdir), 'foo')
     facade.get_file_from_iso(foofile, '/foo')
@@ -293,9 +289,9 @@ def test_facade_joliet_get_file_from_iso_fp():
     facade = iso.get_joliet_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/foo')
 
     assert(out.getvalue() == b'foo\n')
@@ -309,9 +305,9 @@ def test_facade_joliet_add_fp():
     facade = iso.get_joliet_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/foo')
 
     assert(out.getvalue() == b'foo\n')
@@ -330,7 +326,7 @@ def test_facade_joliet_add_file(tmpdir):
 
     facade.add_file(str(testout), '/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/foo')
 
     assert(out.getvalue() == b'foo\n')
@@ -357,7 +353,7 @@ def test_facade_joliet_rm_file():
     facade = iso.get_joliet_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
     rec = facade.get_record('/')
     assert(len(rec.children) == 3)
 
@@ -394,7 +390,7 @@ def test_facade_joliet_list_children():
     facade.add_directory('/dir1')
 
     bootstr = b'boot\n'
-    facade.add_fp(BytesIO(bootstr), len(bootstr), '/dir1/boot')
+    facade.add_fp(io.BytesIO(bootstr), len(bootstr), '/dir1/boot')
 
     full_path = None
     for child in facade.list_children('/dir1'):
@@ -444,7 +440,7 @@ def test_facade_joliet_open_file_from_iso():
     facade = iso.get_joliet_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
 
     with facade.open_file_from_iso('/foo') as infp:
         assert(infp.read() == b'foo\n')
@@ -467,7 +463,7 @@ def test_facade_rock_ridge_get_file_from_iso(tmpdir):
     facade = iso.get_rock_ridge_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo', 0o040555)
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo', 0o040555)
 
     foofile = os.path.join(str(tmpdir), 'foo')
     facade.get_file_from_iso(foofile, '/foo')
@@ -484,9 +480,9 @@ def test_facade_rock_ridge_get_file_from_iso_fp():
     facade = iso.get_rock_ridge_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo', 0o040555)
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo', 0o040555)
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/foo')
 
     assert(out.getvalue() == b'foo\n')
@@ -500,9 +496,9 @@ def test_facade_rock_ridge_add_fp():
     facade = iso.get_rock_ridge_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo', 0o040555)
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo', 0o040555)
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/foo')
 
     assert(out.getvalue() == b'foo\n')
@@ -517,7 +513,7 @@ def test_facade_rock_ridge_add_fp_bad_filename():
 
     foostr = b'foo\n'
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        facade.add_fp(BytesIO(foostr), len(foostr), 'foo', 0o040555)
+        facade.add_fp(io.BytesIO(foostr), len(foostr), 'foo', 0o040555)
     assert(str(excinfo.value) == "rr_path must start with '/'")
 
     iso.close()
@@ -534,7 +530,7 @@ def test_facade_rock_ridge_add_file(tmpdir):
 
     facade.add_file(str(testout), '/foo', 0o040555)
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/foo')
 
     assert(out.getvalue() == b'foo\n')
@@ -561,7 +557,7 @@ def test_facade_rock_ridge_rm_file():
     facade = iso.get_rock_ridge_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo', 0o040555)
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo', 0o040555)
     rec = facade.get_record('/')
     assert(len(rec.children) == 3)
 
@@ -579,7 +575,7 @@ def test_facade_rock_ridge_rm_file_bad_filename():
     facade = iso.get_rock_ridge_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo', 0o040555)
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo', 0o040555)
     rec = facade.get_record('/')
     assert(len(rec.children) == 3)
 
@@ -596,7 +592,7 @@ def test_facade_rock_ridge_rm_file_root():
     facade = iso.get_rock_ridge_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo', 0o040555)
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo', 0o040555)
     rec = facade.get_record('/')
     assert(len(rec.children) == 3)
 
@@ -629,7 +625,7 @@ def test_facade_rock_ridge_rm_directory_root():
     facade = iso.get_rock_ridge_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo', 0o040555)
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo', 0o040555)
     rec = facade.get_record('/')
     assert(len(rec.children) == 3)
 
@@ -646,7 +642,7 @@ def test_facade_rock_ridge_add_symlink():
     facade = iso.get_rock_ridge_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo', 0o040555)
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo', 0o040555)
 
     facade.add_symlink('/sym', 'foo')
 
@@ -665,7 +661,7 @@ def test_facade_rock_ridge_list_children():
     facade.add_directory('/dir1', 0o040555)
 
     bootstr = b'boot\n'
-    facade.add_fp(BytesIO(bootstr), len(bootstr), '/dir1/boot', 0o040555)
+    facade.add_fp(io.BytesIO(bootstr), len(bootstr), '/dir1/boot', 0o040555)
 
     full_path = None
     for child in facade.list_children('/dir1'):
@@ -715,7 +711,7 @@ def test_facade_rock_ridge_open_file_from_iso():
     facade = iso.get_rock_ridge_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo', 0o040555)
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo', 0o040555)
 
     with facade.open_file_from_iso('/foo') as infp:
         assert(infp.read() == b'foo\n')
@@ -738,7 +734,7 @@ def test_facade_udf_get_file_from_iso(tmpdir):
     facade = iso.get_udf_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
 
     foofile = os.path.join(str(tmpdir), 'foo')
     facade.get_file_from_iso(foofile, '/foo')
@@ -755,9 +751,9 @@ def test_facade_udf_get_file_from_iso_fp():
     facade = iso.get_udf_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/foo')
 
     assert(out.getvalue() == b'foo\n')
@@ -771,9 +767,9 @@ def test_facade_udf_add_fp():
     facade = iso.get_udf_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/foo')
 
     assert(out.getvalue() == b'foo\n')
@@ -792,7 +788,7 @@ def test_facade_udf_add_file(tmpdir):
 
     facade.add_file(str(testout), '/foo')
 
-    out = BytesIO()
+    out = io.BytesIO()
     facade.get_file_from_iso_fp(out, '/foo')
 
     assert(out.getvalue() == b'foo\n')
@@ -819,7 +815,7 @@ def test_facade_udf_rm_file():
     facade = iso.get_udf_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
     rec = facade.get_record('/foo')
     assert(rec.is_file())
 
@@ -848,7 +844,7 @@ def test_facade_udf_add_symlink():
     facade = iso.get_udf_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
 
     facade.add_symlink('/sym', 'foo')
 
@@ -867,7 +863,7 @@ def test_facade_udf_list_children():
     facade.add_directory('/dir1')
 
     bootstr = b'boot\n'
-    facade.add_fp(BytesIO(bootstr), len(bootstr), '/dir1/boot')
+    facade.add_fp(io.BytesIO(bootstr), len(bootstr), '/dir1/boot')
 
     full_path = None
     for child in facade.list_children('/dir1'):
@@ -917,7 +913,7 @@ def test_facade_udf_open_file_from_iso():
     facade = iso.get_udf_facade()
 
     foostr = b'foo\n'
-    facade.add_fp(BytesIO(foostr), len(foostr), '/foo')
+    facade.add_fp(io.BytesIO(foostr), len(foostr), '/foo')
 
     with facade.open_file_from_iso('/foo') as infp:
         assert(infp.read() == b'foo\n')

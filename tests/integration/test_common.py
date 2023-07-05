@@ -1,21 +1,15 @@
 # -*- coding: utf-8 -*-
 
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
-import pytest
+import io
 import os
 import sys
 import struct
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import pycdlib
-
-have_py_3 = True
-if sys.version_info.major == 2:
-    have_py_3 = False
 
 # Technically, Rock Ridge doesn't impose a length limitation on NM (alternate
 # name) or SL (symlinks).  However, in practice, the Linux kernel (at least
@@ -440,7 +434,7 @@ def internal_check_dotdot_dir_record(dotdot_record, rr, rr_nlinks, xa, rr_onetwe
         assert(dotdot_record.rock_ridge.dr_entries.re_record == None)
 
 def internal_check_file_contents(iso, path, contents, which):
-    fout = BytesIO()
+    fout = io.BytesIO()
     if which == 'iso_path':
         iso.get_file_from_iso_fp(fout, iso_path=path)
     elif which == 'rr_path':
@@ -644,12 +638,8 @@ def internal_check_joliet_root_dir_record(jroot_dir_record, num_children,
 
 def internal_check_rr_longname(iso, dir_record, extent, letter):
     bytes_iso_name = letter.upper()*8 + b'.;1'
-    if have_py_3:
-        str_iso_path = '/' + bytes_iso_name.decode('ascii')
-        str_rr_path = '/' + letter.decode('ascii')*RR_MAX_FILENAME_LENGTH
-    else:
-        str_iso_path = '/' + bytes_iso_name.encode('ascii')
-        str_rr_path = '/' + letter.encode('ascii')*RR_MAX_FILENAME_LENGTH
+    str_iso_path = '/' + bytes_iso_name.decode('ascii')
+    str_rr_path = '/' + letter.decode('ascii')*RR_MAX_FILENAME_LENGTH
     internal_check_file(dir_record, name=bytes_iso_name, dr_len=None, loc=extent, datalen=3, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path=str_iso_path, contents=letter*2+b'\n', which='iso_path')
     # Now check rock ridge extensions.
@@ -1018,7 +1008,7 @@ def check_nofiles(iso, filesize):
 
     # Check to make sure accessing a missing file results in an exception.
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibException):
-        iso.get_file_from_iso_fp(BytesIO(), iso_path='/FOO.;1')
+        iso.get_file_from_iso_fp(io.BytesIO(), iso_path='/FOO.;1')
 
 def check_onefile(iso, filesize):
     assert(filesize == 51200)
@@ -3254,7 +3244,7 @@ def check_eltorito_hide_boot(iso, filesize):
     initial_entry_offset = iso.eltorito_boot_catalog.initial_entry.get_rba()
 
     # Re-render the output into a string.
-    myout = BytesIO()
+    myout = io.BytesIO()
     iso.write_fp(myout)
 
     # Now seek within the string to the right location.
@@ -4341,7 +4331,7 @@ def check_eltorito_bootlink(iso, filesize):
     initial_entry_offset = iso.eltorito_boot_catalog.initial_entry.get_rba()
 
     # Re-render the output into a string.
-    myout = BytesIO()
+    myout = io.BytesIO()
     iso.write_fp(myout)
 
     # Now seek within the string to the right location.

@@ -16,13 +16,6 @@
 
 """Various utilities for PyCdlib."""
 
-from __future__ import absolute_import
-
-try:
-    import cStringIO  # pylint: disable=import-error
-except ImportError:
-    pass
-
 import io
 import math
 import os
@@ -45,7 +38,7 @@ if sys.platform == "win32":
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    from typing import BinaryIO, Generator, List, Optional, Tuple  # NOQA pylint: disable=unused-import
+    from typing import Any, BinaryIO, Generator, IO, List, Optional, Tuple  # NOQA pylint: disable=unused-import
 
 
 def swab_32bit(x):
@@ -99,7 +92,7 @@ def ceiling_div(numer, denom):
 
 
 def copy_data_yield(data_length, blocksize, infp, outfp):
-    # type: (int, int, BinaryIO, BinaryIO) -> Generator
+    # type: (int, int, BinaryIO, IO[Any]) -> Generator
     """
     A utility function to copy data from the input file object to the output
     file object.
@@ -131,7 +124,7 @@ def copy_data_yield(data_length, blocksize, infp, outfp):
 
 
 def copy_data(data_length, blocksize, infp, outfp):
-    # type: (int, int, BinaryIO, BinaryIO) -> None
+    # type: (int, int, BinaryIO, IO[Any]) -> None
     """
     A utility function to copy data from the input file object to the output
     file object.
@@ -210,10 +203,7 @@ def normpath(path):
         elif new_comps:
             new_comps.pop()
     newpath = sep * initial_slashes + sep.join(new_comps)
-    if sys.version_info >= (3, 0):
-        newpath_bytes = newpath.encode('utf-8')
-    else:
-        newpath_bytes = newpath.decode('utf-8').encode('utf-8')
+    newpath_bytes = newpath.encode('utf-8')
     if not starts_with_slash(newpath_bytes):
         raise pycdlibexception.PyCdlibInvalidInput('Must be a path starting with /')
 
@@ -249,7 +239,7 @@ def gmtoffset_from_tm(tm, localtime):
 
 
 def zero_pad(fp, data_size, pad_size):
-    # type: (BinaryIO, int, int) -> int
+    # type: (IO[Any], int, int) -> int
     """
     A function to write padding out from data_size up to pad_size
     efficiently.
@@ -275,8 +265,8 @@ def starts_with_slash(path):
     # type: (bytes) -> bool
     """
     A function to determine if a path starts with a slash.  This is somewhat
-    difficult to do portably between Python2 and Python3 and with performance,
-    so we have a dedicated function for it.
+    difficult to do portably with performance, so we have a dedicated function
+    for it.
 
     Parameters:
      path - The path to determine if it starts with a slash
@@ -317,12 +307,7 @@ def file_object_supports_binary(fp):
     if hasattr(fp, 'mode'):
         return 'b' in fp.mode
 
-    # Python 3
-    if sys.version_info >= (3, 0):
-        return isinstance(fp, (io.RawIOBase, io.BufferedIOBase))
-
-    # Python 2
-    return isinstance(fp, (cStringIO.OutputType, cStringIO.InputType, io.RawIOBase, io.BufferedIOBase))
+    return isinstance(fp, (io.RawIOBase, io.BufferedIOBase))
 
 
 def truncate_basename(basename, iso_level, is_dir):
@@ -460,7 +445,7 @@ def mangle_dir_for_iso9660(orig, iso_level):
     return truncate_basename(orig, iso_level, True)
 
 
-class Win32RawDevice(object):
+class Win32RawDevice:
     """
     Class to read and seek a Windows Raw Device IO object without bother.
     It deals with getting the full size, allowing full access to all sectors,

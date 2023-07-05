@@ -1,14 +1,10 @@
-from __future__ import absolute_import
-
-import pytest
+import io
 import os
 import sys
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
 import struct
 import time
+
+import pytest
 
 prefix = '.'
 for i in range(0, 3):
@@ -51,8 +47,8 @@ def test_ceiling_div_nan():
         pycdlib.utils.ceiling_div(2048, 0)
 
 def test_copy_data():
-    infp = BytesIO()
-    outfp = BytesIO()
+    infp = io.BytesIO()
+    outfp = io.BytesIO()
 
     infp.write(b'\x00'*1)
     infp.seek(0)
@@ -62,8 +58,8 @@ def test_copy_data():
     assert(outfp.getvalue() == b'\x00')
 
 def test_copy_data_short():
-    infp = BytesIO()
-    outfp = BytesIO()
+    infp = io.BytesIO()
+    outfp = io.BytesIO()
 
     infp.write(b'\x00'*10)
     infp.seek(0)
@@ -155,17 +151,17 @@ def test_gmtoffset_from_tm_2023_rollover():
     restore_tz(oldtz)
 
 def test_zero_pad():
-    fp = BytesIO()
+    fp = io.BytesIO()
     pycdlib.utils.zero_pad(fp, 5, 10)
     assert(fp.getvalue() == b'\x00'*5)
 
 def test_zero_pad_no_pad():
-    fp = BytesIO()
+    fp = io.BytesIO()
     pycdlib.utils.zero_pad(fp, 5, 5)
     assert(fp.getvalue() == b'')
 
 def test_zero_pad_negative_pad():
-    fp = BytesIO()
+    fp = io.BytesIO()
     pycdlib.utils.zero_pad(fp, 5, 4)
     assert(fp.getvalue() == b'\x00'*3)
 
@@ -196,7 +192,7 @@ def test_split_path_trailing_slash():
     assert(pycdlib.utils.split_path(b'/foo/') == [b'foo', b''])
 
 def test_file_object_supports_binary_bytesio():
-    fp = BytesIO()
+    fp = io.BytesIO()
     assert(pycdlib.utils.file_object_supports_binary(fp))
 
 def test_truncate_basename_isolevel4():

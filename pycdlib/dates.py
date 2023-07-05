@@ -18,20 +18,15 @@
 Classes and utilities for ISO date support.
 """
 
-from __future__ import absolute_import
-
+import functools
 import struct
 import time
-try:
-    from functools import lru_cache
-except ImportError:
-    from pycdlib.backport_functools import lru_cache  # type: ignore
 
 from pycdlib import pycdlibexception
 from pycdlib import utils
 
 
-@lru_cache(maxsize=256)
+@functools.lru_cache(maxsize=256)
 def string_to_timestruct(input_string):
     # type: (bytes) -> time.struct_time
     """
@@ -59,7 +54,7 @@ def string_to_timestruct(input_string):
     return timestruct
 
 
-class DirectoryRecordDate(object):
+class DirectoryRecordDate:
     """
     A class to represent a Directory Record date as described in Ecma-119
     section 9.1.5.  The Directory Record date consists of the number of years
@@ -147,7 +142,7 @@ class DirectoryRecordDate(object):
             self.second != other.second or self.gmtoffset != other.gmtoffset
 
 
-class VolumeDescriptorDate(object):
+class VolumeDescriptorDate:
     """
     A class to represent a Volume Descriptor Date as described in Ecma-119
     section 8.4.26.1.  The Volume Descriptor Date consists of a year (from 1 to

@@ -21,38 +21,25 @@ A drop-in replacement program for the 'genisoimage' executable that uses
 PyCdlib under the hood.
 """
 
-from __future__ import print_function
-
 import argparse
 import collections
 import fileinput
 import fnmatch
+import io
 import os
 import sys
 import time
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
 
 import pycdlib
 
 ################################ MURMER3 HASH FUNCTIONS ##############################
 
-if sys.version_info >= (3, 0):
-    def xrange(a, b, c):
-        """An xrange that works for Python 3."""
-        return range(a, b, c)
 
-    def xencode(x):
-        """A version of encode that works for bytes, bytearrays, or strings."""
-        if isinstance(x, (bytearray, bytes)):
-            return x
-        return x.encode()
-else:
-    def xencode(x):
-        """The identity version of xencode for Python 2."""
+def xencode(x):
+    """A version of encode that works for bytes, bytearrays, or strings."""
+    if isinstance(x, (bytearray, bytes)):
         return x
+    return x.encode()
 
 
 def mm3hash(key, seed=0x0):
@@ -78,7 +65,7 @@ def mm3hash(key, seed=0x0):
     c2 = 0x1b873593
 
     # body
-    for block_start in xrange(0, nblocks * 4, 4):
+    for block_start in range(0, nblocks * 4, 4):
         # ??? big endian?
         k1 = key[block_start + 3] << 24 | key[block_start + 2] << 16 | key[block_start + 1] << 8 | key[block_start + 0]
 
@@ -163,7 +150,7 @@ def parse_file_list(thelist):
      Nothing.
     """
     for f in thelist:
-        with open(f, 'r') as infp:
+        with open(f, 'r', encoding='locale') as infp:
             for line in infp.xreadlines():
                 yield line.rstrip()
 
@@ -214,7 +201,7 @@ def build_udf_path(root, name):
     return intermediate + '/' + name
 
 
-class EltoritoEntry(object):
+class EltoritoEntry:
     """
     A class that represents a single El Torito entry on the ISO.  There may be
     more than one of these per-ISO, so each one is tracked separately.
@@ -505,7 +492,7 @@ def determine_eltorito_entries(args):
     return eltorito_entries
 
 
-class DirLevel(object):
+class DirLevel:
     """
     A class to hold information about one directory level of the directory
     hierarchy.  Each level has an iso_path, a joliet_path, and a set of
@@ -590,11 +577,11 @@ def main():
     eltorito_entries = determine_eltorito_entries(args)
 
     if args.quiet:
-        logfp = open(os.devnull, 'w')  # pylint: disable=consider-using-with
+        logfp = open(os.devnull, 'w', encoding='locale')  # pylint: disable=consider-using-with
     else:
         if args.log_file is not None:
             print('re-directing all messages to %s' % (args.log_file))
-            logfp = open(args.log_file, 'w')  # pylint: disable=consider-using-with
+            logfp = open(args.log_file, 'w', encoding='locale')  # pylint: disable=consider-using-with
         else:
             logfp = sys.stdout
 
@@ -653,7 +640,7 @@ def main():
         ignore_patterns.extend(('*~*', '*#*', '*.bak'))
 
     if args.print_size:
-        fp = BytesIO()
+        fp = io.BytesIO()
     else:
         if args.output is None:
             print('Output file must be specified (use -o)', file=logfp)
@@ -895,7 +882,7 @@ def main():
             else:
                 raise
 
-    class ProgressData(object):
+    class ProgressData:
         """
         A private class to hold onto the data from the last progress call.
         """

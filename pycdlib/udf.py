@@ -16,17 +16,11 @@
 
 """Classes to support UDF."""
 
-from __future__ import absolute_import
-
+import io
 import logging
 import random
 import struct
-import sys
 import time
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO  # pylint: disable=ungrouped-imports
 
 from pycdlib import pycdlibexception
 from pycdlib import utils
@@ -88,11 +82,6 @@ crc_ccitt_table = (0, 4129, 8258, 12387, 16516, 20645, 24774, 28903, 33032,
                    20053, 24180, 11923, 16050, 3793, 7920)
 
 
-have_py_3 = True
-if sys.version_info.major == 2:
-    have_py_3 = False
-
-
 _logger = logging.getLogger('pycdlib')
 
 
@@ -107,12 +96,8 @@ def crc_ccitt(data):
      The CCITT CRC of the data.
     """
     crc = 0
-    if have_py_3:
-        for x in data:
-            crc = crc_ccitt_table[x ^ ((crc >> 8) & 0xFF)] ^ ((crc << 8) & 0xFF00)
-    else:
-        for x in data:
-            crc = crc_ccitt_table[ord(x) ^ ((crc >> 8) & 0xFF)] ^ ((crc << 8) & 0xFF00)  # type: ignore
+    for x in data:
+        crc = crc_ccitt_table[x ^ ((crc >> 8) & 0xFF)] ^ ((crc << 8) & 0xFF00)
 
     return crc
 
@@ -120,10 +105,7 @@ def crc_ccitt(data):
 def _ostaunicode(src):
     # type: (str) -> bytes
     """Internal function to create an OSTA byte string from a source string."""
-    if have_py_3:
-        bytename = src
-    else:
-        bytename = src.decode('utf-8')  # type: ignore
+    bytename = src
 
     try:
         enc = bytename.encode('latin-1')
@@ -150,7 +132,7 @@ def _ostaunicode_zero_pad(src, fulllen):
     return byte_src + b'\x00' * (fulllen - 1 - len(byte_src)) + (struct.pack('=B', len(byte_src)))
 
 
-class BEAVolumeStructure(object):
+class BEAVolumeStructure:
     """
     A class representing a UDF Beginning Extended Area Volume Structure
     (ECMA-167, Part 2, 9.2).
@@ -255,7 +237,7 @@ class BEAVolumeStructure(object):
         self.new_extent_loc = extent
 
 
-class NSRVolumeStructure(object):
+class NSRVolumeStructure:
     """A class representing a UDF NSR Volume Structure (ECMA-167, Part 3, 9.1)."""
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'standard_ident')
@@ -366,7 +348,7 @@ class NSRVolumeStructure(object):
         self.new_extent_loc = extent
 
 
-class TEAVolumeStructure(object):
+class TEAVolumeStructure:
     """
     A class representing a UDF Terminating Extended Area Volume Structure
     (ECMA-167, Part 2, 9.3).
@@ -471,7 +453,7 @@ class TEAVolumeStructure(object):
         self.new_extent_loc = extent
 
 
-class UDFBootDescriptor(object):
+class UDFBootDescriptor:
     """A class representing a UDF Boot Descriptor (ECMA-167, Part 2, 9.4)."""
     __slots__ = ('_initialized', 'architecture_type', 'boot_identifier',
                  'boot_extent_loc', 'boot_extent_len', 'load_address',
@@ -634,19 +616,14 @@ def _compute_csum(data):
      The checksum.
     """
     csum = 0
-    if have_py_3:
-        for byte in data:
-            csum += byte
-        csum -= data[4]
-    else:
-        for byte in data:
-            csum += ord(byte)  # type: ignore
-        csum -= ord(data[4])  # type: ignore
+    for byte in data:
+        csum += byte
+    csum -= data[4]
 
     return csum % 256
 
 
-class UDFTag(object):
+class UDFTag:
     """A class representing a UDF Descriptor Tag (ECMA-167, Part 3, 7.2)."""
     __slots__ = ('_initialized', 'tag_ident', 'desc_version',
                  'tag_serial_number', 'tag_location', 'desc_crc_length')
@@ -766,7 +743,7 @@ class UDFTag(object):
             self.desc_crc_length == other.desc_crc_length
 
 
-class UDFAnchorVolumeStructure(object):
+class UDFAnchorVolumeStructure:
     """A class representing a UDF Anchor Volume Structure (ECMA-167, Part 3, 10.2)."""
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'main_vd', 'reserve_vd', 'desc_tag')
@@ -898,7 +875,7 @@ class UDFAnchorVolumeStructure(object):
         return self.main_vd.extent_location == other.main_vd.extent_location and self.reserve_vd.extent_location == other.reserve_vd.extent_location
 
 
-class UDFVolumeDescriptorPointer(object):
+class UDFVolumeDescriptorPointer:
     """A class representing a UDF Volume Descriptor Pointer (ECMA-167, Part 3, 10.3)."""
     __slots__ = ('initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_seqnum', 'next_vol_desc_seq_extent', 'desc_tag')
@@ -1014,7 +991,7 @@ class UDFVolumeDescriptorPointer(object):
         self.desc_tag.tag_location = new_location
 
 
-class UDFTimestamp(object):
+class UDFTimestamp:
     """A class representing a UDF timestamp (ECMA-167, Part 1, 7.3)."""
     __slots__ = ('_initialized', 'year', 'month', 'day', 'hour', 'minute',
                  'second', 'centiseconds', 'hundreds_microseconds',
@@ -1138,7 +1115,7 @@ class UDFTimestamp(object):
             self.timetype == other.timetype and self.tz == other.tz
 
 
-class UDFEntityID(object):
+class UDFEntityID:
     """A class representing a UDF Entity ID (ECMA-167, Part 1, 7.4)."""
     __slots__ = ('_initialized', 'flags', 'identifier', 'suffix')
 
@@ -1220,7 +1197,7 @@ class UDFEntityID(object):
         return self.flags == other.flags and self.identifier == other.identifier and self.suffix == other.suffix
 
 
-class UDFCharspec(object):
+class UDFCharspec:
     """A class representing a UDF charspec (ECMA-167, Part 1, 7.2.1)."""
     __slots__ = ('_initialized', 'set_type', 'set_information')
 
@@ -1300,7 +1277,7 @@ class UDFCharspec(object):
         return self.set_type == other.set_type and self.set_information == other.set_information
 
 
-class UDFExtentAD(object):
+class UDFExtentAD:
     """A class representing a UDF Extent Descriptor (ECMA-167, Part 3, 7.1)."""
     __slots__ = ('_initialized', 'extent_length', 'extent_location')
 
@@ -1374,7 +1351,7 @@ class UDFExtentAD(object):
         return self.extent_length == other.extent_length and self.extent_location == other.extent_location
 
 
-class UDFPrimaryVolumeDescriptor(object):
+class UDFPrimaryVolumeDescriptor:
     """A class representing a UDF Primary Volume Descriptor (ECMA-167, Part 3, 10.1)."""
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'desc_num', 'vol_ident', 'vol_set_ident',
@@ -1589,7 +1566,7 @@ class UDFPrimaryVolumeDescriptor(object):
             self.flags == other.flags
 
 
-class UDFImplementationUseVolumeDescriptorImplementationUse(object):
+class UDFImplementationUseVolumeDescriptorImplementationUse:
     """
     A class representing the Implementation Use field of the Implementation Use
     Volume Descriptor.
@@ -1686,7 +1663,7 @@ class UDFImplementationUseVolumeDescriptorImplementationUse(object):
             self.impl_use == other.impl_use
 
 
-class UDFImplementationUseVolumeDescriptor(object):
+class UDFImplementationUseVolumeDescriptor:
     """A class representing a UDF Implementation Use Volume Structure (ECMA-167, Part 3, 10.4)."""
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'impl_use', 'desc_tag', 'impl_ident')
@@ -1821,7 +1798,7 @@ class UDFImplementationUseVolumeDescriptor(object):
             self.impl_ident == other.impl_ident
 
 
-class UDFPartitionHeaderDescriptor(object):
+class UDFPartitionHeaderDescriptor:
     """A class representing a UDF Partition Header Descriptor."""
     __slots__ = ('_initialized', 'unalloc_space_table', 'unalloc_space_bitmap',
                  'partition_integrity_table', 'freed_space_table',
@@ -1928,7 +1905,7 @@ class UDFPartitionHeaderDescriptor(object):
             self.freed_space_bitmap == other.freed_space_bitmap
 
 
-class UDFPartitionVolumeDescriptor(object):
+class UDFPartitionVolumeDescriptor:
     """A class representing a UDF Partition Volume Structure (ECMA-167, Part 3, 10.5)."""
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'part_flags', 'part_num', 'access_type',
@@ -2112,7 +2089,7 @@ class UDFPartitionVolumeDescriptor(object):
             self.part_contents_use == other.part_contents_use
 
 
-class UDFType0PartitionMap(object):
+class UDFType0PartitionMap:
     """A class representing a UDF Type 0 Partition Map (ECMA-167, Part 3, 10.7)."""
     __slots__ = ('_initialized', 'data')
 
@@ -2180,7 +2157,7 @@ class UDFType0PartitionMap(object):
         self._initialized = True
 
 
-class UDFType1PartitionMap(object):
+class UDFType1PartitionMap:
     """A class representing a UDF Type 1 Partition Map (ECMA-167, Part 3, 10.7)."""
     __slots__ = ('_initialized', 'part_num', 'vol_seqnum')
 
@@ -2247,7 +2224,7 @@ class UDFType1PartitionMap(object):
         self._initialized = True
 
 
-class UDFType2PartitionMap(object):
+class UDFType2PartitionMap:
     """A class representing a UDF Type 2 Partition Map (ECMA-167, Part 3, 10.7)."""
     __slots__ = ('_initialized', 'part_ident')
 
@@ -2312,7 +2289,7 @@ class UDFType2PartitionMap(object):
         self._initialized = True
 
 
-class UDFExtendedAD(object):
+class UDFExtendedAD:
     """A class representing a UDF Extended Allocation Descriptor (ECMA-167, Part 4, 14.14.3)."""
     __slots__ = ('_initialized', 'extent_length', 'recorded_length',
                  'information_length', 'extent_location', 'impl_use')
@@ -2384,7 +2361,7 @@ class UDFExtendedAD(object):
         self._initialized = True
 
 
-class UDFShortAD(object):
+class UDFShortAD:
     """A class representing a UDF Short Allocation Descriptor (ECMA-167, Part 4, 14.14.1)."""
     __slots__ = ('_initialized', 'extent_length', 'log_block_num', 'offset',
                  'extent_type')
@@ -2491,7 +2468,7 @@ class UDFShortAD(object):
         return self.extent_length == other.extent_length and self.log_block_num == other.log_block_num
 
 
-class UDFLongAD(object):
+class UDFLongAD:
     """
     A class representing a UDF Long Allocation Descriptor (ECMA-167, Part 4,
     14.14.2).
@@ -2599,7 +2576,7 @@ class UDFLongAD(object):
             self.impl_use == other.impl_use
 
 
-class UDFInlineAD(object):
+class UDFInlineAD:
     """
     A class representing a UDF Inline Allocation Descriptor.  This isn't
     explicitly defined in the specification, but is a convenient structure
@@ -2696,7 +2673,7 @@ class UDFInlineAD(object):
         return self.extent_length
 
 
-class UDFLogicalVolumeDescriptor(object):
+class UDFLogicalVolumeDescriptor:
     """A class representing a UDF Logical Volume Descriptor (ECMA-167, Part 3, 10.6)."""
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'desc_char_set', 'logical_vol_ident',
@@ -2808,7 +2785,7 @@ class UDFLogicalVolumeDescriptor(object):
         for part in self.partition_maps:
             all_partmaps += part.record()
 
-        partmap_pad = BytesIO()
+        partmap_pad = io.BytesIO()
         utils.zero_pad(partmap_pad, len(all_partmaps), 72)
 
         rec = struct.pack(self.FMT, b'\x00' * 16,
@@ -2960,7 +2937,7 @@ class UDFLogicalVolumeDescriptor(object):
             self.logical_volume_contents_use == other.logical_volume_contents_use
 
 
-class UDFUnallocatedSpaceDescriptor(object):
+class UDFUnallocatedSpaceDescriptor:
     """A class representing a UDF Unallocated Space Descriptor (ECMA-167, Part 3, 10.8)."""
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'vol_desc_seqnum', 'desc_tag', 'num_alloc_descriptors',
@@ -3095,7 +3072,7 @@ class UDFUnallocatedSpaceDescriptor(object):
             self.num_alloc_descriptors == other.num_alloc_descriptors
 
 
-class UDFTerminatingDescriptor(object):
+class UDFTerminatingDescriptor:
     """A class representing a UDF Terminating Descriptor (ECMA-167, Part 3, 10.9)."""
     __slots__ = ('initialized', 'orig_extent_loc', 'new_extent_loc',
                  'desc_tag')
@@ -3198,7 +3175,7 @@ class UDFTerminatingDescriptor(object):
         self.desc_tag.tag_location = tag_location
 
 
-class UDFLogicalVolumeHeaderDescriptor(object):
+class UDFLogicalVolumeHeaderDescriptor:
     """A class representing a UDF Logical Volume Header Descriptor (ECMA-167, Part 4, 14.15)."""
     __slots__ = ('_initialized', 'unique_id')
 
@@ -3258,7 +3235,7 @@ class UDFLogicalVolumeHeaderDescriptor(object):
         self._initialized = True
 
 
-class UDFLogicalVolumeImplementationUse(object):
+class UDFLogicalVolumeImplementationUse:
     """A class representing a UDF Logical Volume Implementation Use."""
     __slots__ = ('_initialized', 'num_files', 'num_dirs',
                  'min_udf_read_revision', 'min_udf_write_revision',
@@ -3341,7 +3318,7 @@ class UDFLogicalVolumeImplementationUse(object):
         self._initialized = True
 
 
-class UDFLogicalVolumeIntegrityDescriptor(object):
+class UDFLogicalVolumeIntegrityDescriptor:
     """A class representing a UDF Logical Volume Integrity Descriptor (ECMA-167, Part 3, 10.10)."""
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'length_impl_use', 'free_space_tables', 'size_tables',
@@ -3511,7 +3488,7 @@ class UDFLogicalVolumeIntegrityDescriptor(object):
         self.desc_tag.tag_location = new_location
 
 
-class UDFFileSetDescriptor(object):
+class UDFFileSetDescriptor:
     """A class representing a UDF File Set Descriptor (ECMA-167, Part 4, 14.1)."""
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'file_set_num', 'log_vol_char_set', 'log_vol_ident',
@@ -3688,7 +3665,7 @@ class UDFFileSetDescriptor(object):
         self.new_extent_loc = new_location
 
 
-class UDFLBAddr(object):
+class UDFLBAddr:
     """A class reprenting a UDF lb_addr (ECMA-167, Part 4, 7.1)."""
     __slots__ = ('_initialized', 'logical_block_num', 'part_ref_num')
 
@@ -3749,7 +3726,7 @@ class UDFLBAddr(object):
         self._initialized = True
 
 
-class UDFICBTag(object):
+class UDFICBTag:
     """A class representing a UDF ICB Tag (ECMA-167, Part 4, 14.6)."""
     __slots__ = ('_initialized', 'prior_num_direct_entries', 'strategy_type',
                  'strategy_param', 'max_num_entries', 'file_type', 'parent_icb',
@@ -3841,7 +3818,7 @@ class UDFICBTag(object):
         self._initialized = True
 
 
-class UDFFileEntry(object):
+class UDFFileEntry:
     """A class representing a UDF File Entry (ECMA-167, Part 4, 14.9)."""
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc', 'uid',
                  'gid', 'perms', 'file_link_count', 'info_len', 'hidden',
@@ -4391,7 +4368,7 @@ class UDFFileEntry(object):
         return False
 
 
-class UDFFileIdentifierDescriptor(object):
+class UDFFileIdentifierDescriptor:
     """A class representing a UDF File Identifier Descriptor (ECMA-167, Part 4, 14.4)."""
     __slots__ = ('_initialized', 'orig_extent_loc', 'new_extent_loc',
                  'desc_tag', 'file_characteristics', 'len_fi', 'len_impl_use',
@@ -4693,7 +4670,7 @@ class UDFFileIdentifierDescriptor(object):
         return self.fi == other.fi
 
 
-class UDFSpaceBitmapDescriptor(object):
+class UDFSpaceBitmapDescriptor:
     """A class representing a UDF Space Bitmap Descriptor."""
     __slots__ = ('_initialized', 'num_bits', 'num_bytes', 'bitmap',
                  'new_extent_loc', 'orig_extent_loc', 'desc_tag')
@@ -4802,7 +4779,7 @@ class UDFSpaceBitmapDescriptor(object):
         self.new_extent_loc = extent
 
 
-class UDFAllocationExtentDescriptor(object):
+class UDFAllocationExtentDescriptor:
     """A class representing a UDF Space Bitmap Descriptor (ECMA-167, Part 4, 14.5)."""
     __slots__ = ('_initialized', 'prev_allocation_extent_loc',
                  'len_allocation_descs', 'new_extent_loc', 'orig_extent_loc',
@@ -4913,7 +4890,7 @@ class UDFAllocationExtentDescriptor(object):
         self.new_extent_loc = extent
 
 
-class UDFIndirectEntry(object):
+class UDFIndirectEntry:
     """A class representing a UDF Indirect Entry (ECMA-167, Part 4, 14.7)."""
     __slots__ = ('_initialized', 'icb_tag', 'indirect_icb', 'desc_tag')
 
@@ -4994,7 +4971,7 @@ class UDFIndirectEntry(object):
         self._initialized = True
 
 
-class UDFTerminalEntry(object):
+class UDFTerminalEntry:
     """A class representing a UDF Terminal Entry (ECMA-167, Part 4, 14.8)."""
     __slots__ = ('_initialized', 'icb_tag', 'desc_tag')
 
@@ -5068,7 +5045,7 @@ class UDFTerminalEntry(object):
         self._initialized = True
 
 
-class UDFExtendedAttributeHeaderDescriptor(object):
+class UDFExtendedAttributeHeaderDescriptor:
     """A class representing a UDF Extended Attribute Header Descriptor (ECMA-167, Part 4, 14.10.1)."""
     __slots__ = ('_initialized', 'impl_attr_loc', 'app_attr_loc',
                  'icb_tag', 'desc_tag')
@@ -5142,7 +5119,7 @@ class UDFExtendedAttributeHeaderDescriptor(object):
         self._initialized = True
 
 
-class UDFUnallocatedSpaceEntry(object):
+class UDFUnallocatedSpaceEntry:
     """A class representing a UDF Unallocated Space Entry (ECMA-167, Part 4, 14.11)."""
     __slots__ = ('_initialized', 'alloc_descs', 'icb_tag', 'desc_tag')
 
@@ -5234,7 +5211,7 @@ class UDFUnallocatedSpaceEntry(object):
         self._initialized = True
 
 
-class UDFPartitionIntegrityEntry(object):
+class UDFPartitionIntegrityEntry:
     """A class representing a UDF Partition Integrity Entry (ECMA-167, Part 4, 14.13)."""
     __slots__ = ('_initialized', 'integrity_type', 'timestamp', 'impl_ident',
                  'impl_use', 'icb_tag', 'desc_tag')
@@ -5330,7 +5307,7 @@ class UDFPartitionIntegrityEntry(object):
         self._initialized = True
 
 
-class UDFExtendedFileEntry(object):
+class UDFExtendedFileEntry:
     """A class representing a UDF Extended File Entry (ECMA-167, Part 4, 14.17)."""
     __slots__ = ('_initialized', 'uid', 'gid', 'permissions', 'file_link_count',
                  'record_format', 'record_display_attrs', 'record_len',
@@ -5606,7 +5583,7 @@ def _parse_allocation_descriptors(flags, data, length, start_offset, extent):
     return alloc_descs
 
 
-class UDFDescriptorSequence(object):
+class UDFDescriptorSequence:
     '''
     A class to represent a UDF Descriptor Sequence.
     '''

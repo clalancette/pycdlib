@@ -16,9 +16,6 @@
 
 """Classes to support El Torito."""
 
-from __future__ import absolute_import
-from __future__ import print_function
-
 import logging
 import struct
 
@@ -38,7 +35,7 @@ if False:  # pylint: disable=using-constant-test
 _logger = logging.getLogger('pycdlib')
 
 
-class EltoritoBootInfoTable(object):
+class EltoritoBootInfoTable:
     """
     A class that represents an El Torito Boot Info Table.  The Boot Info Table
     is an optional table that may be patched into the boot file at offset 8,
@@ -132,7 +129,7 @@ class EltoritoBootInfoTable(object):
         return 16
 
 
-class EltoritoValidationEntry(object):
+class EltoritoValidationEntry:
     """
     A class that represents an El Torito Validation Entry.  El Torito requires
     that the first entry in the El Torito Boot Catalog be a validation entry.
@@ -277,7 +274,7 @@ class EltoritoValidationEntry(object):
         return self._record()
 
 
-class EltoritoEntry(object):
+class EltoritoEntry:
     """A class that represents an El Torito Entry (Initial or Section)."""
     __slots__ = ('_initialized', 'inode', 'boot_indicator',
                  'boot_media_type', 'load_segment', 'system_type',
@@ -493,7 +490,7 @@ class EltoritoEntry(object):
         self.sector_count = utils.ceiling_div(length, 512)
 
 
-class EltoritoSectionHeader(object):
+class EltoritoSectionHeader:
     """A class that represents an El Torito Section Header."""
     __slots__ = ('_initialized', 'header_indicator', 'platform_id',
                  'num_section_entries', 'id_string', 'section_entries')
@@ -621,7 +618,7 @@ class EltoritoSectionHeader(object):
         return b''.join(outlist)
 
 
-class EltoritoBootCatalog(object):
+class EltoritoBootCatalog:
     """
     A class that represents an El Torito Boot Catalog.  The boot catalog is the
     basic unit of El Torito, and is expected to contain a validation entry,

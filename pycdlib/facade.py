@@ -16,8 +16,6 @@
 
 """Facade classes to make the main PyCdlib object easier to use."""
 
-from __future__ import absolute_import
-
 from pycdlib import dr
 from pycdlib import pycdlibexception
 from pycdlib import udf as udfmod
@@ -61,7 +59,7 @@ def iso_path_to_rr_name(iso_path, interchange_level, is_dir):
     return rr_name
 
 
-class PyCdlibISO9660(object):
+class PyCdlibISO9660:
     """The class representing the PyCdlib ISO9660 facade."""
 
     __slots__ = ('pycdlib_obj',)
@@ -256,7 +254,7 @@ class PyCdlibISO9660(object):
         return self.pycdlib_obj.open_file_from_iso(iso_path=iso_path)
 
 
-class PyCdlibJoliet(object):
+class PyCdlibJoliet:
     """The class representing the PyCdlib Joliet facade."""
 
     __slots__ = ('pycdlib_obj',)
@@ -448,7 +446,7 @@ class PyCdlibJoliet(object):
         return self.pycdlib_obj.open_file_from_iso(joliet_path=joliet_path)
 
 
-class PyCdlibRockRidge(object):
+class PyCdlibRockRidge:
     """The class representing the PyCdlib Rock Ridge facade."""
 
     __slots__ = ('pycdlib_obj',)
@@ -738,7 +736,7 @@ class PyCdlibRockRidge(object):
         return self.pycdlib_obj.open_file_from_iso(rr_path=rr_path)
 
 
-class PyCdlibUDF(object):
+class PyCdlibUDF:
     """The class representing the PyCdlib UDF facade."""
 
     __slots__ = ('pycdlib_obj',)

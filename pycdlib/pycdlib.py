@@ -16,25 +16,16 @@
 
 """Main PyCdlib class and support classes and utilities."""
 
-from __future__ import absolute_import
-
 import bisect
 import collections
+import functools
 import inspect
 import io
 import os
 import struct
 import sys
 import time
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
 
-try:
-    from functools import lru_cache
-except ImportError:
-    from pycdlib.backport_functools import lru_cache  # type: ignore
 from pycdlib import dr
 from pycdlib import eltorito
 from pycdlib import facade
@@ -50,10 +41,6 @@ from pycdlib import utils
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
     from typing import Any, BinaryIO, Callable, Deque, Dict, Generator, IO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
-
-have_py_3 = True
-if sys.version_info.major == 2:
-    have_py_3 = False
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -542,7 +529,7 @@ def _find_dr_record_by_name(vd, path, encoding):
     raise pycdlibexception.PyCdlibInvalidInput('Could not find path')
 
 
-class PyCdlib(object):
+class PyCdlib:
     """The main class for manipulating ISOs."""
     __slots__ = ('_initialized', '_cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd',
                  'rock_ridge', '_always_consistent', '_has_udf', 'joliet_vd',
@@ -568,7 +555,7 @@ class PyCdlib(object):
         Returns:
          Nothing.
         """
-        self._cdfp = BytesIO()
+        self._cdfp = io.BytesIO()  # type: IO[Any]
         self.svds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
         self.brs = []  # type: List[headervd.BootRecord]
         self.vdsts = []  # type: List[headervd.VolumeDescriptorSetTerminator]
@@ -717,7 +704,7 @@ class PyCdlib(object):
         """
         self._cdfp.seek(extent * self.logical_block_size)
 
-    @lru_cache(maxsize=256)
+    @functools.lru_cache(maxsize=256)
     def _find_iso_record(self, iso_path):
         # type: (bytes) -> dr.DirectoryRecord
         """
@@ -733,7 +720,7 @@ class PyCdlib(object):
         """
         return _find_dr_record_by_name(self.pvd, iso_path, 'utf-8')
 
-    @lru_cache(maxsize=256)
+    @functools.lru_cache(maxsize=256)
     def _find_rr_record(self, rr_path):
         # type: (bytes) -> dr.DirectoryRecord
         """
@@ -810,7 +797,7 @@ class PyCdlib(object):
 
         raise pycdlibexception.PyCdlibInvalidInput('Could not find path')
 
-    @lru_cache(maxsize=256)
+    @functools.lru_cache(maxsize=256)
     def _find_joliet_record(self, joliet_path):
         # type: (bytes) -> dr.DirectoryRecord
         """
@@ -828,7 +815,7 @@ class PyCdlib(object):
             raise pycdlibexception.PyCdlibInternalError('Joliet path requested on non-Joliet ISO')
         return _find_dr_record_by_name(self.joliet_vd, joliet_path, 'utf-16_be')
 
-    @lru_cache(maxsize=256)
+    @functools.lru_cache(maxsize=256)
     def _find_udf_record(self, udf_path):
         # type: (bytes) -> Tuple[Optional[udfmod.UDFFileIdentifierDescriptor], udfmod.UDFFileEntry]
         """
@@ -1582,7 +1569,7 @@ class PyCdlib(object):
             current_extent += utils.ceiling_div(self.eltorito_boot_catalog.dirrecords[0].get_data_length(),
                                                 self.logical_block_size)
 
-            class _EltoritoEncapsulation(object):
+            class _EltoritoEncapsulation:
                 """
                 An internal class to encapsulate an El Torito Entry object with
                 additional necessary metadata for sorting.
@@ -2511,7 +2498,7 @@ class PyCdlib(object):
             else:
                 break
 
-    class _WriteRange(object):
+    class _WriteRange:
         """
         A class to store the offset and length of a written section of data.
         A sorted list of these is used to determine whether we are unintentionally
@@ -2595,7 +2582,7 @@ class PyCdlib(object):
             self._outfp_write_with_check(outfp, rec, enable_overwrite_check=False)
             outfp.seek(old)
 
-    class _Progress(object):
+    class _Progress:
         """
         An inner class to deal with progress.
         """
@@ -2608,10 +2595,7 @@ class PyCdlib(object):
             self.progress_cb = progress_cb
             self.progress_opaque = progress_opaque
             if self.progress_cb is not None:
-                if have_py_3:
-                    arglen = len(inspect.getfullargspec(self.progress_cb).args)
-                else:
-                    arglen = len(inspect.getargspec(self.progress_cb).args)  # type: ignore # pylint: disable=W1505,E1101
+                arglen = len(inspect.getfullargspec(self.progress_cb).args)
 
                 if arglen == 2:
                     self._call = lambda done, total, opaque: self.progress_cb(done, total)  # type: ignore
@@ -4075,7 +4059,7 @@ class PyCdlib(object):
         if self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object already has an ISO; either close it or create a new object')
 
-        fp = open(filename, mode)  # pylint: disable=consider-using-with
+        fp = open(filename, mode)  # pylint: disable=consider-using-with,unspecified-encoding
         self._managing_fp = True
         try:
             self._open_fp(fp)
@@ -5384,7 +5368,7 @@ class PyCdlib(object):
 
             # The inode for the symlink array.
             ino = inode.Inode()
-            ino.new(len(symlink_bytearray), BytesIO(symlink_bytearray), False, 0)
+            ino.new(len(symlink_bytearray), io.BytesIO(symlink_bytearray), False, 0)
             ino.linked_records.append((file_entry, False))
             ino.num_udf += 1
             file_entry.inode = ino
@@ -5711,12 +5695,8 @@ class PyCdlib(object):
                 names.insert(0, name.decode(encoding))
                 udf_rec = udf_rec.parent
 
-        if have_py_3:
-            # Python 3, just return the encoded version.
-            return '/'.join(names)
-
-        # Python 2.
-        return '/'.join(names).encode('utf-8')  # type: ignore
+        # Return the encoded version.
+        return '/'.join(names)
 
     def duplicate_pvd(self):
         # type: () -> None

@@ -16,8 +16,6 @@
 
 """Class to support ISO9660 Path Table Records."""
 
-from __future__ import absolute_import
-
 import struct
 
 from pycdlib import pycdlibexception
@@ -28,7 +26,7 @@ if False:  # pylint: disable=using-constant-test
     from typing import Type  # NOQA pylint: disable=unused-import
 
 
-class PathTableRecord(object):
+class PathTableRecord:
     """A class that represents a single ISO9660 Path Table Record."""
     __slots__ = ('_initialized', 'len_di', 'xattr_length', 'extent_location',
                  'parent_directory_num', 'directory_identifier', 'dirrecord')
