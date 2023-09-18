@@ -1115,7 +1115,7 @@ class UDFTimestamp(object):
         self.timetype = 1
         self.year = local.tm_year
         self.month = local.tm_mon
-        self.day = local.tm_mon
+        self.day = local.tm_mday
         self.hour = local.tm_hour
         self.minute = local.tm_min
         self.second = local.tm_sec
