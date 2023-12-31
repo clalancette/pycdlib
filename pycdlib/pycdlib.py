@@ -4374,7 +4374,7 @@ class PyCdlib(object):
 
     def add_file(self, filename, iso_path=None, rr_name=None, joliet_path=None,
                  file_mode=None, udf_path=None):
-        # type: (str, Optional[str], Optional[str], str, Optional[int], Optional[str]) -> None
+        # type: (str, Optional[str], Optional[str], Optional[str], Optional[int], Optional[str]) -> None
         """
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
@@ -4699,7 +4699,7 @@ class PyCdlib(object):
 
     def add_directory(self, iso_path=None, rr_name=None, joliet_path=None,
                       file_mode=None, udf_path=None):
-        # type: (Optional[str], Optional[str], Optional[str], int, Optional[str]) -> None
+        # type: (Optional[str], Optional[str], Optional[str], Optional[int], Optional[str]) -> None
         """
         Add a directory to the ISO.  At least one of an iso_path, joliet_path,
         or udf_path must be provided.  Providing joliet_path on a non-Joliet
@@ -5049,7 +5049,7 @@ class PyCdlib(object):
                      boot_load_size=None, platform_id=0, boot_info_table=False,
                      efi=False, media_name='noemul', bootable=True,
                      boot_load_seg=0, udf_bootcatfile=None):
-        # type: (str, Optional[str], Optional[str], Optional[str], int, int, bool, bool, str, bool, int, Optional[str]) -> None
+        # type: (str, Optional[str], Optional[str], Optional[str], Optional[int], int, bool, bool, str, bool, int, Optional[str]) -> None
         """
         Add an El Torito Boot Record, and associated files, to the ISO.  The
         file that will be used as the bootfile must be passed into this function

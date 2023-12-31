@@ -27,9 +27,10 @@ from pycdlib import pycdlibexception
 
 # For mypy annotations
 if False:  # pylint: disable=using-constant-test
-    import ctypes  # NOQA
-    from mmap import mmap  # NOQA
-    import pickle  # NOQA
+    import collections.abc  # NOQA pylint: disable=unused-import
+    import ctypes  # NOQA pylint: disable=unused-import
+    from mmap import mmap  # NOQA pylint: disable=unused-import
+    import pickle  # NOQA pylint: disable=unused-import
     from typing import Any, Optional, Union  # NOQA pylint: disable=unused-import
 
 have_py_3 = True
@@ -113,7 +114,7 @@ class PyCdlibIO(io.RawIOBase):
         return data
 
     def readinto(self, b):
-        # type: (Union[bytearray, memoryview, array.array[Any], mmap, ctypes._CData, pickle.PickleBuffer]) -> int
+        # type: (collections.abc.Buffer) -> int
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
 

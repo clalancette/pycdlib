@@ -3178,7 +3178,7 @@ class UDFTerminatingDescriptor(object):
 
         self.initialized = True
 
-    def set_extent_location(self, new_location, tag_location=None):
+    def set_extent_location(self, new_location, tag_location=-1):
         # type: (int, int) -> None
         """
         Set the location of this UDF Terminating Descriptor.
@@ -3193,7 +3193,7 @@ class UDFTerminatingDescriptor(object):
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor not initialized')
 
         self.new_extent_loc = new_location
-        if tag_location is None:
+        if tag_location < 0:
             tag_location = new_location
         self.desc_tag.tag_location = tag_location
 

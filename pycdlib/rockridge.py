@@ -984,13 +984,13 @@ class RRSLRecord(object):
              A new Component object representing this name.
             """
             if name == b'.':
-                flags = (1 << 1)
+                flags = 1 << 1
                 length = 0
             elif name == b'..':
-                flags = (1 << 2)
+                flags = 1 << 2
                 length = 0
             elif name == b'/':
-                flags = (1 << 3)
+                flags = 1 << 3
                 length = 0
             else:
                 flags = 0
