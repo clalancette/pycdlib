@@ -39,7 +39,7 @@ jobs:
     - name: Build patched cdrkit
       run: |
         pushd vendor
-        tar -xvf cdrkit-1.1.11-fedora29-patched.tar.gz
+        tar -xvf cdrkit-1.1.11-fedora40-patched.tar.gz
         pushd cdrkit-1.1.11
         mkdir build
         pushd build
