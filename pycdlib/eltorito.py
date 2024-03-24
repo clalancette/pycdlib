@@ -19,7 +19,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
 
-import os
+import logging
 import struct
 
 from pycdlib import pycdlibexception
@@ -33,6 +33,9 @@ if False:  # pylint: disable=using-constant-test
     from pycdlib import headervd  # NOQA pylint: disable=unused-import
     from pycdlib import inode    # NOQA pylint: disable=unused-import
     from pycdlib import udf as udfmod  # NOQA pylint: disable=unused-import
+
+
+_logger = logging.getLogger('pycdlib')
 
 
 class EltoritoBootInfoTable(object):
@@ -944,31 +947,19 @@ def hdmbrcheck(disk_mbr, sector_count, bootable):
             raise pycdlibexception.PyCdlibInvalidInput('Boot image has multiple partitions')
 
         if bootable and status != PARTITION_STATUS_ACTIVE:
-            # genisoimage prints a warning in this case, but we have no other
-            # warning prints in the whole codebase, and an exception will probably
-            # make us too fragile.  So we leave the code but don't do anything.
-            with open(os.devnull, 'w') as devnull:
-                print('Warning: partition not marked active', file=devnull)
+            _logger.warning('Warning: partition not marked active')
 
         cyl = ((s_seccyl & 0xC0) << 10) | s_cyl
         sec = s_seccyl & 0x3f
         if cyl != 0 or s_head != 1 or sec != 1:
-            # genisoimage prints a warning in this case, but we have no other
-            # warning prints in the whole codebase, and an exception will probably
-            # make us too fragile.  So we leave the code but don't do anything.
-            with open(os.devnull, 'w') as devnull:
-                print('Warning: partition does not start at 0/1/1', file=devnull)
+            _logger.warning('Warning: partition does not start at 0/1/1')
 
         cyl = ((e_seccyl & 0xC0) << 10) | e_cyl
         sec = e_seccyl & 0x3f
         geometry_sectors = (cyl + 1) * (e_head + 1) * sec
 
         if sector_count != geometry_sectors:
-            # genisoimage prints a warning in this case, but we have no other
-            # warning prints in the whole codebase, and an exception will probably
-            # make us too fragile.  So we leave the code but don't do anything.
-            with open(os.devnull, 'w') as devnull:
-                print('Warning: image size does not match geometry', file=devnull)
+            _logger.warning('Warning: image size does not match geometry')
 
         system_type = parttype
 
