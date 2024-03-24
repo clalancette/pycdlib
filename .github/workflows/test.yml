@@ -36,6 +36,9 @@ jobs:
     - name: Install pip dependencies
       run: python -m pip install flake8 pytest
 
+    - name: Run flake8
+      run: flake8 --ignore=E501,E266 pycdlib tools/*
+
     - name: Build patched cdrkit
       run: |
         pushd vendor
@@ -48,9 +51,6 @@ jobs:
         popd
         popd
         popd
-
-    - name: Run flake8
-      run: flake8 --ignore=E501,E266 pycdlib tools/*
 
     - name: Patch pycdlib-genisoimage for python version
       run: sed -i -e '0,/python3/s//python/' tools/pycdlib-genisoimage
