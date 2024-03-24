@@ -11,7 +11,9 @@ Git-LFS (https://git-lfs.github.com/).  In particular:
   RPM from koji (https://kojipkgs.fedoraproject.org//packages/cdrkit/1.1.11/54.fc40/src/cdrkit-1.1.11-54.fc40.src.rpm,
   though that URI may not exist anymore).  The package was then installed
   (rpm -ivh /path/to/*.src.rpm), and then the original source tarball with
-  patches was prepared (rpmbuild -bp cdrkit.spec).  It was then tarred back up.
+  patches was prepared (rpmbuild -bp cdrkit.spec).  The "icedax" directory was
+  then removed, as it is not required and needs additional dependencies.  It was
+  then tarred back up.
 
 - cdrkit-1.1.11-fedora29-patched.tar.gz
   A vendored version of cdrkit (and more specifically, genisoimage) used to
