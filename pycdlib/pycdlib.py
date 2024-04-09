@@ -705,8 +705,8 @@ class PyCdlib:
         self._cdfp.seek(extent * self.logical_block_size)
 
     @functools.lru_cache(maxsize=256)
-    def _find_iso_record(self, iso_path):
-        # type: (bytes) -> dr.DirectoryRecord
+    def _find_iso_record(self, iso_path, encoding='utf-8'):
+        # type: (bytes, str) -> dr.DirectoryRecord
         """
         An internal method to find a directory record on the ISO given an ISO
         path.  If the entry is found, it returns the directory record object
@@ -718,11 +718,11 @@ class PyCdlib:
         Returns:
          The directory record entry representing the entry on the ISO.
         """
-        return _find_dr_record_by_name(self.pvd, iso_path, 'utf-8')
+        return _find_dr_record_by_name(self.pvd, iso_path, encoding)
 
     @functools.lru_cache(maxsize=256)
-    def _find_rr_record(self, rr_path):
-        # type: (bytes) -> dr.DirectoryRecord
+    def _find_rr_record(self, rr_path, encoding='utf-8'):
+        # type: (bytes, str) -> dr.DirectoryRecord
         """
         An internal method to find a directory record on the ISO given a Rock
         Ridge path.  If the entry is found, it returns the directory record
@@ -742,7 +742,7 @@ class PyCdlib:
 
         splitpath = utils.split_path(rr_path)
 
-        currpath = splitpath.pop(0).decode('utf-8').encode('utf-8')
+        currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
 
         entry = root_dir_record
 
@@ -793,13 +793,13 @@ class PyCdlib:
             if not child.is_dir():
                 break
             entry = child
-            currpath = splitpath.pop(0).decode('utf-8').encode('utf-8')
+            currpath = splitpath.pop(0).decode('utf-8').encode(encoding)
 
         raise pycdlibexception.PyCdlibInvalidInput('Could not find path')
 
     @functools.lru_cache(maxsize=256)
-    def _find_joliet_record(self, joliet_path):
-        # type: (bytes) -> dr.DirectoryRecord
+    def _find_joliet_record(self, joliet_path, encoding='utf-16_be'):
+        # type: (bytes, str) -> dr.DirectoryRecord
         """
         An internal method to find a directory record on the ISO given a Joliet
         path.  If the entry is found, it returns the directory record object
@@ -813,7 +813,7 @@ class PyCdlib:
         """
         if self.joliet_vd is None:
             raise pycdlibexception.PyCdlibInternalError('Joliet path requested on non-Joliet ISO')
-        return _find_dr_record_by_name(self.joliet_vd, joliet_path, 'utf-16_be')
+        return _find_dr_record_by_name(self.joliet_vd, joliet_path, encoding)
 
     @functools.lru_cache(maxsize=256)
     def _find_udf_record(self, udf_path):
@@ -2412,8 +2412,8 @@ class PyCdlib:
                 utils.copy_data(data_len, blocksize, data_fp, outfp)
 
     def _get_file_from_iso_fp(self, outfp, blocksize, iso_path, rr_path,
-                              joliet_path):
-        # type: (BinaryIO, int, Optional[bytes], Optional[bytes], Optional[bytes]) -> None
+                              joliet_path, encoding=None):
+        # type: (BinaryIO, int, Optional[bytes], Optional[bytes], Optional[bytes], str) -> None
         """
         An internal method to fetch a single file from the ISO and write it out
         to the file object.
@@ -2433,13 +2433,16 @@ class PyCdlib:
         if joliet_path is not None:
             if self.joliet_vd is None:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a joliet_path from a non-Joliet ISO')
-            found_record = self._find_joliet_record(joliet_path)
+            encoding = encoding or 'utf-16_be'
+            found_record = self._find_joliet_record(joliet_path, encoding)
         elif rr_path is not None:
             if not self.rock_ridge:
                 raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
-            found_record = self._find_rr_record(rr_path)
+            encoding = encoding or 'utf-8'
+            found_record = self._find_rr_record(rr_path, encoding)
         elif iso_path is not None:
-            found_record = self._find_iso_record(iso_path)
+            encoding = encoding or 'utf-8'
+            found_record = self._find_iso_record(iso_path, encoding)
         else:
             raise pycdlibexception.PyCdlibInternalError('Invalid path passed to get_file_from_iso_fp')
 
@@ -3471,8 +3474,8 @@ class PyCdlib:
 
         return num_bytes_to_remove
 
-    def _get_iso_entry(self, iso_path):
-        # type: (bytes) -> dr.DirectoryRecord
+    def _get_iso_entry(self, iso_path, encoding='utf-8'):
+        # type: (bytes, str) -> dr.DirectoryRecord
         """
         Internal method to get the directory record for an ISO path.
 
@@ -3484,10 +3487,10 @@ class PyCdlib:
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
-        return self._find_iso_record(iso_path)
+        return self._find_iso_record(iso_path, encoding)
 
-    def _get_rr_entry(self, rr_path):
-        # type: (bytes) -> dr.DirectoryRecord
+    def _get_rr_entry(self, rr_path, encoding='utf-8'):
+        # type: (bytes, str) -> dr.DirectoryRecord
         """
         Internal method to get the directory record for a Rock Ridge path.
 
@@ -3500,10 +3503,10 @@ class PyCdlib:
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
-        return self._find_rr_record(rr_path)
+        return self._find_rr_record(rr_path, encoding)
 
-    def _get_joliet_entry(self, joliet_path):
-        # type: (bytes) -> dr.DirectoryRecord
+    def _get_joliet_entry(self, joliet_path, encoding='utf-16_be'):
+        # type: (bytes, str) -> dr.DirectoryRecord
         """
         Internal method to get the directory record for a Joliet path.
 
@@ -3516,7 +3519,7 @@ class PyCdlib:
         if self._needs_reshuffle:
             self._reshuffle_extents()
 
-        return self._find_joliet_record(joliet_path)
+        return self._find_joliet_record(joliet_path, encoding)
 
     def _get_udf_entry(self, udf_path):
         # type: (str) -> udfmod.UDFFileEntry
@@ -4172,6 +4175,7 @@ class PyCdlib:
                        with iso_path, rr_path, and udf_path).
          udf_path - The absolute UDF path to lookup on the ISO (exclusive with
                     iso_path, rr_path, and joliet_path).
+         encoding - The encoding to use for parsing the filenames.
         Returns:
          Nothing.
         """
@@ -4183,6 +4187,7 @@ class PyCdlib:
         iso_path = None
         rr_path = None
         udf_path = None
+        encoding = None
         num_paths = 0
         for key, value in kwargs.items():
             if key == 'blocksize':
@@ -4213,6 +4218,8 @@ class PyCdlib:
                     num_paths += 1
                 elif value is not None:
                     raise pycdlibexception.PyCdlibInvalidInput('udf_path must be a string')
+            elif key == 'encoding':
+                encoding = value
             else:
                 raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
 
@@ -4223,7 +4230,7 @@ class PyCdlib:
             self._udf_get_file_from_iso_fp(outfp, blocksize, udf_path)
         else:
             self._get_file_from_iso_fp(outfp, blocksize, iso_path, rr_path,
-                                       joliet_path)
+                                       joliet_path, encoding)
 
     def get_and_write(self, iso_path, local_path, blocksize=8192):
         # type: (str, str, int) -> None
@@ -5459,6 +5466,8 @@ class PyCdlib:
             if key in ('joliet_path', 'rr_path', 'iso_path', 'udf_path'):
                 if value is not None:
                     num_paths += 1
+            elif key in ('encoding'):
+                continue
             else:
                 raise pycdlibexception.PyCdlibInvalidInput("Invalid keyword, must be one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path'")
 
@@ -5476,12 +5485,15 @@ class PyCdlib:
         else:
             use_rr = False
             if 'joliet_path' in kwargs:
-                rec = self._get_joliet_entry(self._normalize_joliet_path(kwargs['joliet_path']))
+                kwargs['encoding'] = kwargs.get('encoding', None) or 'utf-16_be'
+                rec = self._get_joliet_entry(self._normalize_joliet_path(kwargs['joliet_path']), kwargs['encoding'])
             elif 'rr_path' in kwargs:
-                rec = self._get_rr_entry(utils.normpath(kwargs['rr_path']))
+                kwargs['encoding'] = kwargs.get('encoding', None) or 'utf-8'
+                rec = self._get_rr_entry(utils.normpath(kwargs['rr_path']), kwargs['encoding'])
                 use_rr = True
             else:
-                rec = self._get_iso_entry(utils.normpath(kwargs['iso_path']))
+                kwargs['encoding'] = kwargs.get('encoding', None) or 'utf-8'
+                rec = self._get_iso_entry(utils.normpath(kwargs['iso_path']), kwargs['encoding'])
 
             for c in _yield_children(rec, use_rr):
                 yield c
@@ -5626,8 +5638,8 @@ class PyCdlib:
 
         self.isohybrid_mbr = None
 
-    def full_path_from_dirrecord(self, rec, rockridge=False):
-        # type: (Union[dr.DirectoryRecord, udfmod.UDFFileEntry], bool) -> str
+    def full_path_from_dirrecord(self, rec, rockridge=False, user_encoding=None):
+        # type: (Union[dr.DirectoryRecord, udfmod.UDFFileEntry], bool, str) -> str
         """
         Get the absolute path of a directory record.
 
@@ -5646,6 +5658,8 @@ class PyCdlib:
             if self.joliet_vd is not None and id(rec.vd) == id(self.joliet_vd):
                 encoding = 'utf-16_be'
 
+            if user_encoding:
+                encoding = user_encoding
             # A root entry has no Rock Ridge entry, even on a Rock Ridge ISO.
             # Always return / here.
             if rec.is_root:
@@ -5685,6 +5699,8 @@ class PyCdlib:
                 encoding = rec.file_ident.encoding
             else:
                 encoding = 'utf-8'
+            if user_encoding:
+                encoding = user_encoding
             udf_rec = rec  # type: Optional[udfmod.UDFFileEntry]
             while udf_rec is not None:
                 ident = udf_rec.file_identifier()
@@ -5893,13 +5909,13 @@ class PyCdlib:
         while dirs:
             dir_record = dirs.popleft()
 
-            relpath = self.full_path_from_dirrecord(dir_record,
-                                                    rockridge=path_type == 'rr_path')
+            relpath = self.full_path_from_dirrecord(dir_record, rockridge=path_type == 'rr_path',
+                                                    user_encoding=user_encoding)
             dirlist = []
             filelist = []
             dirdict = {}
 
-            for child in reversed(list(self.list_children(**{path_type: relpath}))):
+            for child in reversed(list(self.list_children(**{path_type: relpath, 'encoding': kwargs.get('encoding', None)}))):
                 if child is None or child.is_dot() or child.is_dotdot():
                     continue
 
