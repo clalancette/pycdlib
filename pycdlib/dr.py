@@ -31,7 +31,7 @@ from pycdlib import utils
 if False:  # pylint: disable=using-constant-test
     from typing import Any, IO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
     # NOTE: these imports have to be here to avoid circular deps
-    from pycdlib import headervd  # NOQA pylint: disable=unused-import
+    from pycdlib import headervd  # NOQA pylint: disable=unused-import,cyclic-import
     from pycdlib import path_table_record  # NOQA pylint: disable=unused-import
 
 

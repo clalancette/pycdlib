@@ -25,7 +25,7 @@ from pycdlib import utils
 if False:  # pylint: disable=using-constant-test
     from typing import BinaryIO, Generator, Optional, Tuple  # NOQA pylint: disable=unused-import
     # NOTE: these imports have to be here to avoid circular deps
-    from pycdlib import pycdlib  # NOQA pylint: disable=unused-import
+    from pycdlib import pycdlib  # NOQA pylint: disable=unused-import,cyclic-import
     from pycdlib import pycdlibio  # NOQA pylint: disable=unused-import
 
 

@@ -26,8 +26,8 @@ import time
 
 from pycdlib import pycdlibexception
 
+win32_has_pywin32 = False
 if sys.platform == "win32":
-    win32_has_pywin32 = False
     try:
         import win32con  # pylint: disable=import-error
         import win32file  # pylint: disable=import-error

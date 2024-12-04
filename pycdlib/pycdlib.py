@@ -2564,7 +2564,7 @@ class PyCdlib:
         outfp.seek(ino.extent_location() * self.logical_block_size)
         start_offset = outfp.tell()
         with inode.InodeOpenData(ino, self.logical_block_size) as (data_fp, data_len):
-            for len_copied in utils.copy_data_yield(data_len, blocksize, data_fp, outfp):
+            for len_copied in utils.copy_data_yield(data_len, blocksize, data_fp, outfp):  # pylint: disable=use-yield-from
                 yield len_copied
             yield utils.zero_pad(outfp, data_len, self.logical_block_size)
 
@@ -5436,7 +5436,7 @@ class PyCdlib:
                 rec = self._get_rr_entry(normpath)
                 use_rr = True
 
-        for c in _yield_children(rec, use_rr):
+        for c in _yield_children(rec, use_rr):  # pylint: disable=use-yield-from
             yield c
 
     def list_children(self, **kwargs):
@@ -5487,7 +5487,7 @@ class PyCdlib:
             else:
                 rec = self._get_iso_entry(utils.normpath(kwargs['iso_path']))
 
-            for c in _yield_children(rec, use_rr):
+            for c in _yield_children(rec, use_rr):  # pylint: disable=use-yield-from
                 yield c
 
     def get_entry(self, iso_path, joliet=False):

@@ -27,7 +27,7 @@ from pycdlib import utils
 if False:  # pylint: disable=using-constant-test
     from typing import Dict, List, Optional  # NOQA pylint: disable=unused-import
     # NOTE: this has to be here to avoid circular deps
-    from pycdlib import dr  # NOQA pylint: disable=unused-import
+    from pycdlib import dr  # NOQA pylint: disable=unused-import,cyclic-import
 
 SU_ENTRY_VERSION = 1
 ALLOWED_DR_SIZE = 254

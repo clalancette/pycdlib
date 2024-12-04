@@ -22,9 +22,9 @@ from pycdlib import pycdlibexception
 if False:  # pylint: disable=using-constant-test
     from typing import Any, BinaryIO, IO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
     # NOTE: this import has to be here to avoid circular deps
-    from pycdlib import dr  # NOQA pylint: disable=unused-import
-    from pycdlib import eltorito  # NOQA pylint: disable=unused-import
-    from pycdlib import udf  # NOQA pylint: disable=unused-import
+    from pycdlib import dr  # NOQA pylint: disable=unused-import,cyclic-import
+    from pycdlib import eltorito  # NOQA pylint: disable=unused-import,cyclic-import
+    from pycdlib import udf  # NOQA pylint: disable=unused-import,cyclic-import
 
 
 class Inode:
