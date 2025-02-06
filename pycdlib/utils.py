@@ -106,10 +106,8 @@ def copy_data_yield(data_length, blocksize, infp, outfp):
      Nothing.
     """
     left = data_length
-    readsize = blocksize
     while left > 0:
-        if left < readsize:
-            readsize = left
+        readsize = min(blocksize, left)
         data = infp.read(readsize)
         # We have seen ISOs in the wild (Tribes Vengeance 1of4.iso) that
         # lie about the size of their files, causing reads to fail (since

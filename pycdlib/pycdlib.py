@@ -2609,9 +2609,7 @@ class PyCdlib:
         def call(self, length):
             # type: (int) -> None
             """Add the length to done, then call progress_cb if it is not None."""
-            self.done += length
-            if self.done > self.total:
-                self.done = self.total
+            self.done = min(self.done + length, self.total)
             self._call(self.done, self.total, self.progress_opaque)
 
         def finish(self):
