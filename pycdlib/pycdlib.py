@@ -3102,7 +3102,9 @@ class PyCdlib:
                 vd = self.pvd
                 rr = self.rock_ridge
                 xa = self.xa
-            elif joliet_new_path is not None:
+            else:
+                # Above we checked to make sure we got exactly one new path, so
+                # we know for certain that this is Joliet.
                 if self.joliet_vd is None:
                     raise pycdlibexception.PyCdlibInternalError('Tried to link to Joliet record on non-Joliet ISO')
                 # ... to a file on the Joliet filesystem.
@@ -3110,8 +3112,6 @@ class PyCdlib:
                 vd = self.joliet_vd
                 rr = ''
                 xa = False
-            # Above we checked to make sure we got at least one new path, so we
-            # don't need to worry about the else situation here.
 
             new_rec = dr.DirectoryRecord()
             new_rec.new_file(vd, length, new_name, new_parent,
