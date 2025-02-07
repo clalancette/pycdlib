@@ -10,7 +10,7 @@ Summary:        A pure python ISO9660 read and write library
 Name:           python-%{srcname}
 Version:        @VERSION@
 Release:        @RELEASE@%{?dist}
-License:        LGPLv2
+License:        LGPL-2.1
 Group:          Development/Libraries
 URL:            https://github.com/clalancette/%{srcname}
 Source0:        https://github.com/clalancette/%{srcname}/archive/v%{version}/%{srcname}-%{version}.tar.gz
