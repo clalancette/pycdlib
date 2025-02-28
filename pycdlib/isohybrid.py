@@ -700,6 +700,8 @@ class IsoHybrid:
         if unused2 != 0:
             raise pycdlibexception.PyCdlibInvalidISO('Invalid IsoHybrid unused2')
 
+        psize = 0
+        ecyle = 0
         offset = 32 + struct.calcsize(self.FMT)
         for i in range(1, 5):
             if bytes(bytearray([instr[offset]])) == b'\x80':

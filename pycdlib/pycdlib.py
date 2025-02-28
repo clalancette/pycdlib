@@ -3107,6 +3107,9 @@ class PyCdlib:
                 # we know for certain that this is Joliet.
                 if self.joliet_vd is None:
                     raise pycdlibexception.PyCdlibInternalError('Tried to link to Joliet record on non-Joliet ISO')
+                if joliet_new_path is None:
+                    # This can really never happen, but here to make mypy happy
+                    raise pycdlibexception.PyCdlibInternalError('Invalid joliet_new_path')
                 # ... to a file on the Joliet filesystem.
                 (new_name, new_parent) = self._joliet_name_and_parent_from_path(joliet_new_path)
                 vd = self.joliet_vd
@@ -4504,6 +4507,9 @@ class PyCdlib:
                 abs_offset = abs_extent_loc * self.logical_block_size + offset
             elif isinstance(record, udfmod.UDFFileEntry):
                 abs_offset = record.extent_location() * self.logical_block_size
+            else:
+                # This should never happen
+                raise pycdlibexception.PyCdlibInternalError('Invalid record type')
 
             record.set_data_length(length)
             self._cdfp.seek(abs_offset)
@@ -5743,6 +5749,8 @@ class PyCdlib:
         elif joliet_path is not None:
             joliet_path_bytes = self._normalize_joliet_path(joliet_path)
             rec = self._find_joliet_record(joliet_path_bytes)
+        else:
+            raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, rr_path, or joliet_path')
 
         rec.change_existence(True)
 
@@ -5773,6 +5781,8 @@ class PyCdlib:
         elif joliet_path is not None:
             joliet_path_bytes = self._normalize_joliet_path(joliet_path)
             rec = self._find_joliet_record(joliet_path_bytes)
+        else:
+            raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, rr_path, or joliet_path')
 
         rec.change_existence(False)
 

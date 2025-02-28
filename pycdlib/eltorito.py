@@ -163,18 +163,10 @@ class EltoritoValidationEntry:
         Returns:
          The checksum of the data.
         """
-        def identity(x):
-            # type: (int) -> int
-            """
-            The identity function so we can use a function for python2/3
-            compatibility.
-            """
-            return x
-
-        if isinstance(data, str):
+        if isinstance(data, bytes):
+            myord = int
+        else:
             myord = ord
-        elif isinstance(data, bytes):
-            myord = identity
         csum = 0
         for i, val in enumerate(data):
             short = (myord(val) << (8 * (i % 2))) & 0xffff
