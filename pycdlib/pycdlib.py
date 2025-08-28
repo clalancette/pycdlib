@@ -1052,8 +1052,6 @@ class PyCdlib:
                                       dir_record)
                 offset += lenbyte
 
-                self._set_rock_ridge(rr)
-
                 # Cache some properties of this record for later use.
                 is_symlink = new_record.is_symlink()
                 dots = new_record.is_dot() or new_record.is_dotdot()
@@ -1115,6 +1113,7 @@ class PyCdlib:
                         # will eventually be used to fix the PVD size.
                         lastbyte = max(lastbyte, new_end)
 
+                rr_ce = ''
                 if new_record.rock_ridge is not None and new_record.rock_ridge.dr_entries.ce_record is not None:
                     ce_record = new_record.rock_ridge.dr_entries.ce_record
                     orig_pos = cdfp.tell()
@@ -1129,6 +1128,12 @@ class PyCdlib:
                                                        ce_record.offset_cont_area,
                                                        ce_record.len_cont_area)
                     new_record.rock_ridge.update_ce_block(block)
+
+                    rr_ce = new_record.rock_ridge.rr_version if new_record.rock_ridge else ''
+                # The PX record could be in the continuation blob, so
+                # the continuation is relevant to determine the actual
+                # Rock Ridge version
+                self._set_rock_ridge(max(rr, rr_ce))
 
                 if rr_cl:
                     child_links.append(new_record)
