@@ -6493,6 +6493,47 @@ def test_new_udf_eltorito_multi_boot_rm_file():
 
     iso.close()
 
+def test_new_udf_anchor_after_shrink():
+    # Create a UDF ISO with a small file and a large file, write it, reopen,
+    # remove the large file, add a different small file, write again, then
+    # reopen.  The removal makes the reshuffled layout more compact than the
+    # original pvd.space_size, which (before the fix) caused the second UDF
+    # anchor to be placed at an extent the parser wouldn't check.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    foostr = b'foo\n'
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
+
+    bigstr = b'x' * 102400
+    iso.add_fp(io.BytesIO(bigstr), len(bigstr), '/BIG.;1', udf_path='/big')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+
+    iso2.rm_file(iso_path='/BIG.;1', udf_path='/big')
+
+    barstr = b'bar\n'
+    iso2.add_fp(io.BytesIO(barstr), len(barstr), '/BAR.;1', udf_path='/bar')
+
+    out2 = io.BytesIO()
+    iso2.write_fp(out2)
+
+    check_udf_anchor_after_shrink(iso2, len(out2.getvalue()))
+
+    iso2.close()
+
+    # The critical check: reopen the twice-written ISO and verify it parses
+    # correctly, confirming both UDF anchors are at locations the parser finds.
+    iso3 = pycdlib.PyCdlib()
+    iso3.open_fp(out2)
+    check_udf_anchor_after_shrink(iso3, len(out2.getvalue()))
+    iso3.close()
+
 def test_new_rr_file_mode():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge='1.09')
