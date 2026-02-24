@@ -1661,6 +1661,17 @@ class PyCdlib:
             self.udf_anchors[-1].set_extent_location(current_extent,
                                                      self.udf_main_descs.pvds[0].extent_location(),
                                                      self.udf_reserve_descs.pvds[0].extent_location())
+            # Update space_size so the second anchor is at the last extent.
+            # Without this, ISOs with a more compact reshuffled layout than
+            # the original would place the anchor at a position the parser
+            # doesn't check, breaking round-trip open/write/open.
+            new_space_size = current_extent + 1
+            for pvd in self.pvds:
+                pvd.space_size = new_space_size
+            if self.joliet_vd is not None:
+                self.joliet_vd.space_size = new_space_size
+            if self.enhanced_vd is not None:
+                self.enhanced_vd.space_size = new_space_size
 
         if current_extent > self.pvd.space_size:
             raise pycdlibexception.PyCdlibInternalError('Assigned an extent beyond the ISO (%d > %d)' % (current_extent, self.pvd.space_size))
