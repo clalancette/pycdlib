@@ -2449,6 +2449,37 @@ def test_new_rr_onefile_onetwelve():
 
     iso.close()
 
+def check_rr_onetwelve_px_in_ce(iso, filesize):
+    # The version on the ISO must reflect what we wrote: 1.12.
+    assert(iso.rock_ridge == '1.12')
+    # Sanity-check that the scenario actually exercises CE-resident PX.
+    # If a future writer change keeps PX inline even for very long names,
+    # this test would otherwise silently stop covering the bug.
+    long_name_dr = iso.pvd.root_dir_record.children[2]
+    assert(long_name_dr.rock_ridge.dr_entries.ce_record is not None)
+    assert(long_name_dr.rock_ridge.dr_entries.px_record is None)
+    assert(long_name_dr.rock_ridge.ce_entries.px_record is not None)
+
+def test_new_rr_onetwelve_px_in_ce():
+    # Regression test for https://github.com/clalancette/pycdlib/pull/138.
+    # When a Rock Ridge 1.12 record's filename is long enough to push the
+    # PX record into the SUSP CE block, the parser must defer determining
+    # the on-disk Rock Ridge version until after the CE block is read.
+    # Pre-fix, _set_rock_ridge was called with the version inferred from
+    # the directory record alone -- which sees no PX, defaults to '1.09',
+    # and then trips 'Inconsistent Rock Ridge versions on the ISO!' on
+    # the next correctly-inferred (inline-PX) record like '.' or '..'.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.12')
+
+    aastr = b'aa\n'
+    iso.add_fp(io.BytesIO(aastr), len(aastr), '/AAAAAAAA.;1',
+               rr_name='a' * RR_MAX_FILENAME_LENGTH)
+
+    do_a_test(iso, check_rr_onetwelve_px_in_ce)
+
+    iso.close()
+
 def test_new_set_hidden_file():
     iso = pycdlib.PyCdlib()
     iso.new()
