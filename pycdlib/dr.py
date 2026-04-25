@@ -83,7 +83,14 @@ class XARecord:
                 continue
 
             if unused != b'\x00\x00\x00\x00\x00':
-                raise pycdlibexception.PyCdlibInvalidISO('Unused fields should be 0')
+                # The signature looks like 'XA', but the trailing reserved
+                # bytes aren't zero.  A real XA record always has those zero
+                # per the Yellow Book spec, so this is a false positive: SUSP
+                # payload (Rock Ridge) coincidentally containing 'XA' at the
+                # signature offset.  Fall through to the next candidate
+                # offset, then to the for-else (return False) if neither
+                # candidate validates.
+                continue
 
             self._pad_size = offset
             break
@@ -183,8 +190,8 @@ class DirectoryRecord:
         self.xa_record = None  # type: Optional[XARecord]
         self.inode = None  # type: Optional[inode.Inode]
 
-    def parse(self, vd, record, parent):
-        # type: (headervd.PrimaryOrSupplementaryVD, bytes, Optional[DirectoryRecord]) -> str
+    def parse(self, vd, record, parent, xa=False):
+        # type: (headervd.PrimaryOrSupplementaryVD, bytes, Optional[DirectoryRecord], bool) -> str
         """
         Parse a directory record out of a string.
 
@@ -192,6 +199,11 @@ class DirectoryRecord:
          vd - The Volume Descriptor this record is part of.
          record - The string to parse for this record.
          parent - The parent of this record.
+         xa - Whether the volume declares XA (via the PVD's 'CD-XA001'
+              marker).  When False, the system-use area is not scanned for
+              an XA record; this avoids false-positive matches against
+              Rock Ridge SUSP payload that happens to contain the bytes
+              'XA' at the signature offset.
         Returns:
          The Rock Ridge version as a string if this Directory Record has Rock
          Ridge, '' otherwise.
@@ -278,10 +290,11 @@ class DirectoryRecord:
             self._printable_name = self.file_ident
 
         if self.parent is not None:
-            xa_rec = XARecord()
-            if xa_rec.parse(record[record_offset:], self.len_fi):
-                self.xa_record = xa_rec
-                record_offset += len(self.xa_record.record())
+            if xa:
+                xa_rec = XARecord()
+                if xa_rec.parse(record[record_offset:], self.len_fi):
+                    self.xa_record = xa_rec
+                    record_offset += len(self.xa_record.record())
 
             if len(record[record_offset:]) >= 2 and \
                record[record_offset:record_offset + 2] in (b'SP', b'RR', b'CE', b'PX', b'ER', b'ES', b'PN', b'SL', b'NM', b'CL', b'PL', b'TF', b'SF', b'RE', b'AL'):

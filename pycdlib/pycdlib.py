@@ -1049,7 +1049,7 @@ class PyCdlib:
 
                 new_record = dr.DirectoryRecord()
                 rr = new_record.parse(vd, data[offset:offset + lenbyte],
-                                      dir_record)
+                                      dir_record, self.xa)
                 offset += lenbyte
 
                 # Cache some properties of this record for later use.
