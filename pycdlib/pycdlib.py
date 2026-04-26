@@ -5700,14 +5700,20 @@ class PyCdlib:
 
         self.isohybrid_mbr = None
 
-    def full_path_from_dirrecord(self, rec, rockridge=False):
-        # type: (Union[dr.DirectoryRecord, udfmod.UDFFileEntry], bool) -> str
+    def full_path_from_dirrecord(self, rec, rockridge=False, encoding=None):
+        # type: (Union[dr.DirectoryRecord, udfmod.UDFFileEntry], bool, Optional[str]) -> str
         """
         Get the absolute path of a directory record.
 
         Parameters:
          rec - The directory record to get the full path for.
          rockridge - Whether to get the rock ridge full path.
+         encoding - The encoding to decode the on-disk file identifiers
+                    with.  When None, defaults to 'utf-8' for ISO9660 and
+                    Rock Ridge records, 'utf-16_be' for Joliet records,
+                    and the UDF file_ident's own encoding for UDF.  Pass
+                    a non-None value when walking an ISO whose names are
+                    in a different encoding (issue #109; e.g. shift_jis).
         Returns:
          A string representing the absolute path to the file on the ISO.
         """
@@ -5716,9 +5722,10 @@ class PyCdlib:
 
         names = []  # type: List[str]
         if isinstance(rec, dr.DirectoryRecord):
-            encoding = 'utf-8'
-            if self.joliet_vd is not None and id(rec.vd) == id(self.joliet_vd):
-                encoding = 'utf-16_be'
+            if encoding is None:
+                encoding = 'utf-8'
+                if self.joliet_vd is not None and id(rec.vd) == id(self.joliet_vd):
+                    encoding = 'utf-16_be'
 
             # A root entry has no Rock Ridge entry, even on a Rock Ridge ISO.
             # Always return / here.
@@ -5755,10 +5762,11 @@ class PyCdlib:
         else:
             if rec.parent is None:
                 return '/'
-            if rec.file_ident is not None:
-                encoding = rec.file_ident.encoding
-            else:
-                encoding = 'utf-8'
+            if encoding is None:
+                if rec.file_ident is not None:
+                    encoding = rec.file_ident.encoding
+                else:
+                    encoding = 'utf-8'
             udf_rec = rec  # type: Optional[udfmod.UDFFileEntry]
             while udf_rec is not None:
                 ident = udf_rec.file_identifier()
@@ -5972,12 +5980,26 @@ class PyCdlib:
             dir_record = dirs.popleft()
 
             relpath = self.full_path_from_dirrecord(dir_record,
-                                                    rockridge=path_type == 'rr_path')
+                                                    rockridge=path_type == 'rr_path',
+                                                    encoding=user_encoding)
             dirlist = []
             filelist = []
             dirdict = {}
 
-            for child in reversed(list(self.list_children(**{path_type: relpath}))):
+            # Iterate dir_record's children directly instead of going
+            # through list_children(<path>) -- the latter would re-encode
+            # relpath for path lookup with a hardcoded encoding, which
+            # fails on ISOs whose on-disk names aren't UTF-8 (issue #109).
+            if path_type == 'udf_path':
+                assert isinstance(dir_record, udfmod.UDFFileEntry)
+                if not dir_record.is_dir():
+                    raise pycdlibexception.PyCdlibInvalidInput('UDF File Entry is not a directory!')
+                children_iter = [fi.file_entry for fi in dir_record.fi_descs]  # type: List[Any]
+            else:
+                assert isinstance(dir_record, dr.DirectoryRecord)
+                children_iter = list(_yield_children(dir_record, path_type == 'rr_path'))
+
+            for child in reversed(children_iter):
                 if child is None or child.is_dot() or child.is_dotdot():
                     continue
 

@@ -2662,6 +2662,42 @@ def test_new_udf_boot_descriptor_parsed():
     assert(len(iso2.udf_boots) == 1)
     iso2.close()
 
+def test_new_walk_with_non_utf8_directory_name():
+    # Regression test for https://github.com/clalancette/pycdlib/issues/109.
+    # The 1.15.0 walk encoding work decoded the file/directory names that
+    # walk() yields, but full_path_from_dirrecord still hardcoded UTF-8
+    # for ISO9660 records and tripped UnicodeDecodeError when walk
+    # recursed into a sub-directory whose on-disk name isn't UTF-8.
+    # In addition, the descended walk() iteration used to look up the
+    # directory via list_children(iso_path=relpath), which re-encoded
+    # the path through hardcoded UTF-8 and failed to find the record.
+    # Build a small ISO and byte-patch a directory's file_ident to be
+    # the shift_jis bytes for the character 'せ' (which are *not* valid
+    # UTF-8) to exercise both code paths.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_directory('/AA')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/AA/FOO.;1')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    root_extent = iso.pvd.root_dir_record.extent_location()
+    iso.close()
+
+    data = bytearray(out.getvalue())
+    ext_off = root_extent * 2048
+    pos = data.find(b'AA', ext_off, ext_off + 2048)
+    assert(pos >= 0)
+    data[pos:pos + 2] = b'\x82\xb9'  # shift_jis for 'せ'; not valid UTF-8
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(bytes(data)))
+    walked = list(iso2.walk(iso_path='/', encoding='shift_jis'))
+    assert(walked == [
+        ('/', ['せ'], []),
+        ('/せ', [], ['FOO.;1']),
+    ])
+    iso2.close()
+
 def test_new_set_hidden_file():
     iso = pycdlib.PyCdlib()
     iso.new()
