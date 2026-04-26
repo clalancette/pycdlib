@@ -920,3 +920,54 @@ def test_facade_udf_open_file_from_iso():
         assert(infp.tell() == 4)
 
     iso.close()
+
+# Coverage for the four "Invalid return type from get_record" defensive
+# raises in the four facade get_record methods.  Under normal use these
+# can't fire -- pycdlib_obj.get_record always returns a DirectoryRecord
+# for iso/joliet/rr_path and a UDFFileEntry for udf_path -- so we replace
+# the facade's pycdlib_obj with a stub whose get_record returns a bare
+# object().
+
+class _StubReturnsWrongType:
+    def get_record(self, **kwargs):
+        return object()
+
+def test_facade_iso9660_get_record_wrong_type():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    facade = iso.get_iso9660_facade()
+    facade.pycdlib_obj = _StubReturnsWrongType()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        facade.get_record('/')
+    assert(str(excinfo.value) == 'Invalid return type from get_record')
+    iso.close()
+
+def test_facade_joliet_get_record_wrong_type():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    facade = iso.get_joliet_facade()
+    facade.pycdlib_obj = _StubReturnsWrongType()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        facade.get_record('/')
+    assert(str(excinfo.value) == 'Invalid return type from get_record')
+    iso.close()
+
+def test_facade_rr_get_record_wrong_type():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    facade = iso.get_rock_ridge_facade()
+    facade.pycdlib_obj = _StubReturnsWrongType()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        facade.get_record('/')
+    assert(str(excinfo.value) == 'Invalid return type from get_record')
+    iso.close()
+
+def test_facade_udf_get_record_wrong_type():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    facade = iso.get_udf_facade()
+    facade.pycdlib_obj = _StubReturnsWrongType()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        facade.get_record('/')
+    assert(str(excinfo.value) == 'Invalid return type from get_record')
+    iso.close()

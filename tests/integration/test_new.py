@@ -2620,6 +2620,48 @@ def test_new_modify_file_in_place_unsorted_dir_records():
         assert(buf.getvalue() == expected)
     iso3.close()
 
+def test_new_udf_boot_descriptor_parsed():
+    # Coverage for the UDF BOOT2 (Boot Descriptor) dispatch in
+    # _parse_volume_descriptors.  pycdlib's writer doesn't emit BOOT2 on
+    # its own, so build a real UDF ISO and overwrite the BEA01 extent
+    # with a synthetic BOOT2 descriptor.  Re-open and verify the BOOT2
+    # was parsed and stashed in iso.udf_boots.  (Replacing BEA01 also
+    # disables the rest of the UDF parse path -- _has_udf is only set
+    # when BEA01 is seen -- so we don't need the rest of the UDF
+    # machinery to remain functional for this test.)
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', udf_path='/foo')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    # Bytes copied from the existing UDFBootDescriptor.parse unit test
+    # in test_udf.py: structure_type=0, ident='BOOT2', version=1,
+    # reserved1=0, then 32-byte architecture_type and boot_ident
+    # (zero-init UDFEntityIDs), then boot_extent_loc/len/load/start (24
+    # zero bytes), then a valid 12-byte UDFTimestamp, flags=0,
+    # reserved2 = 32 zeros, boot_use = 1906 zeros.
+    boot2 = (b'\x00BOOT2\x01\x00'
+             + b'\x00' * 32
+             + b'\x00' * 32
+             + b'\x00' * 24
+             + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00'
+             + b'\x00\x00'
+             + b'\x00' * 32
+             + b'\x00' * 1906)
+    assert(len(boot2) == 2048)
+    data = bytearray(out.getvalue())
+    bea01_byte = data.find(b'BEA01')
+    assert(bea01_byte >= 0)
+    extent_start = (bea01_byte // 2048) * 2048
+    data[extent_start:extent_start + 2048] = boot2
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(bytes(data)))
+    assert(len(iso2.udf_boots) == 1)
+    iso2.close()
+
 def test_new_set_hidden_file():
     iso = pycdlib.PyCdlib()
     iso.new()
