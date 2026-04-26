@@ -221,6 +221,7 @@ class GPTPartHeader:
                  'last_lba', 'attributes', 'name')
 
     FMT = '<16s16sQQ8s72s'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     BASIC_PARTITION = b'\xa2\xa0\xd0\xeb\xe5\xb9\x33\x44\x87\xc0\x68\xb6\xb7\x26\x99\xc7'
     HFS_PARTITION = b'\x00\x53\x46\x48\x00\x00\xaa\x11\xaa\x11\x00\x30\x65\x43\xec\xac'
@@ -243,7 +244,7 @@ class GPTPartHeader:
             raise pycdlibexception.PyCdlibInternalError('This GPTPartHeader object is already initialized')
 
         (self.part_type_guid, part_guid, self.first_lba, self.last_lba,
-         self.attributes, name) = struct.unpack_from(self.FMT, instr[:struct.calcsize(self.FMT)], 0)
+         self.attributes, name) = struct.unpack_from(self.FMT, instr, 0)
 
         if self.part_type_guid not in (self.BASIC_PARTITION, self.HFS_PARTITION):
             raise pycdlibexception.PyCdlibInvalidISO('Invalid Partition Type UUID')
@@ -254,7 +255,7 @@ class GPTPartHeader:
 
         self._initialized = True
 
-        return struct.calcsize(self.FMT)
+        return self._FMT_SIZE
 
     def new(self, is_basic, name):
         # type: (bool, str) -> None
@@ -309,6 +310,7 @@ class GPTHeader:
                  'num_parts', 'size_of_partition_entries')
 
     FMT = '<8s4s4sLLQQQQ16sQLLL420s'
+    _FMT_SIZE = struct.calcsize(FMT)
     GPT_SIG = b'\x45\x46\x49\x20\x50\x41\x52\x54'
     GPT_REV = b'\x00\x00\x01\x00'
     GPT_HEADER_SIZE = b'\x5c\x00\x00\x00'
@@ -335,7 +337,7 @@ class GPTHeader:
          self.last_usable_lba, disk_guid, self.partition_entries_lba,
          self.num_parts, self.size_of_partition_entries,
          partition_entries_crc_unused,
-         resv2_unused) = struct.unpack_from(self.FMT, instr[:struct.calcsize(self.FMT)], 0)
+         resv2_unused) = struct.unpack_from(self.FMT, instr, 0)
 
         if sig != self.GPT_SIG:
             raise pycdlibexception.PyCdlibInvalidISO('Failed to find GPT signature while parsing GPT Header')
@@ -350,7 +352,7 @@ class GPTHeader:
 
         self._initialized = True
 
-        return struct.calcsize(self.FMT)
+        return self._FMT_SIZE
 
     def new(self, mac):
         # type: (bool) -> None
@@ -653,6 +655,7 @@ class IsoHybrid:
                  'secondary_gpt')
 
     FMT = '<400sLLLH'
+    _FMT_SIZE = struct.calcsize(FMT)
     ORIG_HEADER = b'\x33\xed' + b'\x90' * 30
     MAC_AFP = b'\x45\x52\x08\x00\x00\x00\x90\x90' + b'\x00' * 24
     EFI_HEADER = b'\x00\xfe\xff\xff\xef\xfe\xff\xff'
@@ -693,7 +696,7 @@ class IsoHybrid:
             return False
 
         (self.mbr, self.rba, unused1, self.mbr_id,
-         unused2) = struct.unpack_from(self.FMT, instr[:32 + struct.calcsize(self.FMT)], 32)
+         unused2) = struct.unpack_from(self.FMT, instr, 32)
 
         if unused1 != 0:
             raise pycdlibexception.PyCdlibInvalidISO('Invalid IsoHybrid unused1')
@@ -703,20 +706,20 @@ class IsoHybrid:
 
         psize = 0
         ecyle = 0
-        offset = 32 + struct.calcsize(self.FMT)
+        offset = 32 + self._FMT_SIZE
         for i in range(1, 5):
-            if bytes(bytearray([instr[offset]])) == b'\x80':
+            if instr[offset] == 0x80:
                 self.part_entry = i
                 (const_unused, self.bhead, self.bsect, self.bcyle, self.ptype,
                  self.ehead, esect_unused, ecyle, self.part_offset,
-                 psize) = struct.unpack_from('<BBBBBBBBLL', instr[:offset + 16], offset)
+                 psize) = struct.unpack_from('<BBBBBBBBLL', instr, offset)
             if i == 2 and instr[offset:offset + 8] == self.EFI_HEADER:
                 self.efi = True
-                (efi_lba, self.efi_count) = struct.unpack_from('<LL', instr[:offset + 16], offset + 8)
+                (efi_lba, self.efi_count) = struct.unpack_from('<LL', instr, offset + 8)
                 self.efi_lba = efi_lba // 4
             if i == 3 and instr[offset:offset + 8] == self.MAC_HEADER:
                 self.mac = True
-                (mac_lba, self.mac_count) = struct.unpack_from('<LL', instr[:offset + 16], offset + 8)
+                (mac_lba, self.mac_count) = struct.unpack_from('<LL', instr, offset + 8)
                 self.mac_lba = mac_lba // 4
 
             offset += 16

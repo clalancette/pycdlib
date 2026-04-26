@@ -45,6 +45,7 @@ class XARecord:
                  '_filenum', '_pad_size')
 
     FMT = '=HHH2sB5s'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -75,7 +76,7 @@ class XARecord:
         # the XA record.
         for offset in (0, even_size):
             parse_str = xastr[offset:]
-            if len(parse_str) < struct.calcsize(self.FMT):
+            if len(parse_str) < self._FMT_SIZE:
                 return False
 
             (self._group_id, self._user_id, self._attributes, signature,
@@ -173,6 +174,7 @@ class DirectoryRecord:
     FILE_FLAG_MULTI_EXTENT_BIT = 7
 
     FMT = '<BBLLLL7sBBBHHB'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -224,7 +226,7 @@ class DirectoryRecord:
         (self.dr_len, self.xattr_len, extent_location_le, extent_location_be,
          data_length_le, data_length_be_unused, dr_date, self.file_flags,
          self.file_unit_size, self.interleave_gap_size, seqnum_le, seqnum_be,
-         self.len_fi) = struct.unpack_from(self.FMT, record[:33], 0)
+         self.len_fi) = struct.unpack_from(self.FMT, record, 0)
 
         # In theory we should have a check here that checks to make sure that
         # the length of the record we were passed in matches the data record
@@ -262,7 +264,7 @@ class DirectoryRecord:
             # However, we have seen ISOs in the wild that get this wrong, so we
             # elide a check for it.
 
-            self.file_ident = bytes(bytearray([record[33]]))
+            self.file_ident = record[33:34]
 
             # A root directory entry should always have 0 as the identifier.
             # However, we have seen ISOs in the wild that don't have this set
@@ -479,7 +481,7 @@ class DirectoryRecord:
         # so we leave it at None.
         self.orig_extent_loc = None
         self.len_fi = len(self.file_ident)
-        self.dr_len = struct.calcsize(self.FMT) + self.len_fi
+        self.dr_len = self._FMT_SIZE + self.len_fi
 
         # From Ecma-119, 9.1.6, the file flag bits are:
         #
@@ -1098,7 +1100,7 @@ class DirectoryRecord:
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
-        padlen = struct.calcsize(self.FMT) + self.len_fi
+        padlen = self._FMT_SIZE + self.len_fi
         padstr = b'\x00' * (padlen % 2)
 
         extent_loc = self._extent_location()

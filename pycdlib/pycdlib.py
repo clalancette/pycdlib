@@ -1070,7 +1070,7 @@ class PyCdlib:
                     # The data we read off of the ISO was shorter than what we
                     # expected.  The ISO is corrupt, throw an error.
                     raise pycdlibexception.PyCdlibInvalidISO('Invalid directory record')
-                lenbyte = bytearray([data[offset]])[0]
+                lenbyte = data[offset]
                 if lenbyte == 0:
                     # If we saw a zero length, this is probably the padding for
                     # the end of this extent.  Move the offset to the start of
@@ -1268,7 +1268,7 @@ class PyCdlib:
         extent_to_ptr = {}
         while offset < ptr_size:
             ptr = path_table_record.PathTableRecord()
-            len_di_byte = bytearray([data[offset]])[0]
+            len_di_byte = data[offset]
             read_len = path_table_record.PathTableRecord.record_length(len_di_byte)
 
             ptr.parse(data[offset:offset + read_len])
@@ -1915,7 +1915,7 @@ class PyCdlib:
                 # The first 64 bytes are not included in the checksum.
                 i = 64
             while i < len(block):
-                tmp, = struct.unpack_from('<L', block[:i + 4], i)
+                tmp, = struct.unpack_from('<L', block, i)
                 csum += tmp
                 csum = csum & 0xffffffff
                 i += 4
@@ -2607,17 +2607,22 @@ class PyCdlib:
         Returns:
          Nothing.
         """
-        start = outfp.tell()
-        outfp.write(data)
         if self._track_writes:
-            # After the write, double check that we didn't write beyond the
-            # boundary of the PVD, and raise a PyCdlibException if we do.
+            # When write tracking is on, capture the start offset and the
+            # end offset to verify we didn't overflow the ISO and to feed
+            # the per-range overlap detection.  Otherwise, skip the tell()
+            # calls entirely -- in the common (untracked) path this is a
+            # bare write.
+            start = outfp.tell()
+            outfp.write(data)
             end = outfp.tell()
             if end > self.pvd.space_size * self.logical_block_size:
                 raise pycdlibexception.PyCdlibInternalError('Wrote past the end of the ISO! (%d > %d)' % (end, self.pvd.space_size * self.logical_block_size))
 
             if enable_overwrite_check:
                 bisect.insort_left(self._write_check_list, self._WriteRange(start, end - 1))
+        else:
+            outfp.write(data)
 
     def _output_file_data(self, outfp, blocksize, ino):
         # type: (BinaryIO, int, inode.Inode) -> Generator

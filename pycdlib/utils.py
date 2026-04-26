@@ -449,6 +449,8 @@ class Win32RawDevice:
     It deals with getting the full size, allowing full access to all sectors,
     and alignment with the discs sector size.
     """
+    __slots__ = ('target', 'sector_size', 'disc_size', 'position', 'handle',
+                 'geometry')
 
     def __init__(self, target):
         # type: (str) -> None
