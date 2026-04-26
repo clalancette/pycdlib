@@ -939,7 +939,9 @@ class PyCdlib:
             for ver in ('1.09', '1.10', '1.12'):
                 if self.rock_ridge == ver:
                     if rr and rr != ver:
-                        raise pycdlibexception.PyCdlibInvalidISO('Inconsistent Rock Ridge versions on the ISO!')
+                        raise pycdlibexception.PyCdlibInvalidISO(
+                            'Inconsistent Rock Ridge versions on the ISO! '
+                            '(established %s, new record reports %s)' % (ver, rr))
 
     def _get_iso_size(self):
         # type: () -> int
