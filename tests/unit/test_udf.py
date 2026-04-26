@@ -2669,55 +2669,128 @@ def test_part_integrity_new():
     part.new('dir')
     assert(part.desc_tag.tag_ident == 265)
 
-# Extended File
-def test_extended_file_parse_initialized_twice():
+# Extended File Entry (tag 266; subclass of UDFFileEntry)
+def _build_efe_body(file_type=4, checkpoint=1, record_format=0,
+                    record_display_attrs=0, record_len=0):
+    icb_tag = struct.pack('<LHHHBB6sH', 0, 4, 0, 0, 0, file_type, b'\x00' * 6, 0)
+    ts = b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00'
+    return struct.pack(pycdlib.udf.UDFExtendedFileEntry.FMT,
+                       b'\x00' * 16, icb_tag, 0, 0, 0, 0,
+                       record_format, record_display_attrs, record_len,
+                       0, 0, 0, ts, ts, ts, ts, checkpoint,
+                       b'\x00' * 4, b'\x00' * 16, b'\x00' * 16,
+                       b'\x00' * 32, 0, 0, 0)
+
+def test_extended_file_entry_is_udf_file_entry_subclass():
+    assert(issubclass(pycdlib.udf.UDFExtendedFileEntry, pycdlib.udf.UDFFileEntry))
+
+def test_extended_file_entry_parse_initialized_twice():
     tag = pycdlib.udf.UDFTag()
     tag.new(0, 0)
-
     ef = pycdlib.udf.UDFExtendedFileEntry()
-    ef.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00' + b'\x00'*4 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 0, tag)
+    ef.parse(_build_efe_body(), 0, None, tag)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        ef.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00' + b'\x00'*4 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 0, tag)
+        ef.parse(_build_efe_body(), 0, None, tag)
     assert(str(excinfo.value) == 'UDF Extended File Entry already initialized')
 
-def test_extended_file_parse():
+def test_extended_file_entry_parse():
     tag = pycdlib.udf.UDFTag()
-    tag.new(0, 0)
-
+    tag.new(266, 0)
     ef = pycdlib.udf.UDFExtendedFileEntry()
-    ef.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00' + b'\x00'*4 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 0, tag)
-    assert(ef.desc_tag.tag_ident == 0)
+    ef.parse(_build_efe_body(file_type=4), 0, None, tag)
+    assert(isinstance(ef, pycdlib.udf.UDFFileEntry))
+    assert(ef.desc_tag.tag_ident == 266)
+    assert(ef.is_dir())
+    assert(ef.creation_time is not None)
+    assert(ef.stream_icb is not None)
 
-def test_extended_file_record_not_initialized():
+def test_extended_file_entry_parse_bad_record_format():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(266, 0)
+    ef = pycdlib.udf.UDFExtendedFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ef.parse(_build_efe_body(record_format=1), 0, None, tag)
+    assert(str(excinfo.value) == 'File Entry record format is not 0')
+
+def test_extended_file_entry_parse_bad_record_display_attrs():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(266, 0)
+    ef = pycdlib.udf.UDFExtendedFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ef.parse(_build_efe_body(record_display_attrs=1), 0, None, tag)
+    assert(str(excinfo.value) == 'File Entry record display attributes is not 0')
+
+def test_extended_file_entry_parse_bad_record_len():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(266, 0)
+    ef = pycdlib.udf.UDFExtendedFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ef.parse(_build_efe_body(record_len=1), 0, None, tag)
+    assert(str(excinfo.value) == 'File Entry record length is not 0')
+
+def test_extended_file_entry_parse_bad_checkpoint():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(266, 0)
+    ef = pycdlib.udf.UDFExtendedFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ef.parse(_build_efe_body(checkpoint=0), 0, None, tag)
+    assert(str(excinfo.value) == 'Only DVD Read-only disks supported')
+
+def test_extended_file_entry_record_not_initialized():
     ef = pycdlib.udf.UDFExtendedFileEntry()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         ef.record()
     assert(str(excinfo.value) == 'UDF Extended File Entry not initialized')
 
-def test_extended_file_record():
+def test_extended_file_entry_record_round_trip():
+    # Round-trip the body bytes: parse, then record, should match the input
+    # (modulo the 16-byte tag, which is regenerated by desc_tag.record).
+    body = _build_efe_body()
     tag = pycdlib.udf.UDFTag()
-    tag.new(0, 0)
-
+    tag.new(266, 0)
     ef = pycdlib.udf.UDFExtendedFileEntry()
-    ef.parse(b'\x00'*16 + b'\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00' + b'\x00\x00\x00\x00' + b'\x00'*4 + b'\x00'*16 + b'\x00'*16 + b'\x00'*32 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00' + b'\x00\x00\x00\x00\x00\x00\x00\x00', 0, tag)
-    assert(ef.record() == b'\x00\x00\x02\x00\xf1\x00\x00\x00\x52\xcd\xd0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00')
+    ef.parse(body, 0, None, tag)
+    out = ef.record()
+    assert(out[16:] == body[16:])
 
-def test_extended_file_new_initialized_twice():
+def test_extended_file_entry_new_creation_seconds():
     ef = pycdlib.udf.UDFExtendedFileEntry()
-    ef.new('dir', 0, 2048)
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        ef.new('dir', 0, 2048)
-    assert(str(excinfo.value) == 'UDF Extended File Entry already initialized')
-
-def test_extended_file_new_dir():
-    ef = pycdlib.udf.UDFExtendedFileEntry()
-    ef.new('dir', 0, 2048)
+    ef.new(0, 'dir', None, 2048, creation_seconds=1234567890.0)
     assert(ef.desc_tag.tag_ident == 266)
+    assert(ef.creation_time.year == 2009)
+    assert(ef.creation_time.month == 2)
+    assert(ef.creation_time.day == 13)
 
-def test_extended_file_new_file():
+def test_extended_file_entry_new_default_creation_time():
     ef = pycdlib.udf.UDFExtendedFileEntry()
-    ef.new('file', 5, 2048)
+    ef.new(0, 'dir', None, 2048)
+    # When creation_seconds isn't supplied, EFE.new uses the current time.
     assert(ef.desc_tag.tag_ident == 266)
+    assert(ef.creation_time is not None)
+
+def test_extended_file_entry_inherits_runtime_interface():
+    # Sanity: methods inherited from UDFFileEntry must work on EFE instances.
+    tag = pycdlib.udf.UDFTag()
+    tag.new(266, 0)
+    ef = pycdlib.udf.UDFExtendedFileEntry()
+    ef.parse(_build_efe_body(file_type=5), 0, None, tag)
+    assert(ef.is_file())
+    assert(not ef.is_dir())
+    assert(not ef.is_dot())
+    assert(not ef.is_dotdot())
+    assert(ef.file_identifier() == b'/')
+    assert(ef.get_data_length() == 0)
+
+# parse_file_entry tag dispatch
+def test_parse_file_entry_unknown_tag():
+    # tag 100 is neither 261 (FE) nor 266 (EFE).
+    tag = pycdlib.udf.UDFTag()
+    tag.new(100, 0)
+    body = b'\x00' * 200
+    icbdata = tag.record(body) + body
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pycdlib.udf.parse_file_entry(icbdata, 0, 0, None)
+    assert(str(excinfo.value) == 'UDF File Entry Tag identifier not 261 or 266')
 
 # parse_allocation_descriptors
 def test_parse_allocation_descriptors_long():

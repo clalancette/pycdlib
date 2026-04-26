@@ -2662,6 +2662,183 @@ def test_new_udf_boot_descriptor_parsed():
     assert(len(iso2.udf_boots) == 1)
     iso2.close()
 
+def test_new_udf_creation_time_forces_efe_round_trip():
+    # Regression test for https://github.com/clalancette/pycdlib/issues/94.
+    # When the user supplies creation_time on add_directory/add_file for a
+    # UDF path, pycdlib must emit an Extended File Entry (tag 266) for that
+    # entry, since regular File Entries (tag 261) have no on-disk slot for
+    # creation_time.  Round-trip the resulting ISO and verify the
+    # creation_time, the EFE on-disk format, and that an unstamped child
+    # mirrors its EFE parent.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    # An explicit creation_time forces EFE for /dir1.
+    creation_secs = 1234567890.0
+    iso.add_directory('/DIR1', udf_path='/dir1', creation_time=creation_secs)
+    # No creation_time on this child -- it must mirror the EFE parent.
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', udf_path='/dir1/foo')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(out.getvalue()))
+
+    # The root was created without creation_time, parent=None, so it
+    # should still be a regular File Entry.
+    assert(iso2.udf_root is not None)
+    assert(type(iso2.udf_root) is pycdlib.udf.UDFFileEntry)
+    assert(iso2.udf_root.desc_tag.tag_ident == 261)
+
+    sub = iso2._find_udf_record(b'/dir1')[1]
+    assert(isinstance(sub, pycdlib.udf.UDFExtendedFileEntry))
+    assert(sub.desc_tag.tag_ident == 266)
+    # creation_time round-tripped (granularity is whole seconds).
+    assert(sub.creation_time.year == 2009)
+    assert(sub.creation_time.month == 2)
+    assert(sub.creation_time.day == 13)
+
+    foo = iso2._find_udf_record(b'/dir1/foo')[1]
+    # Mirroring: parent /dir1 is EFE, so /dir1/foo is EFE too even though
+    # the caller didn't supply a creation_time for it.
+    assert(isinstance(foo, pycdlib.udf.UDFExtendedFileEntry))
+    assert(foo.desc_tag.tag_ident == 266)
+
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, udf_path='/dir1/foo')
+    assert(buf.getvalue() == b'foo\n')
+
+    iso2.close()
+
+def test_new_udf_no_creation_time_keeps_fe():
+    # Sibling test: if no creation_time is supplied, every UDF entry stays
+    # in the regular File Entry format (tag 261), matching the parent.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_directory('/DIR1', udf_path='/dir1')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', udf_path='/foo')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(out.getvalue()))
+    assert(type(iso2.udf_root) is pycdlib.udf.UDFFileEntry)
+    sub = iso2._find_udf_record(b'/dir1')[1]
+    assert(type(sub) is pycdlib.udf.UDFFileEntry)
+    foo = iso2._find_udf_record(b'/foo')[1]
+    assert(type(foo) is pycdlib.udf.UDFFileEntry)
+    iso2.close()
+
+def test_new_creation_time_no_compatible_storage_errors():
+    # creation_time has nowhere to live on plain ISO9660 / Joliet (the DR
+    # has no creation-time field), so passing it without RR or UDF raises.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_fp(io.BytesIO(b'x'), 1, '/X.;1', creation_time=0.0)
+    assert('creation_time' in str(excinfo.value))
+    iso.close()
+
+def test_new_rock_ridge_creation_time_round_trip():
+    # On a Rock Ridge ISO, creation_time should land in the TF record's
+    # CREATION timestamp (bit 0).  Verify by re-opening and inspecting
+    # the parsed RRTFRecord.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    creation_secs = 1234567890.0
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', rr_name='foo',
+               creation_time=creation_secs)
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(out.getvalue()))
+    rec = iso2.get_record(rr_path='/foo')
+    assert(rec.rock_ridge is not None)
+    tf = rec.rock_ridge.dr_entries.tf_record
+    if tf is None:
+        tf = rec.rock_ridge.ce_entries.tf_record
+    assert(tf is not None)
+    assert(tf.creation_time is not None)
+    assert(tf.creation_time.years_since_1900 == 109)  # 2009
+    assert(tf.creation_time.month == 2)
+    assert(tf.creation_time.day_of_month == 13)
+    iso2.close()
+
+def test_new_add_symlink_creation_time_forces_efe():
+    # add_symlink with creation_time on a UDF symlink path forces the
+    # EFE format for the symlink's UDF File Entry.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_symlink(udf_symlink_path='/lnk', udf_target='target',
+                    creation_time=1234567890.0)
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(out.getvalue()))
+    rec = iso2._find_udf_record(b'/lnk')[1]
+    assert(isinstance(rec, pycdlib.udf.UDFExtendedFileEntry))
+    assert(rec.creation_time.year == 2009)
+    iso2.close()
+
+def test_new_add_hard_link_creation_time_round_trip_rr():
+    # Rock Ridge hard links get their own DR (and own TF record) per link,
+    # so creation_time on the new link round-trips cleanly without
+    # disturbing the original DR.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', rr_name='foo')
+    iso.add_hard_link(iso_old_path='/FOO.;1', iso_new_path='/FOO2.;1',
+                      rr_name='foo2', creation_time=1234567890.0)
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(out.getvalue()))
+    rec = iso2.get_record(rr_path='/foo2')
+    tf = rec.rock_ridge.dr_entries.tf_record
+    if tf is None:
+        tf = rec.rock_ridge.ce_entries.tf_record
+    assert(tf is not None)
+    assert(tf.creation_time is not None)
+    assert(tf.creation_time.years_since_1900 == 109)
+    # The original link's DR keeps its default flags (no creation_time).
+    rec_orig = iso2.get_record(rr_path='/foo')
+    tf_orig = rec_orig.rock_ridge.dr_entries.tf_record
+    if tf_orig is None:
+        tf_orig = rec_orig.rock_ridge.ce_entries.tf_record
+    assert(tf_orig is not None)
+    assert(tf_orig.creation_time is None)
+    iso2.close()
+
+def test_new_add_hard_link_creation_time_udf_rejected():
+    # UDF hard links share a single File Entry in pycdlib, so a per-link
+    # creation_time can't be honored -- we must reject it.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', udf_path='/foo')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_hard_link(udf_old_path='/foo', udf_new_path='/foo2',
+                          creation_time=0.0)
+    assert('UDF hard links' in str(excinfo.value))
+    iso.close()
+
+def test_new_add_directory_creation_time_no_storage_errors():
+    # creation_time on add_directory must error if neither RR nor UDF can
+    # store it.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_directory(joliet_path='/dir1', creation_time=0.0)
+    assert('creation_time' in str(excinfo.value))
+    iso.close()
+
 def test_new_walk_with_non_utf8_directory_name():
     # Regression test for https://github.com/clalancette/pycdlib/issues/109.
     # The 1.15.0 walk encoding work decoded the file/directory names that

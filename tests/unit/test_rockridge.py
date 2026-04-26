@@ -888,6 +888,25 @@ def test_rrtfrecord_record_not_initialized():
 def test_rrtfrecord_length_use_vol_desc_dates():
     assert(pycdlib.rockridge.RRTFRecord.length(0x81) == 0x16)
 
+def test_rrtfrecord_new_creation_seconds_forces_creation_bit():
+    # Passing creation_seconds adds the creation_time bit (0x01) on top of
+    # whatever flags were requested, and the field is populated from the
+    # creation_seconds value rather than from date_seconds.
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.new(pycdlib.rockridge.TF_FLAGS, 0.0, creation_seconds=1234567890.0)
+    assert(tf.time_flags & 0x01)
+    assert(tf.creation_time is not None)
+    assert(tf.creation_time.years_since_1900 == 109)
+    assert(tf.creation_time.month == 2)
+    assert(tf.creation_time.day_of_month == 13)
+
+def test_rrtfrecord_new_no_creation_seconds_keeps_flags():
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.new(pycdlib.rockridge.TF_FLAGS, 0.0)
+    # No creation_seconds -> creation_time bit stays off, no field set.
+    assert(not (tf.time_flags & 0x01))
+    assert(tf.creation_time is None)
+
 # SF record
 def test_rrsfrecord_parse_double_initialized():
     sf = pycdlib.rockridge.RRSFRecord()

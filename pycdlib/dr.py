@@ -340,8 +340,9 @@ class DirectoryRecord:
         return ret
 
     def _rr_new(self, rr_version, rr_name, rr_symlink_target, rr_relocated_child,
-                rr_relocated, rr_relocated_parent, file_mode, date_seconds):
-        # type: (str, bytes, bytes, bool, bool, bool, int, float) -> None
+                rr_relocated, rr_relocated_parent, file_mode, date_seconds,
+                creation_seconds=None):
+        # type: (str, bytes, bytes, bool, bool, bool, int, float, Optional[float]) -> None
         """
         Internal method to add Rock Ridge to a Directory Record.
 
@@ -376,7 +377,8 @@ class DirectoryRecord:
                                           file_mode, rr_symlink_target,
                                           rr_version, rr_relocated_child,
                                           rr_relocated, rr_relocated_parent,
-                                          bytes_to_skip, self.dr_len, {}, date_seconds)
+                                          bytes_to_skip, self.dr_len, {},
+                                          date_seconds, creation_seconds)
 
         # For files, we are done
         if not self.isdir:
@@ -522,8 +524,8 @@ class DirectoryRecord:
         self.initialized = True
 
     def new_symlink(self, vd, name, parent, rr_target, seqnum, rock_ridge,
-                    rr_name, xa, date_seconds):
-        # type: (headervd.PrimaryOrSupplementaryVD, bytes, DirectoryRecord, bytes, int, str, bytes, bool, float) -> None
+                    rr_name, xa, date_seconds, creation_seconds=None):
+        # type: (headervd.PrimaryOrSupplementaryVD, bytes, DirectoryRecord, bytes, int, str, bytes, bool, float, Optional[float]) -> None
         """
         Create a new symlink Directory Record.  This implies that the new
         record will be Rock Ridge.
@@ -539,6 +541,8 @@ class DirectoryRecord:
          xa - True if this is an Extended Attribute record.
          date_seconds - Time and date, in seconds since the epoch, to use for
                         this symlink.
+         creation_seconds - Optional creation time, in seconds since the epoch,
+                            for the Rock Ridge TF record.
         Returns:
          Nothing.
         """
@@ -548,11 +552,11 @@ class DirectoryRecord:
         self._new(vd, name, parent, seqnum, False, 0, xa, date_seconds)
         if rock_ridge:
             self._rr_new(rock_ridge, rr_name, rr_target, False, False, False,
-                         0o0120555, date_seconds)
+                         0o0120555, date_seconds, creation_seconds)
 
     def new_file(self, vd, length, isoname, parent, seqnum, rock_ridge, rr_name,
-                 xa, file_mode, date_seconds):
-        # type: (headervd.PrimaryOrSupplementaryVD, int, bytes, DirectoryRecord, int, str, bytes, bool, int, float) -> None
+                 xa, file_mode, date_seconds, creation_seconds=None):
+        # type: (headervd.PrimaryOrSupplementaryVD, int, bytes, DirectoryRecord, int, str, bytes, bool, int, float, Optional[float]) -> None
         """
         Create a new file Directory Record.
 
@@ -568,6 +572,8 @@ class DirectoryRecord:
          file_mode - The POSIX file mode for this entry.
          date_seconds - Time and date, in seconds since the epoch, to use for
                         this file.
+         creation_seconds - Optional creation time, in seconds since the epoch,
+                            for the Rock Ridge TF record.
         Returns:
          Nothing.
         """
@@ -577,7 +583,7 @@ class DirectoryRecord:
         self._new(vd, isoname, parent, seqnum, False, length, xa, date_seconds)
         if rock_ridge:
             self._rr_new(rock_ridge, rr_name, b'', False, False, False,
-                         file_mode, date_seconds)
+                         file_mode, date_seconds, creation_seconds)
 
     def new_root(self, vd, seqnum, log_block_size, date_seconds):
         # type: (headervd.PrimaryOrSupplementaryVD, int, int, float) -> None
@@ -656,8 +662,8 @@ class DirectoryRecord:
 
     def new_dir(self, vd, name, parent, seqnum, rock_ridge, rr_name,
                 log_block_size, rr_relocated_child, rr_relocated, xa, file_mode,
-                date_seconds):
-        # type: (headervd.PrimaryOrSupplementaryVD, bytes, DirectoryRecord, int, str, bytes, int, bool, bool, bool, int, float) -> None
+                date_seconds, creation_seconds=None):
+        # type: (headervd.PrimaryOrSupplementaryVD, bytes, DirectoryRecord, int, str, bytes, int, bool, bool, bool, int, float, Optional[float]) -> None
         """
         Create a new directory Directory Record.
 
@@ -675,6 +681,8 @@ class DirectoryRecord:
          file_mode - The POSIX file mode to set for this directory.
          date_seconds - Time and date, in seconds since the epoch, to use for
                         this directory record.
+         creation_seconds - Optional creation time, in seconds since the epoch,
+                            for the Rock Ridge TF record.
         Returns:
          Nothing.
         """
@@ -685,7 +693,8 @@ class DirectoryRecord:
                   date_seconds)
         if rock_ridge:
             self._rr_new(rock_ridge, rr_name, b'', rr_relocated_child,
-                         rr_relocated, False, file_mode, date_seconds)
+                         rr_relocated, False, file_mode, date_seconds,
+                         creation_seconds)
             if rr_relocated_child and self.rock_ridge:
                 # Relocated Rock Ridge entries are not exactly treated as
                 # directories, so fix things up here.

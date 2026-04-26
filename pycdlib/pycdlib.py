@@ -899,6 +899,33 @@ class PyCdlib:
 
         return (name.decode('utf-8').encode('utf-16_be'), parent)
 
+    def _new_udf_file_entry(self, parent, creation_time):
+        # type: (Optional[udfmod.UDFFileEntry], Optional[float]) -> udfmod.UDFFileEntry
+        """
+        An internal method to construct a fresh UDF file entry of the
+        appropriate on-disk format.  The choice between regular File Entry
+        (tag 261, ECMA-167 14.9) and Extended File Entry (tag 266, 14.17)
+        is per-entry, driven by:
+          - if the caller supplied a creation_time, EFE is required (FE has
+            no on-disk slot for it);
+          - otherwise the new entry mirrors its parent's on-disk format,
+            keeping pure-FE and pure-EFE ISOs round-trip-clean when adding
+            entries to an opened ISO.
+
+        Parameters:
+         parent - The parent UDF File Entry the new entry will live under,
+                  or None for the root.
+         creation_time - The user-supplied creation time, or None.
+        Returns:
+         A UDFFileEntry instance (or UDFExtendedFileEntry, which is-a
+         UDFFileEntry) ready to have .new() called on it.
+        """
+        if creation_time is not None:
+            return udfmod.UDFExtendedFileEntry()
+        if isinstance(parent, udfmod.UDFExtendedFileEntry):
+            return udfmod.UDFExtendedFileEntry()
+        return udfmod.UDFFileEntry()
+
     def _udf_name_and_parent_from_path(self, udf_path):
         # type: (bytes) -> Tuple[bytes, udfmod.UDFFileEntry]
         """
@@ -3080,8 +3107,8 @@ class PyCdlib:
             self._needs_reshuffle = True
 
     def _add_hard_link_to_inode(self, data_ino, length, file_mode,
-                                boot_catalog_old, **kwargs):
-        # type: (Optional[inode.Inode], int, int, bool, Optional[str]) -> int
+                                boot_catalog_old, creation_time, **kwargs):
+        # type: (Optional[inode.Inode], int, int, bool, Optional[float], Optional[str]) -> int
         """
         Add a hard link to the ISO.  Hard links are alternate names for the
         same file contents that don't take up any additional space on the ISO.
@@ -3162,7 +3189,7 @@ class PyCdlib:
             new_rec = dr.DirectoryRecord()
             new_rec.new_file(vd, length, new_name, new_parent,
                              vd.sequence_number(), rr, rr_name, xa, file_mode,
-                             time.time())
+                             time.time(), creation_time)
 
             num_bytes_to_add += self._add_child_to_dr(new_rec)
             num_bytes_to_add += self._update_rr_ce_entry(new_rec)
@@ -3179,8 +3206,13 @@ class PyCdlib:
                                                              self.logical_block_size)
             num_bytes_to_add += num_new_extents * self.logical_block_size
 
-            file_entry = udfmod.UDFFileEntry()
-            file_entry.new(length, 'file', udf_parent, self.logical_block_size)
+            file_entry = self._new_udf_file_entry(udf_parent, creation_time)
+            if isinstance(file_entry, udfmod.UDFExtendedFileEntry):
+                file_entry.new(length, 'file', udf_parent,
+                               self.logical_block_size, creation_time)
+            else:
+                file_entry.new(length, 'file', udf_parent,
+                               self.logical_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             if data_ino is None or data_ino.num_udf == 0:
@@ -3206,8 +3238,9 @@ class PyCdlib:
         return num_bytes_to_add
 
     def _add_fp(self, fp, length, manage_fp, iso_path, rr_name,
-                joliet_path, udf_path, file_mode, eltorito_catalog):
-        # type: (Optional[Union[BinaryIO, str]], int, bool, Optional[str], Optional[str], Optional[str], Optional[str], Optional[int], bool) -> int
+                joliet_path, udf_path, file_mode, eltorito_catalog,
+                creation_time):
+        # type: (Optional[Union[BinaryIO, str]], int, bool, Optional[str], Optional[str], Optional[str], Optional[str], Optional[int], bool, Optional[float]) -> int
         """
         An internal method to add a file to the ISO.  If the ISO contains Rock
         Ridge, then a Rock Ridge name must be provided.  If the ISO contains
@@ -3284,6 +3317,7 @@ class PyCdlib:
                 num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
                                                                  fmode,
                                                                  eltorito_catalog,
+                                                                 creation_time,
                                                                  iso_new_path=iso_path,
                                                                  rr_name=rr_name)
 
@@ -3293,6 +3327,7 @@ class PyCdlib:
                 num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
                                                                  fmode,
                                                                  eltorito_catalog,
+                                                                 creation_time,
                                                                  joliet_new_path=joliet_path)
 
             # This goes after the hard link so we only track the new Inode if
@@ -3309,6 +3344,7 @@ class PyCdlib:
             num_bytes_to_add += self._add_hard_link_to_inode(ino, length,
                                                              fmode,
                                                              eltorito_catalog,
+                                                             creation_time,
                                                              udf_new_path=udf_path)
 
         return num_bytes_to_add
@@ -4031,7 +4067,7 @@ class PyCdlib:
             num_bytes_to_add += 2 * self.logical_block_size
 
             # Create the root directory, and the 'parent' entry inside.
-            self.udf_root = udfmod.UDFFileEntry()
+            self.udf_root = self._new_udf_file_entry(None, None)
             self.udf_root.new(0, 'dir', None, self.logical_block_size)
             num_bytes_to_add += self.logical_block_size
 
@@ -4365,8 +4401,8 @@ class PyCdlib:
         self._write_fp(outfp, blocksize, progress_cb, progress_opaque)
 
     def add_fp(self, fp, length, iso_path=None, rr_name=None, joliet_path=None,
-               file_mode=None, udf_path=None):
-        # type: (BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[int], Optional[str]) -> None
+               file_mode=None, udf_path=None, creation_time=None):
+        # type: (BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[int], Optional[str], Optional[float]) -> None
         """
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
@@ -4386,6 +4422,13 @@ class PyCdlib:
                      applies if this is a Rock Ridge ISO.  If this is None (the
                      default), the permissions from the original file are used.
          udf_path - The UDF name of the file destination on the ISO.
+         creation_time - Optional creation time, in seconds since the epoch.
+                         Stored on Rock Ridge TF (CREATION timestamp) and on
+                         UDF (forces an Extended File Entry, which has the
+                         on-disk slot).  Plain ISO9660 and Joliet have no
+                         creation-time field, so when supplied this value
+                         requires that at least one of iso_path (with Rock
+                         Ridge enabled) or udf_path is also supplied.
         Returns:
          Nothing.
         """
@@ -4395,14 +4438,19 @@ class PyCdlib:
         if not utils.file_object_supports_binary(fp):
             raise pycdlibexception.PyCdlibInvalidInput('The fp argument must be in binary mode')
 
+        if creation_time is not None and not ((iso_path and self.rock_ridge) or udf_path):
+            raise pycdlibexception.PyCdlibInvalidInput(
+                'creation_time can only be stored on a Rock Ridge iso_path or a udf_path')
+
         num_bytes_to_add = self._add_fp(fp, length, False, iso_path, rr_name,
-                                        joliet_path, udf_path, file_mode, False)
+                                        joliet_path, udf_path, file_mode, False,
+                                        creation_time)
 
         self._finish_add(0, num_bytes_to_add)
 
     def add_file(self, filename, iso_path=None, rr_name=None, joliet_path=None,
-                 file_mode=None, udf_path=None):
-        # type: (str, Optional[str], Optional[str], Optional[str], Optional[int], Optional[str]) -> None
+                 file_mode=None, udf_path=None, creation_time=None):
+        # type: (str, Optional[str], Optional[str], Optional[str], Optional[int], Optional[str], Optional[float]) -> None
         """
         Add a file to the ISO.  If the ISO is a Rock Ridge one, then a Rock
         Ridge name must also be provided.  If the ISO is a Joliet one, then a
@@ -4418,15 +4466,22 @@ class PyCdlib:
                      applies if this is a Rock Ridge ISO.  If this is None (the
                      default), the permissions from the original file are used.
          udf_path - The UDF name of the file destination on the ISO.
+         creation_time - Optional creation time, in seconds since the epoch.
+                         See add_fp for storage rules.
         Returns:
          Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
+        if creation_time is not None and not ((iso_path and self.rock_ridge) or udf_path):
+            raise pycdlibexception.PyCdlibInvalidInput(
+                'creation_time can only be stored on a Rock Ridge iso_path or a udf_path')
+
         num_bytes_to_add = self._add_fp(filename, os.stat(filename).st_size,
                                         True, iso_path, rr_name, joliet_path,
-                                        udf_path, file_mode, False)
+                                        udf_path, file_mode, False,
+                                        creation_time)
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -4586,7 +4641,7 @@ class PyCdlib:
             offset_in_extent += len(recstr)
 
     def add_hard_link(self, **kwargs):
-        # type: (str) -> None
+        # type: (...) -> None
         """
         Add a hard link to the ISO.  Hard links are alternate names for the
         same file contents that don't take up any additional space on the the
@@ -4610,6 +4665,10 @@ class PyCdlib:
          boot_catalog_old - Use the El Torito boot catalog as the old path.
          udf_old_path - The old path on the UDF filesystem to link from.
          udf_new_path - The new path on the UDF filesystem to link to.
+         creation_time - Optional creation time, in seconds since the epoch,
+                         for the newly-created link.  See add_fp for storage
+                         rules: requires iso_new_path on a Rock Ridge ISO or
+                         udf_new_path.
         Returns:
          Nothing.
         """
@@ -4621,6 +4680,7 @@ class PyCdlib:
         joliet_old_path = None
         boot_catalog_old = False
         udf_old_path = None
+        creation_time = None  # type: Optional[float]
         keys_to_remove = []
         for key, value in kwargs.items():
             if key == 'iso_old_path':
@@ -4645,9 +4705,27 @@ class PyCdlib:
                     num_old += 1
                     udf_old_path = utils.normpath(value)
                 keys_to_remove.append(key)
+            elif key == 'creation_time':
+                creation_time = value
+                keys_to_remove.append(key)
 
         if num_old != 1:
             raise pycdlibexception.PyCdlibInvalidInput('Exactly one old path must be specified')
+
+        iso_new_path = kwargs.get('iso_new_path')
+        udf_new_path = kwargs.get('udf_new_path')
+        if creation_time is not None:
+            if udf_new_path is not None:
+                # In pycdlib's UDF writer, hard links to the same inode
+                # share a single on-disk File Entry, so a per-link
+                # creation_time would silently overwrite the shared
+                # entry's timestamp.  Reject it rather than pretend it
+                # works.
+                raise pycdlibexception.PyCdlibInvalidInput(
+                    'creation_time is not supported on UDF hard links; set creation_time when the file is first added')
+            if not (iso_new_path and self.rock_ridge):
+                raise pycdlibexception.PyCdlibInvalidInput(
+                    'creation_time can only be stored on a Rock Ridge iso_new_path')
 
         # Once we've iterated over the keys we know about, remove them from
         # the map so that _add_hard_link_to_inode() can parse the rest.
@@ -4689,6 +4767,7 @@ class PyCdlib:
         num_bytes_to_add = self._add_hard_link_to_inode(old_rec.inode,
                                                         old_rec.get_data_length(),
                                                         fmode, boot_catalog_old,
+                                                        creation_time,
                                                         **kwargs)
 
         self._finish_add(0, num_bytes_to_add)
@@ -4756,8 +4835,8 @@ class PyCdlib:
         self._finish_remove(num_bytes_to_remove, True)
 
     def add_directory(self, iso_path=None, rr_name=None, joliet_path=None,
-                      file_mode=None, udf_path=None):
-        # type: (Optional[str], Optional[str], Optional[str], Optional[int], Optional[str]) -> None
+                      file_mode=None, udf_path=None, creation_time=None):
+        # type: (Optional[str], Optional[str], Optional[str], Optional[int], Optional[str], Optional[float]) -> None
         """
         Add a directory to the ISO.  At least one of an iso_path, joliet_path,
         or udf_path must be provided.  Providing joliet_path on a non-Joliet
@@ -4771,6 +4850,8 @@ class PyCdlib:
          file_mode - The POSIX file mode to use for the directory.  This only
                      applies for Rock Ridge ISOs.
          udf_path - The UDF absolute path to use for the directory.
+         creation_time - Optional creation time, in seconds since the epoch.
+                         See add_fp for storage rules.
         Returns:
          Nothing.
         """
@@ -4782,6 +4863,10 @@ class PyCdlib:
 
         if file_mode is not None and not self.rock_ridge:
             raise pycdlibexception.PyCdlibInvalidInput('A file mode can only be specified for Rock Ridge ISOs')
+
+        if creation_time is not None and not ((iso_path and self.rock_ridge) or udf_path):
+            raise pycdlibexception.PyCdlibInvalidInput(
+                'creation_time can only be stored on a Rock Ridge iso_path or a udf_path')
 
         # For backwards-compatibility reasons, if the mode was not specified we
         # just assume 555.  We should probably eventually make file_mode
@@ -4822,7 +4907,8 @@ class PyCdlib:
                                      self.pvd.sequence_number(),
                                      self.rock_ridge, new_rr_name,
                                      self.logical_block_size, True, False,
-                                     self.xa, file_mode, time.time())
+                                     self.xa, file_mode, time.time(),
+                                     creation_time)
                 num_bytes_to_add += self._add_child_to_dr(fake_dir_rec)
 
                 # The fake dir record doesn't get an entry in the path table
@@ -4853,7 +4939,7 @@ class PyCdlib:
             rec.new_dir(self.pvd, iso9660_name, parent,
                         self.pvd.sequence_number(), self.rock_ridge, new_rr_name,
                         self.logical_block_size, False, relocated,
-                        self.xa, file_mode, time.time())
+                        self.xa, file_mode, time.time(), creation_time)
             num_bytes_to_add += self._add_child_to_dr(rec)
             if rec.rock_ridge is not None:
                 if relocated and fake_dir_rec is not None and fake_dir_rec.rock_ridge is not None:
@@ -4898,8 +4984,12 @@ class PyCdlib:
             num_new_extents = udf_parent.add_file_ident_desc(file_ident, self.logical_block_size)
             num_bytes_to_add += num_new_extents * self.logical_block_size
 
-            file_entry = udfmod.UDFFileEntry()
-            file_entry.new(0, 'dir', udf_parent, self.logical_block_size)
+            file_entry = self._new_udf_file_entry(udf_parent, creation_time)
+            if isinstance(file_entry, udfmod.UDFExtendedFileEntry):
+                file_entry.new(0, 'dir', udf_parent, self.logical_block_size,
+                               creation_time)
+            else:
+                file_entry.new(0, 'dir', udf_parent, self.logical_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             num_bytes_to_add += self.logical_block_size
@@ -5231,7 +5321,7 @@ class PyCdlib:
             num_bytes_to_add += self._add_fp(None, self.logical_block_size,
                                              False, bootcatfile, rrname,
                                              joliet_bootcatfile,
-                                             udf_bootcatfile, None, True)
+                                             udf_bootcatfile, None, True, None)
 
         self._finish_add(0, num_bytes_to_add)
 
@@ -5301,8 +5391,9 @@ class PyCdlib:
         self._finish_remove(num_bytes_to_remove, True)
 
     def add_symlink(self, symlink_path=None, rr_symlink_name=None, rr_path=None,
-                    joliet_path=None, udf_symlink_path=None, udf_target=None):
-        # type: (Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]) -> None
+                    joliet_path=None, udf_symlink_path=None, udf_target=None,
+                    creation_time=None):
+        # type: (Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[str], Optional[float]) -> None
         """
         Add a symlink from rr_symlink_name to the rr_path.  The ISO must have
         either Rock Ridge or UDF support (or both).
@@ -5316,6 +5407,11 @@ class PyCdlib:
          udf_symlink_path - The UDF path of the symlink itself on the ISO.
          udf_target - The UDF name of the entry on the ISO that the symlink
                       points to.
+         creation_time - Optional creation time, in seconds since the epoch.
+                         See add_fp for storage rules.  At least one of a Rock
+                         Ridge symlink (rr_symlink_name + rr_path) or a UDF
+                         symlink (udf_symlink_path + udf_target) must be
+                         supplied to store it.
         Returns:
          Nothing.
         """
@@ -5385,6 +5481,13 @@ class PyCdlib:
             # Rule 9
             raise pycdlibexception.PyCdlibInvalidInput('A Joliet path can only be specified for a Joliet ISO')
 
+        if creation_time is not None and rr_vars_provided != 2 and udf_vars_provided != 2:
+            # Both ends of an RR symlink must be present for the TF record
+            # to apply; either rr-symlink or udf-symlink can store
+            # creation_time.
+            raise pycdlibexception.PyCdlibInvalidInput(
+                'creation_time on add_symlink requires either a Rock Ridge symlink (rr_symlink_name + rr_path) or a UDF symlink (udf_symlink_path + udf_target)')
+
         # Checks complete, we can go on to make the symlink.
 
         num_bytes_to_add = 0
@@ -5402,7 +5505,8 @@ class PyCdlib:
                 rr_symlink_name_bytes = rr_symlink_name.encode('utf-8')
                 rec.new_symlink(self.pvd, name, parent, rr_path.encode('utf-8'),
                                 self.pvd.sequence_number(), self.rock_ridge,
-                                rr_symlink_name_bytes, self.xa, time.time())
+                                rr_symlink_name_bytes, self.xa, time.time(),
+                                creation_time)
                 num_bytes_to_add += self._add_child_to_dr(rec)
 
                 num_bytes_to_add += self._update_rr_ce_entry(rec)
@@ -5416,7 +5520,7 @@ class PyCdlib:
                     tmp_joliet_path = ''
                 num_bytes_to_add += self._add_fp(None, 0, False, symlink_path,
                                                  '', tmp_joliet_path, '', None,
-                                                 False)
+                                                 False, creation_time)
 
             udf_symlink_path_bytes = utils.normpath(udf_symlink_path)
 
@@ -5432,9 +5536,13 @@ class PyCdlib:
             # Generate the bytearry representing the symlink.
             symlink_bytearray = udfmod.symlink_to_bytes(udf_target)
 
-            file_entry = udfmod.UDFFileEntry()
-            file_entry.new(len(symlink_bytearray), 'symlink', udf_parent,
-                           self.logical_block_size)
+            file_entry = self._new_udf_file_entry(udf_parent, creation_time)
+            if isinstance(file_entry, udfmod.UDFExtendedFileEntry):
+                file_entry.new(len(symlink_bytearray), 'symlink', udf_parent,
+                               self.logical_block_size, creation_time)
+            else:
+                file_entry.new(len(symlink_bytearray), 'symlink', udf_parent,
+                               self.logical_block_size)
             file_ident.file_entry = file_entry
             file_entry.file_ident = file_ident
             num_bytes_to_add += self.logical_block_size
