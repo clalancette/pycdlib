@@ -740,11 +740,16 @@ def test_rrnmrecord_parse_invalid_flag():
         nm.parse(b'NM\x05\x01\x03')
     assert(str(excinfo.value) == 'Invalid Rock Ridge NM flags')
 
-def test_rrnmrecord_parse_invalid_flag_with_name():
+def test_rrnmrecord_parse_flag_with_name_accepted():
+    # Regression test for issue #130: VirtualBox Guest Additions ISOs
+    # set the CURRENT (0x2) flag *and* include a name.  Per spec the two
+    # are mutually exclusive, but the name is the writer's clear intent;
+    # accept it rather than raising.  Pre-fix this raised
+    # 'Invalid name in Rock Ridge NM entry (0x2 1)'.
     nm = pycdlib.rockridge.RRNMRecord()
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
-        nm.parse(b'NM\x06\x01\x02a')
-    assert(str(excinfo.value) == 'Invalid name in Rock Ridge NM entry (0x2 1)')
+    nm.parse(b'NM\x06\x01\x02a')
+    assert(nm.posix_name == b'a')
+    assert(nm.posix_name_flags == 0x2)
 
 def test_rrnmrecord_new_double_initialized():
     nm = pycdlib.rockridge.RRNMRecord()
@@ -1103,6 +1108,15 @@ def test_rr_parse_invalid_sp_record():
         rr.parse(b'SP\x01\x01', False, 0, False, b'')
     assert(str(excinfo.value) == 'Invalid SUSP SP record')
 
+def test_rr_parse_sp_record_in_non_root_dr():
+    # Regression test for issue #130: VirtualBox Guest Additions ISOs put
+    # SP records in dot/dotdot DRs of non-root directories, not only in
+    # the root's first DR.  Pre-fix this raised 'Invalid SUSP SP record'
+    # whenever is_first_dir_record_of_root was False.
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(b'SP\x07\x01\xbe\xef\x00', False, 0, False, b'')
+    assert(rr.dr_entries.sp_record is not None)
+
 def test_rr_parse_double_ce_record():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
@@ -1441,6 +1455,16 @@ def test_rrcontentry_track_overlap():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         rr.track_entry(22, 33)
     assert(str(excinfo.value) == 'Overlapping CE regions on the ISO')
+
+def test_rrcontentry_track_exact_duplicate_idempotent():
+    # Regression test for issue #130: ISOs (e.g. VirtualBox Guest Additions)
+    # share a single CE region across many DRs to save space, so the parser
+    # sees the same (offset, length) registered repeatedly.  Treat
+    # exact-match re-registrations as idempotent rather than overlapping.
+    rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
+    rr.track_entry(0, 23)
+    rr.track_entry(0, 23)
+    assert(len(rr._entries) == 1)
 
 def test_rrcontentry_track_rest():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)

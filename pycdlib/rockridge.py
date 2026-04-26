@@ -1579,8 +1579,12 @@ class RRNMRecord:
             raise pycdlibexception.PyCdlibInvalidISO('Invalid Rock Ridge NM flags')
 
         if name_len != 0:
-            if (self.posix_name_flags & (1 << 1)) or (self.posix_name_flags & (1 << 2)) or (self.posix_name_flags & (1 << 5)):
-                raise pycdlibexception.PyCdlibInvalidISO('Invalid name in Rock Ridge NM entry (0x%x %d)' % (self.posix_name_flags, name_len))
+            # The spec says CURRENT (bit 1), PARENT (bit 2), and HOST (bit 5)
+            # must not be combined with a name -- the flag itself is the
+            # entire payload.  ISOs in the wild (e.g. VirtualBox Guest
+            # Additions) violate this by setting CURRENT with a real name.
+            # When a name is present, take it; the bare flag was clearly
+            # not the writer's intent.
             self.posix_name += rrstr[5:5 + name_len]
 
         self._initialized = True
@@ -2529,12 +2533,13 @@ class RockRidge:
                     raise pycdlibexception.PyCdlibInvalidISO('Only single %s record supported' % (rtype.decode('utf-8')))
 
             if rtype == b'SP':
-                if left < 7 or not is_first_dir_record_of_root:
+                # SUSP says the SP record belongs in the first Directory
+                # Record of the root, but ISOs in the wild (e.g. VirtualBox
+                # Guest Additions) put one in every dot/dotdot DR.  Accept
+                # the record wherever it appears as long as there's room
+                # for one; RRSPRecord.parse() validates the magic bytes.
+                if left < 7:
                     raise pycdlibexception.PyCdlibInvalidISO('Invalid SUSP SP record')
-
-                # OK, this is the first Directory Record of the root
-                # directory, which means we should check it for the SUSP/RR
-                # extension, which is exactly 7 bytes and starts with 'SP'.
 
                 entry_list.sp_record = RRSPRecord()
                 entry_list.sp_record.parse(recslice)
@@ -3680,6 +3685,13 @@ class RockRidgeContinuationBlock:
         """
         newlen = offset + length - 1
         for entry in self._entries:
+            # Idempotent: if a previous DR already registered this exact
+            # range, accept silently.  Some writers (e.g. VirtualBox Guest
+            # Additions) share a single CE region across many dot/dotdot
+            # DRs to save space; each parses successfully and registers
+            # the same (offset, length) pair.
+            if entry.offset == offset and entry.length == length:
+                return
             thislen = entry.offset + entry.length - 1
             overlap = range(max(entry.offset, offset), min(thislen, newlen) + 1)
             if overlap:
