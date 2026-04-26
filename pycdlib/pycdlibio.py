@@ -24,11 +24,17 @@ from pycdlib import pycdlibexception
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    import collections.abc  # noqa: F401
+    import array
     import ctypes  # noqa: F401
-    from mmap import mmap  # noqa: F401
+    from mmap import mmap
     import pickle  # noqa: F401
     from typing import Any, Optional, Union  # noqa: F401
+    # Used as the buffer-protocol parameter type for readinto.  Python 3.12+
+    # has collections.abc.Buffer (PEP 688), but the override already needs a
+    # Liskov suppression on every Python anyway, so enumerate the common
+    # writable-buffer concrete types and keep the type uniform across all
+    # versions.
+    Buffer = bytearray | memoryview | array.array | mmap
 
 
 class PyCdlibIO(io.RawIOBase):
@@ -106,8 +112,8 @@ class PyCdlibIO(io.RawIOBase):
 
         return data
 
-    def readinto(self, b):
-        # type: (collections.abc.Buffer) -> int
+    def readinto(self, b):  # type: ignore[override]
+        # type: (Buffer) -> int
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
 

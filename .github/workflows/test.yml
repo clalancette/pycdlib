@@ -34,10 +34,13 @@ jobs:
        sudo apt-get install -y cmake git-lfs libbz2-dev libcap-dev libcdio-utils util-linux zlib1g-dev
 
     - name: Install pip dependencies
-      run: python -m pip install flake8 pytest
+      run: python -m pip install flake8==6.1.0 mypy==1.18.2 pytest==8.3.5
 
     - name: Run flake8
       run: flake8 --ignore=E501,E266 pycdlib tools/*
+
+    - name: Run mypy
+      run: mypy --ignore-missing-imports -p pycdlib
 
     - name: Build patched cdrkit
       run: |

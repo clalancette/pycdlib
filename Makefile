@@ -25,7 +25,7 @@ lineprof:
 	kernprof-3 -v -l /usr/bin/py.test-3 --verbose tests
 
 mypy:
-	mypy --ignore-missing-imports -m pycdlib
+	mypy --ignore-missing-imports -p pycdlib
 
 profile:
 	python3 -m cProfile -o profile /usr/bin/py.test-3 --verbose tests
