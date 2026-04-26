@@ -2480,6 +2480,82 @@ def test_new_rr_onetwelve_px_in_ce():
 
     iso.close()
 
+def test_new_rr_intact_er_still_detected():
+    # Sanity: a normal Rock Ridge ISO with the canonical ER record present
+    # is still recognized as Rock Ridge after open.  Guards against the
+    # post-hoc detection in _walk_directories accidentally wiping out
+    # iso.rock_ridge for legitimate RR ISOs.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', rr_name='foo')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(out.getvalue()))
+    assert(iso2.rock_ridge == '1.09')
+    assert(iso2.has_rock_ridge())
+    iso2.close()
+
+def test_new_rr_missing_er_treated_as_non_rr():
+    # Regression test for https://github.com/clalancette/pycdlib/issues/123.
+    # A non-Rock-Ridge ISO can have system-use bytes that coincidentally
+    # match RR SUSP signatures (e.g. some MAC app ISOs).  Per-record
+    # opportunistic detection alone used to set iso.rock_ridge='1.09' from
+    # those false positives, and walk(rr_path=...) would later trip with
+    # "Cannot generate a Rock Ridge path on a non-Rock Ridge ISO" deep in
+    # the traversal when an individual record didn't have RR data.  The
+    # canonical RR signal is the ER record with ext_id 'RRIP_1991A' (or
+    # 'IEEE_P1282' for 1.12) -- without it, the volume is not RR.
+    #
+    # Build a real RR 1.09 ISO, then scrub the ER ext_id bytes so the ISO
+    # no longer declares RR via the canonical signal while leaving every
+    # per-record RR-shaped byte intact.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', rr_name='foo')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    data = bytearray(out.getvalue())
+    pos = data.find(b'RRIP_1991A')
+    assert(pos >= 0)
+    data[pos:pos + len(b'RRIP_1991A')] = b'XXXXXXXXXX'
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(bytes(data)))
+    assert(iso2.rock_ridge == '')
+    assert(not iso2.has_rock_ridge())
+    # rr_path now hits the API-boundary guard with a clear message
+    # instead of tripping deep inside walk().
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        list(iso2.walk(rr_path='/'))
+    assert(str(excinfo.value) == 'Cannot fetch a rr_path from a non-Rock Ridge ISO')
+    iso2.close()
+
+def test_new_rr_onetwelve_missing_er_treated_as_non_rr():
+    # Same as test_new_rr_missing_er_treated_as_non_rr but for Rock Ridge
+    # 1.12, whose ER ext_id is IEEE_P1282 instead of RRIP_1991A.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.12')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', rr_name='foo')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    data = bytearray(out.getvalue())
+    pos = data.find(b'IEEE_P1282')
+    assert(pos >= 0)
+    data[pos:pos + len(b'IEEE_P1282')] = b'XXXXXXXXXX'
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(bytes(data)))
+    assert(iso2.rock_ridge == '')
+    assert(not iso2.has_rock_ridge())
+    iso2.close()
+
 def test_new_set_hidden_file():
     iso = pycdlib.PyCdlib()
     iso.new()

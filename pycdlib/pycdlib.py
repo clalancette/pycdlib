@@ -35,6 +35,7 @@ from pycdlib import isohybrid
 from pycdlib import path_table_record
 from pycdlib import pycdlibexception
 from pycdlib import pycdlibio
+from pycdlib import rockridge
 from pycdlib import udf as udfmod
 from pycdlib import utils
 
@@ -1021,6 +1022,13 @@ class PyCdlib:
         parent_links = []
         child_links = []
         lastbyte = 0
+        # Track whether we saw a Rock Ridge ER (Extension Reference) record
+        # whose ext_id identifies RRIP_1991A or IEEE_P1282.  Per SUSP/RRIP,
+        # that ER is the canonical declaration that the volume uses Rock
+        # Ridge.  Without it, any RR-shaped bytes we see in system-use areas
+        # are false positives (e.g. a Mac HFS-hybrid ISO whose system-use
+        # area happens to start with bytes matching an RR signature).
+        saw_rrip_er = False
         dirs = collections.deque([root_dir_record])
         while dirs:
             dir_record = dirs.popleft()
@@ -1138,6 +1146,11 @@ class PyCdlib:
                 # Rock Ridge version
                 self._set_rock_ridge(max(rr, rr_ce))
 
+                if not saw_rrip_er and new_record.rock_ridge is not None:
+                    er = new_record.rock_ridge.dr_entries.er_record or new_record.rock_ridge.ce_entries.er_record
+                    if er is not None and er.ext_id in (rockridge.EXT_ID_109, rockridge.EXT_ID_112):
+                        saw_rrip_er = True
+
                 if rr_cl:
                     child_links.append(new_record)
 
@@ -1192,6 +1205,17 @@ class PyCdlib:
                 cl.rock_ridge.cl_to_moved_dr = all_extent_to_dr[cl.rock_ridge.child_link_extent()]
                 if cl.rock_ridge.cl_to_moved_dr.rock_ridge is not None:
                     cl.rock_ridge.cl_to_moved_dr.rock_ridge.moved_to_cl_dr = cl
+
+        # If our per-record opportunistic detection set self.rock_ridge but
+        # no record carried a Rock Ridge ER record (RRIP_1991A or
+        # IEEE_P1282), the RR-shaped bytes were a false positive.  Treat
+        # the volume as non-Rock-Ridge so callers using rr_path get the
+        # clear "Cannot fetch a rr_path from a non-Rock Ridge ISO" error
+        # at the API boundary, rather than tripping deep inside walk()
+        # with "Cannot generate a Rock Ridge path on a non-Rock Ridge ISO"
+        # when an individual record doesn't have RR data.
+        if is_pvd and self.rock_ridge and not saw_rrip_er:
+            self.rock_ridge = ''
 
         return interchange_level, lastbyte
 
