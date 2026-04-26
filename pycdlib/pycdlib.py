@@ -5991,12 +5991,14 @@ class PyCdlib:
             # relpath for path lookup with a hardcoded encoding, which
             # fails on ISOs whose on-disk names aren't UTF-8 (issue #109).
             if path_type == 'udf_path':
-                assert isinstance(dir_record, udfmod.UDFFileEntry)
+                if not isinstance(dir_record, udfmod.UDFFileEntry):
+                    raise pycdlibexception.PyCdlibInternalError('Internal error: expected UDF File Entry while walking UDF path')
                 if not dir_record.is_dir():
                     raise pycdlibexception.PyCdlibInvalidInput('UDF File Entry is not a directory!')
                 children_iter = [fi.file_entry for fi in dir_record.fi_descs]  # type: List[Any]
             else:
-                assert isinstance(dir_record, dr.DirectoryRecord)
+                if not isinstance(dir_record, dr.DirectoryRecord):
+                    raise pycdlibexception.PyCdlibInternalError('Internal error: expected ISO9660 Directory Record while walking non-UDF path')
                 children_iter = list(_yield_children(dir_record, path_type == 'rr_path'))
 
             for child in reversed(children_iter):
