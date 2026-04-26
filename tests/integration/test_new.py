@@ -6712,6 +6712,100 @@ def test_new_open_file_from_iso_readinto_past_eof():
 
     iso.close()
 
+def _build_two_file_iso():
+    """Build an ISO containing two files whose contents are easy to tell
+    apart byte-wise.  Returns the freshly-opened PyCdlib object."""
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'A' * 4096), 4096, '/A.;1')
+    iso.add_fp(io.BytesIO(b'B' * 4096), 4096, '/B.;1')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(out.getvalue()))
+    return iso2
+
+def test_new_open_file_from_iso_concurrent_reads_dont_corrupt():
+    # Regression test: PyCdlibIO.read used to issue a bare
+    # self._fp.read(n) without seeking first, relying on _cdfp's position
+    # being whatever __enter__ left it.  But _cdfp is shared with the
+    # rest of pycdlib, so opening (and reading) a second file on the same
+    # ISO would silently shift _cdfp to the second file's data and the
+    # next read() on the first PyCdlibIO would return the second file's
+    # bytes instead of the first file's continuation.
+    iso = _build_two_file_iso()
+
+    with iso.open_file_from_iso(iso_path='/A.;1') as fa:
+        first = fa.read(100)
+        assert(first == b'A' * 100)
+
+        # Opening and reading from B mutates the shared _cdfp position.
+        with iso.open_file_from_iso(iso_path='/B.;1') as fb:
+            assert(fb.read(100) == b'B' * 100)
+
+        # fa.read must continue at A[100:200], not at B[100:200].
+        second = fa.read(100)
+        assert(second == b'A' * 100)
+
+    iso.close()
+
+def test_new_open_file_from_iso_concurrent_open_no_read_dont_corrupt():
+    # Same hazard, weaker trigger: merely entering the second file's
+    # context manager seeks the shared _cdfp to that file's start (in
+    # InodeOpenData.__enter__), even if no read happens.  fa's next
+    # read must still return A's continuation.
+    iso = _build_two_file_iso()
+
+    with iso.open_file_from_iso(iso_path='/A.;1') as fa:
+        assert(fa.read(100) == b'A' * 100)
+
+        with iso.open_file_from_iso(iso_path='/B.;1') as fb_unused:
+            pass
+
+        assert(fa.read(100) == b'A' * 100)
+
+    iso.close()
+
+def test_new_open_file_from_iso_concurrent_readinto_dont_corrupt():
+    # readinto has the same bare-read hazard; verify the regression case
+    # against it directly.
+    iso = _build_two_file_iso()
+
+    with iso.open_file_from_iso(iso_path='/A.;1') as fa:
+        buf = bytearray(100)
+        assert(fa.readinto(buf) == 100)
+        assert(bytes(buf) == b'A' * 100)
+
+        with iso.open_file_from_iso(iso_path='/B.;1') as fb:
+            buf2 = bytearray(100)
+            assert(fb.readinto(buf2) == 100)
+            assert(bytes(buf2) == b'B' * 100)
+
+        buf3 = bytearray(100)
+        assert(fa.readinto(buf3) == 100)
+        assert(bytes(buf3) == b'A' * 100)
+
+    iso.close()
+
+def test_new_open_file_from_iso_concurrent_readall_dont_corrupt():
+    # readall has the same bare-read hazard.  Read part of A, then poke
+    # _cdfp by opening B, then readall the rest of A.
+    iso = _build_two_file_iso()
+
+    with iso.open_file_from_iso(iso_path='/A.;1') as fa:
+        first = fa.read(100)
+        assert(first == b'A' * 100)
+
+        with iso.open_file_from_iso(iso_path='/B.;1') as fb:
+            assert(fb.read(100) == b'B' * 100)
+
+        rest = fa.readall()
+        assert(rest == b'A' * (4096 - 100))
+
+    iso.close()
+
 def test_new_udf_cyrillic():
     iso = pycdlib.PyCdlib()
     iso.new(udf='2.60')

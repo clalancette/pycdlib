@@ -84,6 +84,12 @@ class PyCdlibIO(io.RawIOBase):
             data = self.readall()
         else:
             readsize = min(self._length - self._offset, size)
+            # _fp is the ISO's shared file descriptor; any other pycdlib
+            # operation (a second open_file_from_iso, write_fp, an
+            # internal _seek_to_extent, ...) can move its position
+            # between our reads.  Re-seek to the start of our slice on
+            # every read rather than trust accumulated state.
+            self._fp.seek(self._startpos + self._offset)
             data = self._fp.read(readsize)
             self._offset += readsize
 
@@ -105,6 +111,8 @@ class PyCdlibIO(io.RawIOBase):
 
         readsize = self._length - self._offset
         if readsize > 0:
+            # See read() for why the seek is here.
+            self._fp.seek(self._startpos + self._offset)
             data = self._fp.read(readsize)
             self._offset += readsize
         else:
@@ -122,9 +130,12 @@ class PyCdlibIO(io.RawIOBase):
             mv = memoryview(b)
             m = mv.cast('B')
             readsize = min(readsize, len(m))
+            # See read() for why the seek is here.
+            self._fp.seek(self._startpos + self._offset)
             data = self._fp.read(readsize)
             n = len(data)
             m[:n] = data
+            self._offset += n
         else:
             n = 0
 
