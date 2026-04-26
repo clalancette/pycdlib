@@ -4604,6 +4604,16 @@ class UDFFileIdentifierDescriptor:
             except UnicodeEncodeError:
                 self.fi = bytename.encode('utf-16_be')
                 self.encoding = 'utf-16_be'
+            # OSTA UDF 2.60 section 2.3.4.2 limits L_FI (length of File
+            # Identifier, including the 1-byte compression-ID prefix) to 254.
+            # In latin-1 that's 253 chars; in utf-16_be it's 126 chars.
+            # Without this check, struct.pack in record() fails much later
+            # with an opaque "'B' format requires 0 <= number <= 255".
+            if len(self.fi) + 1 > 254:
+                max_chars = 253 if self.encoding == 'latin-1' else 126
+                raise pycdlibexception.PyCdlibInvalidInput(
+                    'UDF filename too long: max %d characters in %s' % (
+                        max_chars, self.encoding))
             self.len_fi = len(self.fi) + 1
 
         self.parent = parent

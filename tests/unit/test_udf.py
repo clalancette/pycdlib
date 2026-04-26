@@ -2124,6 +2124,49 @@ def test_file_ident_new_initialized_twice():
         fi.new(False, False, b'foo', None)
     assert(str(excinfo.value) == 'UDF File Identifier already initialized')
 
+def test_file_ident_new_latin1_max_length():
+    # 253 latin-1 characters fits: L_FI = 253 + 1 (compression ID) = 254 (the
+    # OSTA UDF 2.60 maximum).  Regression coverage for issue #132.
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, False, b'A' * 253, None)
+    assert(fi.len_fi == 254)
+    assert(fi.encoding == 'latin-1')
+
+def test_file_ident_new_latin1_too_long():
+    # 254 latin-1 characters overflows: L_FI = 255 > 254.  Pre-fix this
+    # raised "'B' format requires 0 <= number <= 255" from struct.pack
+    # deep in record(); now raises a clear PyCdlibInvalidInput at new().
+    # Regression coverage for issue #132.
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        fi.new(False, False, b'A' * 254, None)
+    assert('UDF filename too long' in str(excinfo.value))
+    assert('latin-1' in str(excinfo.value))
+
+def test_file_ident_new_255_char_filename_from_issue():
+    # The exact symptom reported in issue #132: filename of 255 'A' chars.
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        fi.new(False, False, b'A' * 255, None)
+    assert('UDF filename too long' in str(excinfo.value))
+
+def test_file_ident_new_utf16_max_length():
+    # Filenames containing non-latin-1 characters fall back to utf-16_be (2
+    # bytes per char).  126 chars fits: L_FI = 252 + 1 = 253 (under the 254
+    # cap; the next char up takes us to 255).
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    fi.new(False, False, ('Ж' * 126).encode('utf-8'), None)
+    assert(fi.encoding == 'utf-16_be')
+    assert(fi.len_fi == 253)
+
+def test_file_ident_new_utf16_too_long():
+    # 127 utf-16 chars => L_FI = 254 + 1 = 255 > 254.
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        fi.new(False, False, ('Ж' * 127).encode('utf-8'), None)
+    assert('UDF filename too long' in str(excinfo.value))
+    assert('utf-16_be' in str(excinfo.value))
+
 def test_file_ident_set_extent_location_not_initialized():
     fi = pycdlib.udf.UDFFileIdentifierDescriptor()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
