@@ -1309,6 +1309,105 @@ def test_rr_copy_file_links_not_initialized():
         rr.copy_file_links(None)
     assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
+# Bookkeeping coverage for nlinks: the integration suite no longer asserts
+# the exact posix_file_links value on directory records (the value comes
+# from genisoimage's stat() call on the source dir, which is filesystem-
+# dependent -- e.g. btrfs reports 1 for any directory).  These unit tests
+# pin the pure increment/decrement/copy semantics directly.
+
+def test_rr_add_to_file_links_increments():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    # A freshly-created PX record starts at 1 link.
+    assert(rr.dr_entries.px_record.posix_file_links == 1)
+    rr.add_to_file_links()
+    assert(rr.dr_entries.px_record.posix_file_links == 2)
+    rr.add_to_file_links()
+    rr.add_to_file_links()
+    assert(rr.dr_entries.px_record.posix_file_links == 4)
+
+def test_rr_remove_from_file_links_decrements():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    rr.add_to_file_links()
+    rr.add_to_file_links()
+    assert(rr.dr_entries.px_record.posix_file_links == 3)
+    rr.remove_from_file_links()
+    assert(rr.dr_entries.px_record.posix_file_links == 2)
+    rr.remove_from_file_links()
+    rr.remove_from_file_links()
+    assert(rr.dr_entries.px_record.posix_file_links == 0)
+
+def test_rr_copy_file_links_overrides():
+    src = pycdlib.rockridge.RockRidge()
+    src.new(False, b'src', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    src.add_to_file_links()
+    src.add_to_file_links()
+    src.add_to_file_links()
+    assert(src.dr_entries.px_record.posix_file_links == 4)
+
+    dst = pycdlib.rockridge.RockRidge()
+    dst.new(False, b'dst', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    assert(dst.dr_entries.px_record.posix_file_links == 1)
+    dst.copy_file_links(src)
+    assert(dst.dr_entries.px_record.posix_file_links == 4)
+
+def test_rr_add_to_file_links_uses_ce_entries_when_dr_lacks_px():
+    # When the PX record lives in the SUSP CE block (because the DR was
+    # too full), add_to_file_links must operate on the CE-resident PX.
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    # Move the PX record into the CE entries to mimic the spilled layout.
+    rr.ce_entries.px_record = rr.dr_entries.px_record
+    rr.dr_entries.px_record = None
+    rr.add_to_file_links()
+    assert(rr.ce_entries.px_record.posix_file_links == 2)
+    rr.remove_from_file_links()
+    rr.remove_from_file_links()
+    assert(rr.ce_entries.px_record.posix_file_links == 0)
+
+def test_rr_add_to_file_links_no_px_record():
+    # If neither dr_entries nor ce_entries holds a PX record, the method
+    # cannot do anything sensible and must raise.
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    rr.dr_entries.px_record = None
+    rr.ce_entries.px_record = None
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        rr.add_to_file_links()
+    assert(str(excinfo.value) == 'No Rock Ridge file links')
+
+def test_rr_remove_from_file_links_no_px_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    rr.dr_entries.px_record = None
+    rr.ce_entries.px_record = None
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        rr.remove_from_file_links()
+    assert(str(excinfo.value) == 'No Rock Ridge file links')
+
+def test_rr_copy_file_links_no_px_record_in_src():
+    src = pycdlib.rockridge.RockRidge()
+    src.new(False, b'src', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    src.dr_entries.px_record = None
+    src.ce_entries.px_record = None
+    dst = pycdlib.rockridge.RockRidge()
+    dst.new(False, b'dst', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        dst.copy_file_links(src)
+    assert(str(excinfo.value) == 'No Rock Ridge file links')
+
+def test_rr_copy_file_links_no_px_record_in_dst():
+    src = pycdlib.rockridge.RockRidge()
+    src.new(False, b'src', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    dst = pycdlib.rockridge.RockRidge()
+    dst.new(False, b'dst', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    dst.dr_entries.px_record = None
+    dst.ce_entries.px_record = None
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        dst.copy_file_links(src)
+    assert(str(excinfo.value) == 'No Rock Ridge file links')
+
 def test_rr_get_file_mode_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
