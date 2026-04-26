@@ -2556,6 +2556,70 @@ def test_new_rr_onetwelve_missing_er_treated_as_non_rr():
     assert(not iso2.has_rock_ridge())
     iso2.close()
 
+def test_new_modify_file_in_place_unsorted_dir_records():
+    # Regression test for https://github.com/clalancette/pycdlib/issues/122.
+    # modify_file_in_place used to compute the on-disk byte offset of a
+    # directory record from extents_to_here / offset_to_here -- both
+    # derived from pycdlib's in-memory sorted order of children.  When
+    # the actual on-disk order doesn't match (some writers don't emit
+    # records strictly sorted), the write lands on the wrong byte range
+    # and silently corrupts whatever sibling actually sat at that offset.
+    # The fix rewrites the parent's full child list instead of trusting
+    # the per-record offset.
+    #
+    # Construct the on-disk vs in-memory skew by building a sorted ISO
+    # with three same-length-name files and swapping two of the records
+    # in the bytes.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'AAA\n'), 4, '/AAA.;1')
+    iso.add_fp(io.BytesIO(b'BBB\n'), 4, '/BBB.;1')
+    iso.add_fp(io.BytesIO(b'CCC\n'), 4, '/CCC.;1')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    root_extent = iso.pvd.root_dir_record.extent_location()
+    iso.close()
+
+    # Locate the AAA and BBB records inside the root directory extent
+    # (layout: dot, dotdot, AAA, BBB, CCC) and swap their bytes so the
+    # on-disk order becomes dot, dotdot, BBB, AAA, CCC.
+    data = bytearray(out.getvalue())
+    pos = root_extent * 2048
+    pos += data[pos]   # skip dot
+    pos += data[pos]   # skip dotdot
+    aaa_pos = pos
+    aaa_len = data[aaa_pos]
+    bbb_pos = aaa_pos + aaa_len
+    bbb_len = data[bbb_pos]
+    assert(aaa_len == bbb_len)
+    aaa_bytes = bytes(data[aaa_pos:aaa_pos + aaa_len])
+    bbb_bytes = bytes(data[bbb_pos:bbb_pos + bbb_len])
+    data[aaa_pos:aaa_pos + aaa_len] = bbb_bytes
+    data[bbb_pos:bbb_pos + bbb_len] = aaa_bytes
+
+    # Re-open the patched ISO and modify AAA in place.  pycdlib reads
+    # records in on-disk order (BBB, AAA, CCC) but stores them sorted in
+    # memory (AAA, BBB, CCC) -- the divergence that triggers the bug.
+    fp = io.BytesIO(bytes(data))
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(fp)
+    iso2.modify_file_in_place(io.BytesIO(b'aaa\n'), 4, '/AAA.;1')
+    iso2.close()
+
+    # All three files must still be readable with their expected contents.
+    # Pre-fix, BBB or CCC would be corrupted by AAA's write hitting the
+    # wrong byte range.
+    iso3 = pycdlib.PyCdlib()
+    iso3.open_fp(fp)
+    for path, expected in [('/AAA.;1', b'aaa\n'),
+                           ('/BBB.;1', b'BBB\n'),
+                           ('/CCC.;1', b'CCC\n')]:
+        buf = io.BytesIO()
+        iso3.get_file_from_iso_fp(buf, iso_path=path)
+        assert(buf.getvalue() == expected)
+    iso3.close()
+
 def test_new_set_hidden_file():
     iso = pycdlib.PyCdlib()
     iso.new()

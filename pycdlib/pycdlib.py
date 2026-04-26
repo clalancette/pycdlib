@@ -4526,17 +4526,18 @@ class PyCdlib:
             utils.copy_data(data_len, self.logical_block_size, data_fp, self._cdfp)
             utils.zero_pad(self._cdfp, data_len, self.logical_block_size)
 
-        # Finally write out the directory record entry.
-        # This is a little tricky because of what things mean.  First of all,
-        # child.extents_to_here represents the total number of extents up to
-        # this child in the parent.  Thus, to get the absolute extent offset,
-        # we start with the parent's extent location, add on the number of
-        # extents to here, and remove 1 (since our offset will be zero-based).
-        # Second, child.offset_to_here is the *last* byte that the child uses,
-        # so to get the start of it we subtract off the length of the child.
-        # Then we can multiply the extent location by the logical block size,
-        # add on the offset, and get to the absolute location in the file.
+        # Finally update the directory record entries that reference this
+        # file with the new length.  For UDF the file entry has its own
+        # extent, so we can write it directly.  For ISO9660/Joliet the
+        # record lives inside its parent's directory extent; we used to
+        # compute that record's byte offset from extents_to_here /
+        # offset_to_here (which reflect pycdlib's in-memory sorted order
+        # of children), but the on-disk order doesn't always match the
+        # sorted order -- writing to the computed offset then corrupts
+        # whichever sibling actually sits at that on-disk position
+        # (issue #122).  Rewrite the parent's full child list instead.
         first_joliet = True
+        rewritten_parents = set()  # type: set
         for record, is_pvd_unused in child.inode.linked_records:
             if isinstance(record, dr.DirectoryRecord):
                 if self.joliet_vd is not None and id(record.vd) == id(self.joliet_vd) and first_joliet:
@@ -4545,18 +4546,44 @@ class PyCdlib:
                     self.joliet_vd.add_to_space_size(length)
                 if record.parent is None:
                     raise pycdlibexception.PyCdlibInternalError('Modifying file with empty parent')
-                abs_extent_loc = record.parent.extent_location() + record.extents_to_here - 1
-                offset = record.offset_to_here - record.dr_len
-                abs_offset = abs_extent_loc * self.logical_block_size + offset
+                record.set_data_length(length)
+                parent_id = id(record.parent)
+                if parent_id not in rewritten_parents:
+                    rewritten_parents.add(parent_id)
+                    self._rewrite_dir_record_extent(record.parent)
             elif isinstance(record, udfmod.UDFFileEntry):
+                record.set_data_length(length)
                 abs_offset = record.extent_location() * self.logical_block_size
+                self._cdfp.seek(abs_offset)
+                self._cdfp.write(record.record())
             else:
                 # This should never happen
                 raise pycdlibexception.PyCdlibInternalError('Invalid record type')
 
-            record.set_data_length(length)
-            self._cdfp.seek(abs_offset)
-            self._cdfp.write(record.record())
+    def _rewrite_dir_record_extent(self, parent):
+        # type: (dr.DirectoryRecord) -> None
+        """
+        Rewrite all of `parent`'s child directory records to disk in the
+        order pycdlib holds them in memory.  Used by modify_file_in_place
+        to avoid relying on per-record offsets that may be wrong if the
+        on-disk order doesn't match pycdlib's sorted order (issue #122).
+
+        Parameters:
+         parent - The parent DirectoryRecord whose children should be
+                  written out to disk.
+        Returns:
+         Nothing.
+        """
+        dir_extent = parent.extent_location()
+        offset_in_extent = 0
+        for ch in parent.children:
+            recstr = ch.record()
+            if offset_in_extent + len(recstr) > self.logical_block_size:
+                dir_extent += 1
+                offset_in_extent = 0
+            self._cdfp.seek(dir_extent * self.logical_block_size + offset_in_extent)
+            self._cdfp.write(recstr)
+            offset_in_extent += len(recstr)
 
     def add_hard_link(self, **kwargs):
         # type: (str) -> None
