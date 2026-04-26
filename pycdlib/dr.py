@@ -27,12 +27,13 @@ from pycdlib import pycdlibexception
 from pycdlib import rockridge
 from pycdlib import utils
 
-# For mypy annotations
-if False:  # pylint: disable=using-constant-test
-    from typing import Any, IO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Any, IO, List, Optional, Tuple, Union  # noqa: F401
     # NOTE: these imports have to be here to avoid circular deps
-    from pycdlib import headervd  # NOQA pylint: disable=unused-import,cyclic-import
-    from pycdlib import path_table_record  # NOQA pylint: disable=unused-import
+    from pycdlib import headervd  # noqa: F401  pylint: disable=cyclic-import
+    from pycdlib import path_table_record  # noqa: F401
 
 
 class XARecord:

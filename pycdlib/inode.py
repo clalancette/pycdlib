@@ -18,13 +18,14 @@
 
 from pycdlib import pycdlibexception
 
-# For mypy annotations
-if False:  # pylint: disable=using-constant-test
-    from typing import Any, BinaryIO, IO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Any, BinaryIO, IO, List, Optional, Tuple, Union  # noqa: F401
     # NOTE: this import has to be here to avoid circular deps
-    from pycdlib import dr  # NOQA pylint: disable=unused-import,cyclic-import
-    from pycdlib import eltorito  # NOQA pylint: disable=unused-import,cyclic-import
-    from pycdlib import udf  # NOQA pylint: disable=unused-import,cyclic-import
+    from pycdlib import dr  # noqa: F401  pylint: disable=cyclic-import
+    from pycdlib import eltorito  # noqa: F401  pylint: disable=cyclic-import
+    from pycdlib import udf  # noqa: F401  pylint: disable=cyclic-import
 
 
 class Inode:

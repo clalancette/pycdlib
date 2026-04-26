@@ -23,6 +23,7 @@ import re
 import struct
 import sys
 import time
+from typing import TYPE_CHECKING
 
 from pycdlib import pycdlibexception
 
@@ -36,9 +37,8 @@ if sys.platform == "win32":
     except ImportError:
         pass
 
-# For mypy annotations
-if False:  # pylint: disable=using-constant-test
-    from typing import Any, BinaryIO, Generator, IO, List, Optional, Tuple  # NOQA pylint: disable=unused-import
+if TYPE_CHECKING:
+    from typing import Any, BinaryIO, Generator, IO, List, Optional, Tuple  # noqa: F401
 
 
 def swab_32bit(x):

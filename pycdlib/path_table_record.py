@@ -21,9 +21,10 @@ import struct
 from pycdlib import pycdlibexception
 from pycdlib import utils
 
-# For mypy annotations
-if False:  # pylint: disable=using-constant-test
-    from typing import Type  # NOQA pylint: disable=unused-import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Type  # noqa: F401
 
 
 class PathTableRecord:

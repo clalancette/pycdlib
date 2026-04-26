@@ -22,14 +22,15 @@ import struct
 from pycdlib import pycdlibexception
 from pycdlib import utils
 
-# For mypy annotations
-if False:  # pylint: disable=using-constant-test
-    from typing import List, Union  # NOQA pylint: disable=unused-import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import List, Union  # noqa: F401
     # NOTE: these imports have to be here to avoid circular deps
-    from pycdlib import dr  # NOQA pylint: disable=unused-import
-    from pycdlib import headervd  # NOQA pylint: disable=unused-import
-    from pycdlib import inode    # NOQA pylint: disable=unused-import
-    from pycdlib import udf as udfmod  # NOQA pylint: disable=unused-import
+    from pycdlib import dr  # noqa: F401
+    from pycdlib import headervd  # noqa: F401
+    from pycdlib import inode  # noqa: F401
+    from pycdlib import udf as udfmod  # noqa: F401
 
 
 _logger = logging.getLogger('pycdlib')

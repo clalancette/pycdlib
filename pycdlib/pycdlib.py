@@ -38,9 +38,10 @@ from pycdlib import pycdlibio
 from pycdlib import udf as udfmod
 from pycdlib import utils
 
-# For mypy annotations
-if False:  # pylint: disable=using-constant-test
-    from typing import Any, BinaryIO, Callable, Deque, Dict, Generator, IO, List, Optional, Tuple, Union  # NOQA pylint: disable=unused-import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Any, BinaryIO, Callable, Deque, Dict, Generator, IO, List, Optional, Tuple, Union  # noqa: F401
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section

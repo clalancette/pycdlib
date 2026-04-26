@@ -21,13 +21,14 @@ import io
 from pycdlib import inode
 from pycdlib import pycdlibexception
 
-# For mypy annotations
-if False:  # pylint: disable=using-constant-test
-    import collections.abc  # NOQA pylint: disable=unused-import
-    import ctypes  # NOQA pylint: disable=unused-import
-    from mmap import mmap  # NOQA pylint: disable=unused-import
-    import pickle  # NOQA pylint: disable=unused-import
-    from typing import Any, Optional, Union  # NOQA pylint: disable=unused-import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import collections.abc  # noqa: F401
+    import ctypes  # noqa: F401
+    from mmap import mmap  # noqa: F401
+    import pickle  # noqa: F401
+    from typing import Any, Optional, Union  # noqa: F401
 
 
 class PyCdlibIO(io.RawIOBase):
@@ -40,7 +41,7 @@ class PyCdlibIO(io.RawIOBase):
 
     def __init__(self, ino, logical_block_size):
         # type: (inode.Inode, int) -> None
-        super(PyCdlibIO, self).__init__()  # pylint: disable=super-with-arguments
+        super().__init__()
         self._ctxt = inode.InodeOpenData(ino, logical_block_size)
         self._open = True
 

@@ -22,9 +22,10 @@ import uuid
 
 from pycdlib import pycdlibexception
 
-# For mypy annotations
-if False:  # pylint: disable=using-constant-test
-    from typing import List, Optional, Tuple  # NOQA pylint: disable=unused-import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import List, Optional, Tuple  # noqa: F401
 
 APM_PARTS = 3
 GPT_SIZE = 128 // 4 + 2

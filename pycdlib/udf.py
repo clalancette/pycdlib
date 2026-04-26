@@ -25,11 +25,12 @@ import time
 from pycdlib import pycdlibexception
 from pycdlib import utils
 
-# For mypy annotations
-if False:  # pylint: disable=using-constant-test
-    from typing import List, Optional, Tuple, Type, Union  # NOQA pylint: disable=unused-import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import List, Optional, Tuple, Type, Union  # noqa: F401
     # NOTE: this import has to be here to avoid circular deps
-    from pycdlib import inode  # NOQA pylint: disable=unused-import
+    from pycdlib import inode  # noqa: F401
 
 # This is the CRC CCITT table generated with a polynomial of 0x11021 and
 # 16-bits.  The following code will re-generate the table:

@@ -25,9 +25,10 @@ from pycdlib import pycdlibexception
 from pycdlib import rockridge
 from pycdlib import utils
 
-# For mypy annotations
-if False:  # pylint: disable=using-constant-test
-    from typing import List, Tuple  # NOQA pylint: disable=unused-import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import List, Tuple  # noqa: F401
 
 VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD = 0
 VOLUME_DESCRIPTOR_TYPE_PRIMARY = 1

@@ -21,12 +21,13 @@ from pycdlib import pycdlibexception
 from pycdlib import udf as udfmod
 from pycdlib import utils
 
-# For mypy annotations
-if False:  # pylint: disable=using-constant-test
-    from typing import BinaryIO, Generator, Optional, Tuple  # NOQA pylint: disable=unused-import
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import BinaryIO, Generator, Optional, Tuple  # noqa: F401
     # NOTE: these imports have to be here to avoid circular deps
-    from pycdlib import pycdlib  # NOQA pylint: disable=unused-import,cyclic-import
-    from pycdlib import pycdlibio  # NOQA pylint: disable=unused-import
+    from pycdlib import pycdlib  # noqa: F401  pylint: disable=cyclic-import
+    from pycdlib import pycdlibio  # noqa: F401
 
 
 def iso_path_to_rr_name(iso_path, interchange_level, is_dir):
