@@ -993,6 +993,7 @@ def test_parse_open_twice(tmpdir):
 
     iso.close()
 
+@uses_deprecated("get_and_write_fp")
 def test_parse_get_and_write_fp_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('modifyinplaceisolevel4onefile')
@@ -1008,6 +1009,7 @@ def test_parse_get_and_write_fp_not_initialized(tmpdir):
         iso.get_and_write_fp('/FOO.;1', open(os.path.join(str(tmpdir), 'bar'), 'w'))
     assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
+@uses_deprecated("get_and_write")
 def test_parse_get_and_write_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('modifyinplaceisolevel4onefile')
@@ -1093,6 +1095,7 @@ def test_parse_write_with_progress_three_arg(tmpdir):
 
     iso.close()
 
+@uses_deprecated("get_entry")
 def test_parse_get_entry(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('twofile')
@@ -1118,6 +1121,7 @@ def test_parse_get_entry(tmpdir):
 
     iso.close()
 
+@uses_deprecated("get_entry")
 def test_parse_get_entry_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('twofile')
@@ -1134,6 +1138,7 @@ def test_parse_get_entry_not_initialized(tmpdir):
         fooentry = iso.get_entry('/FOO.;1')
     assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
+@uses_deprecated("list_dir")
 def test_parse_list_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('twofile')
@@ -1153,6 +1158,7 @@ def test_parse_list_dir(tmpdir):
 
     iso.close()
 
+@uses_deprecated("list_dir")
 def test_parse_list_dir_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('twofile')
@@ -1171,6 +1177,7 @@ def test_parse_list_dir_not_initialized(tmpdir):
             pass
     assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
+@uses_deprecated("list_dir")
 def test_parse_list_dir_not_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('twofile')
@@ -1192,6 +1199,7 @@ def test_parse_list_dir_not_dir(tmpdir):
 
     iso.close()
 
+@uses_deprecated("get_and_write")
 def test_parse_get_and_write(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('modifyinplaceisolevel4onefile')
@@ -1945,6 +1953,7 @@ def test_parse_eltorito_hide_boot(tmpdir):
 
     do_a_test(tmpdir, outfile, check_eltorito_hide_boot)
 
+@uses_deprecated("get_entry")
 def test_parse_get_entry_joliet(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('getentryjoliet')
