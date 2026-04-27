@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <title>Pydoc: module pycdlib.pycdlib</title>
-<link rel="stylesheet" type="text/css" href="pydoc_data/_pydoc.css"></head><body><div style="clear:both;padding-top:.5em;">
+<link rel="stylesheet" type="text/css" href="pydoc_data/pydoc.css"></head><body><div style="clear:both;padding-top:.5em;">
 <table class="heading">
 <tr class="heading-text decor">
 <td class="title">&nbsp;<br><strong class="title"><a href="pycdlib.html" class="white">pycdlib</a>.pycdlib</strong></td>
@@ -36,7 +36,7 @@ The&nbsp;main&nbsp;class&nbsp;for&nbsp;manipulating&nbsp;ISOs.<br>&nbsp;</span><
 <td class="singlecolumn">Methods defined here:<br>
 <dl><dt><a name="PyCdlib-__init__"><strong>__init__</strong></a>(self, always_consistent=False)</dt><dd><span class="code">Initialize&nbsp;self.&nbsp;&nbsp;See&nbsp;help(type(self))&nbsp;for&nbsp;accurate&nbsp;signature.</span></dd></dl>
 
-<dl><dt><a name="PyCdlib-add_directory"><strong>add_directory</strong></a>(self, iso_path=None, rr_name=None, joliet_path=None, file_mode=None, udf_path=None)</dt><dd><span class="code">Add&nbsp;a&nbsp;directory&nbsp;to&nbsp;the&nbsp;ISO.&nbsp;&nbsp;At&nbsp;least&nbsp;one&nbsp;of&nbsp;an&nbsp;iso_path,&nbsp;joliet_path,<br>
+<dl><dt><a name="PyCdlib-add_directory"><strong>add_directory</strong></a>(self, iso_path=None, rr_name=None, joliet_path=None, file_mode=None, udf_path=None, creation_time=None)</dt><dd><span class="code">Add&nbsp;a&nbsp;directory&nbsp;to&nbsp;the&nbsp;ISO.&nbsp;&nbsp;At&nbsp;least&nbsp;one&nbsp;of&nbsp;an&nbsp;iso_path,&nbsp;joliet_path,<br>
 or&nbsp;udf_path&nbsp;must&nbsp;be&nbsp;provided.&nbsp;&nbsp;Providing&nbsp;joliet_path&nbsp;on&nbsp;a&nbsp;non-Joliet<br>
 ISO,&nbsp;or&nbsp;udf_path&nbsp;on&nbsp;a&nbsp;non-UDF&nbsp;ISO,&nbsp;is&nbsp;an&nbsp;error.&nbsp;&nbsp;If&nbsp;the&nbsp;ISO&nbsp;contains<br>
 Rock&nbsp;Ridge,&nbsp;then&nbsp;a&nbsp;Rock&nbsp;Ridge&nbsp;name&nbsp;must&nbsp;be&nbsp;provided.<br>
@@ -48,6 +48,8 @@ Parameters:<br>
 &nbsp;file_mode&nbsp;-&nbsp;The&nbsp;POSIX&nbsp;file&nbsp;mode&nbsp;to&nbsp;use&nbsp;for&nbsp;the&nbsp;directory.&nbsp;&nbsp;This&nbsp;only<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;applies&nbsp;for&nbsp;Rock&nbsp;Ridge&nbsp;ISOs.<br>
 &nbsp;udf_path&nbsp;-&nbsp;The&nbsp;UDF&nbsp;absolute&nbsp;path&nbsp;to&nbsp;use&nbsp;for&nbsp;the&nbsp;directory.<br>
+&nbsp;creation_time&nbsp;-&nbsp;Optional&nbsp;creation&nbsp;time,&nbsp;in&nbsp;seconds&nbsp;since&nbsp;the&nbsp;epoch.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See&nbsp;add_fp&nbsp;for&nbsp;storage&nbsp;rules.<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
@@ -80,7 +82,7 @@ Parameters:<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
-<dl><dt><a name="PyCdlib-add_file"><strong>add_file</strong></a>(self, filename, iso_path=None, rr_name=None, joliet_path=None, file_mode=None, udf_path=None)</dt><dd><span class="code">Add&nbsp;a&nbsp;file&nbsp;to&nbsp;the&nbsp;ISO.&nbsp;&nbsp;If&nbsp;the&nbsp;ISO&nbsp;is&nbsp;a&nbsp;Rock&nbsp;Ridge&nbsp;one,&nbsp;then&nbsp;a&nbsp;Rock<br>
+<dl><dt><a name="PyCdlib-add_file"><strong>add_file</strong></a>(self, filename, iso_path=None, rr_name=None, joliet_path=None, file_mode=None, udf_path=None, creation_time=None)</dt><dd><span class="code">Add&nbsp;a&nbsp;file&nbsp;to&nbsp;the&nbsp;ISO.&nbsp;&nbsp;If&nbsp;the&nbsp;ISO&nbsp;is&nbsp;a&nbsp;Rock&nbsp;Ridge&nbsp;one,&nbsp;then&nbsp;a&nbsp;Rock<br>
 Ridge&nbsp;name&nbsp;must&nbsp;also&nbsp;be&nbsp;provided.&nbsp;&nbsp;If&nbsp;the&nbsp;ISO&nbsp;is&nbsp;a&nbsp;Joliet&nbsp;one,&nbsp;then&nbsp;a<br>
 Joliet&nbsp;path&nbsp;may&nbsp;also&nbsp;be&nbsp;provided;&nbsp;while&nbsp;it&nbsp;is&nbsp;optional&nbsp;to&nbsp;do&nbsp;so,&nbsp;it&nbsp;is<br>
 highly&nbsp;recommended.<br>
@@ -94,10 +96,12 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;applies&nbsp;if&nbsp;this&nbsp;is&nbsp;a&nbsp;Rock&nbsp;Ridge&nbsp;ISO.&nbsp;&nbsp;If&nbsp;this&nbsp;is&nbsp;None&nbsp;(the<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default),&nbsp;the&nbsp;permissions&nbsp;from&nbsp;the&nbsp;original&nbsp;file&nbsp;are&nbsp;used.<br>
 &nbsp;udf_path&nbsp;-&nbsp;The&nbsp;UDF&nbsp;name&nbsp;of&nbsp;the&nbsp;file&nbsp;destination&nbsp;on&nbsp;the&nbsp;ISO.<br>
+&nbsp;creation_time&nbsp;-&nbsp;Optional&nbsp;creation&nbsp;time,&nbsp;in&nbsp;seconds&nbsp;since&nbsp;the&nbsp;epoch.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See&nbsp;add_fp&nbsp;for&nbsp;storage&nbsp;rules.<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
-<dl><dt><a name="PyCdlib-add_fp"><strong>add_fp</strong></a>(self, fp, length, iso_path=None, rr_name=None, joliet_path=None, file_mode=None, udf_path=None)</dt><dd><span class="code">Add&nbsp;a&nbsp;file&nbsp;to&nbsp;the&nbsp;ISO.&nbsp;&nbsp;If&nbsp;the&nbsp;ISO&nbsp;is&nbsp;a&nbsp;Rock&nbsp;Ridge&nbsp;one,&nbsp;then&nbsp;a&nbsp;Rock<br>
+<dl><dt><a name="PyCdlib-add_fp"><strong>add_fp</strong></a>(self, fp, length, iso_path=None, rr_name=None, joliet_path=None, file_mode=None, udf_path=None, creation_time=None)</dt><dd><span class="code">Add&nbsp;a&nbsp;file&nbsp;to&nbsp;the&nbsp;ISO.&nbsp;&nbsp;If&nbsp;the&nbsp;ISO&nbsp;is&nbsp;a&nbsp;Rock&nbsp;Ridge&nbsp;one,&nbsp;then&nbsp;a&nbsp;Rock<br>
 Ridge&nbsp;name&nbsp;must&nbsp;also&nbsp;be&nbsp;provided.&nbsp;&nbsp;If&nbsp;the&nbsp;ISO&nbsp;is&nbsp;a&nbsp;Joliet&nbsp;one,&nbsp;then&nbsp;a<br>
 Joliet&nbsp;path&nbsp;may&nbsp;also&nbsp;be&nbsp;provided;&nbsp;while&nbsp;it&nbsp;is&nbsp;optional&nbsp;to&nbsp;do&nbsp;so,&nbsp;it&nbsp;is<br>
 highly&nbsp;recommended.&nbsp;&nbsp;Note&nbsp;that&nbsp;the&nbsp;caller&nbsp;must&nbsp;ensure&nbsp;that&nbsp;'fp'&nbsp;remains<br>
@@ -115,6 +119,13 @@ Parameters:<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;applies&nbsp;if&nbsp;this&nbsp;is&nbsp;a&nbsp;Rock&nbsp;Ridge&nbsp;ISO.&nbsp;&nbsp;If&nbsp;this&nbsp;is&nbsp;None&nbsp;(the<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;default),&nbsp;the&nbsp;permissions&nbsp;from&nbsp;the&nbsp;original&nbsp;file&nbsp;are&nbsp;used.<br>
 &nbsp;udf_path&nbsp;-&nbsp;The&nbsp;UDF&nbsp;name&nbsp;of&nbsp;the&nbsp;file&nbsp;destination&nbsp;on&nbsp;the&nbsp;ISO.<br>
+&nbsp;creation_time&nbsp;-&nbsp;Optional&nbsp;creation&nbsp;time,&nbsp;in&nbsp;seconds&nbsp;since&nbsp;the&nbsp;epoch.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Stored&nbsp;on&nbsp;Rock&nbsp;Ridge&nbsp;TF&nbsp;(CREATION&nbsp;timestamp)&nbsp;and&nbsp;on<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;UDF&nbsp;(forces&nbsp;an&nbsp;Extended&nbsp;File&nbsp;Entry,&nbsp;which&nbsp;has&nbsp;the<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;on-disk&nbsp;slot).&nbsp;&nbsp;Plain&nbsp;ISO9660&nbsp;and&nbsp;Joliet&nbsp;have&nbsp;no<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;creation-time&nbsp;field,&nbsp;so&nbsp;when&nbsp;supplied&nbsp;this&nbsp;value<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;requires&nbsp;that&nbsp;at&nbsp;least&nbsp;one&nbsp;of&nbsp;iso_path&nbsp;(with&nbsp;Rock<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ridge&nbsp;enabled)&nbsp;or&nbsp;udf_path&nbsp;is&nbsp;also&nbsp;supplied.<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
@@ -140,6 +151,10 @@ Parameters:<br>
 &nbsp;boot_catalog_old&nbsp;-&nbsp;Use&nbsp;the&nbsp;El&nbsp;Torito&nbsp;boot&nbsp;catalog&nbsp;as&nbsp;the&nbsp;old&nbsp;path.<br>
 &nbsp;udf_old_path&nbsp;-&nbsp;The&nbsp;old&nbsp;path&nbsp;on&nbsp;the&nbsp;UDF&nbsp;filesystem&nbsp;to&nbsp;link&nbsp;from.<br>
 &nbsp;udf_new_path&nbsp;-&nbsp;The&nbsp;new&nbsp;path&nbsp;on&nbsp;the&nbsp;UDF&nbsp;filesystem&nbsp;to&nbsp;link&nbsp;to.<br>
+&nbsp;creation_time&nbsp;-&nbsp;Optional&nbsp;creation&nbsp;time,&nbsp;in&nbsp;seconds&nbsp;since&nbsp;the&nbsp;epoch,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;for&nbsp;the&nbsp;newly-created&nbsp;link.&nbsp;&nbsp;See&nbsp;add_fp&nbsp;for&nbsp;storage<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;rules:&nbsp;requires&nbsp;iso_new_path&nbsp;on&nbsp;a&nbsp;Rock&nbsp;Ridge&nbsp;ISO&nbsp;or<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;udf_new_path.<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
@@ -178,7 +193,7 @@ Parameters:<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
-<dl><dt><a name="PyCdlib-add_symlink"><strong>add_symlink</strong></a>(self, symlink_path=None, rr_symlink_name=None, rr_path=None, joliet_path=None, udf_symlink_path=None, udf_target=None)</dt><dd><span class="code">Add&nbsp;a&nbsp;symlink&nbsp;from&nbsp;rr_symlink_name&nbsp;to&nbsp;the&nbsp;rr_path.&nbsp;&nbsp;The&nbsp;ISO&nbsp;must&nbsp;have<br>
+<dl><dt><a name="PyCdlib-add_symlink"><strong>add_symlink</strong></a>(self, symlink_path=None, rr_symlink_name=None, rr_path=None, joliet_path=None, udf_symlink_path=None, udf_target=None, creation_time=None)</dt><dd><span class="code">Add&nbsp;a&nbsp;symlink&nbsp;from&nbsp;rr_symlink_name&nbsp;to&nbsp;the&nbsp;rr_path.&nbsp;&nbsp;The&nbsp;ISO&nbsp;must&nbsp;have<br>
 either&nbsp;Rock&nbsp;Ridge&nbsp;or&nbsp;UDF&nbsp;support&nbsp;(or&nbsp;both).<br>
 &nbsp;<br>
 Parameters:<br>
@@ -190,6 +205,11 @@ Parameters:<br>
 &nbsp;udf_symlink_path&nbsp;-&nbsp;The&nbsp;UDF&nbsp;path&nbsp;of&nbsp;the&nbsp;symlink&nbsp;itself&nbsp;on&nbsp;the&nbsp;ISO.<br>
 &nbsp;udf_target&nbsp;-&nbsp;The&nbsp;UDF&nbsp;name&nbsp;of&nbsp;the&nbsp;entry&nbsp;on&nbsp;the&nbsp;ISO&nbsp;that&nbsp;the&nbsp;symlink<br>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;points&nbsp;to.<br>
+&nbsp;creation_time&nbsp;-&nbsp;Optional&nbsp;creation&nbsp;time,&nbsp;in&nbsp;seconds&nbsp;since&nbsp;the&nbsp;epoch.<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;See&nbsp;add_fp&nbsp;for&nbsp;storage&nbsp;rules.&nbsp;&nbsp;At&nbsp;least&nbsp;one&nbsp;of&nbsp;a&nbsp;Rock<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ridge&nbsp;symlink&nbsp;(rr_symlink_name&nbsp;+&nbsp;rr_path)&nbsp;or&nbsp;a&nbsp;UDF<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;symlink&nbsp;(udf_symlink_path&nbsp;+&nbsp;udf_target)&nbsp;must&nbsp;be<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;supplied&nbsp;to&nbsp;store&nbsp;it.<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
@@ -243,11 +263,17 @@ Parameters:<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
-<dl><dt><a name="PyCdlib-full_path_from_dirrecord"><strong>full_path_from_dirrecord</strong></a>(self, rec, rockridge=False)</dt><dd><span class="code">Get&nbsp;the&nbsp;absolute&nbsp;path&nbsp;of&nbsp;a&nbsp;directory&nbsp;record.<br>
+<dl><dt><a name="PyCdlib-full_path_from_dirrecord"><strong>full_path_from_dirrecord</strong></a>(self, rec, rockridge=False, encoding=None)</dt><dd><span class="code">Get&nbsp;the&nbsp;absolute&nbsp;path&nbsp;of&nbsp;a&nbsp;directory&nbsp;record.<br>
 &nbsp;<br>
 Parameters:<br>
 &nbsp;rec&nbsp;-&nbsp;The&nbsp;directory&nbsp;record&nbsp;to&nbsp;get&nbsp;the&nbsp;full&nbsp;path&nbsp;for.<br>
 &nbsp;rockridge&nbsp;-&nbsp;Whether&nbsp;to&nbsp;get&nbsp;the&nbsp;rock&nbsp;ridge&nbsp;full&nbsp;path.<br>
+&nbsp;encoding&nbsp;-&nbsp;The&nbsp;encoding&nbsp;to&nbsp;decode&nbsp;the&nbsp;on-disk&nbsp;file&nbsp;identifiers<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with.&nbsp;&nbsp;When&nbsp;None,&nbsp;defaults&nbsp;to&nbsp;'utf-8'&nbsp;for&nbsp;ISO9660&nbsp;and<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Rock&nbsp;Ridge&nbsp;records,&nbsp;'utf-16_be'&nbsp;for&nbsp;Joliet&nbsp;records,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;the&nbsp;UDF&nbsp;file_ident's&nbsp;own&nbsp;encoding&nbsp;for&nbsp;UDF.&nbsp;&nbsp;Pass<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a&nbsp;non-None&nbsp;value&nbsp;when&nbsp;walking&nbsp;an&nbsp;ISO&nbsp;whose&nbsp;names&nbsp;are<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;in&nbsp;a&nbsp;different&nbsp;encoding&nbsp;(issue&nbsp;#109;&nbsp;e.g.&nbsp;shift_jis).<br>
 Returns:<br>
 &nbsp;A&nbsp;string&nbsp;representing&nbsp;the&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;on&nbsp;the&nbsp;ISO.</span></dd></dl>
 
@@ -716,5 +742,17 @@ Data descriptors defined here:<br>
 </dl>
 <dl><dt><strong>xa</strong></dt>
 </dl>
-</td></tr></table></td></tr></table></div>
+<hr>
+Data and other attributes defined here:<br>
+<dl><dt><strong>__firstlineno__</strong> = 534</dl>
+
+<dl><dt><strong>__static_attributes__</strong> = ('_always_consistent', '_cdfp', '_has_udf', '_initialized', '_managing_fp', '_needs_reshuffle', '_rr_moved_name', '_rr_moved_record', '_rr_moved_rr_name', '_track_writes', '_write_check_list', 'brs', 'eltorito_boot_catalog', 'enhanced_vd', 'inodes', 'interchange_level', 'isohybrid_mbr', 'joliet_vd', 'logical_block_size', 'pvd', ...)</dl>
+
+</td></tr></table></td></tr></table><p>
+<table class="section">
+<tr class="decor data-decor heading-text">
+<td class="section-title" colspan=3>&nbsp;<br><strong class="bigsection">Data</strong></td></tr>
+    
+<tr><td class="decor data-decor"><span class="code">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span></td><td>&nbsp;</td>
+<td class="singlecolumn"><strong>TYPE_CHECKING</strong> = False</td></tr></table></div>
 </body></html>

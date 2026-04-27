@@ -6,6 +6,7 @@ The documentation for PyCdlib is split into several parts.  If you are unfamilia
 * [Standards](standards.md)
 * [Python compatibility](python-compatibility.md)
 * [Examples](examples.md)
+* [API reference](pycdlib-api.html)
 * [Design](design.md)
 * [Tools](tools.md)
 * [Exceptions](exceptions.md)

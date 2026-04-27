@@ -17,6 +17,11 @@ import sys
 import sysconfig
 import urllib.parse
 
+# Helpers we still rely on from upstream pydoc.  These used to be in scope
+# because this file is a lightly-modified fork of pydoc.py; later upstream
+# refactors broke that, so import them explicitly.
+from pydoc import ErrorDuringImport, cram, parentname, stripid
+
 def _split_list(s, predicate):
     """Split sequence s via predicate, and return pair ([true], [false]).
 
@@ -999,7 +1004,7 @@ class _HTMLDoc(HTMLDoc):
 
     def page(self, title, contents):
         """Format an HTML page."""
-        css_path = "pydoc_data/_pydoc.css"
+        css_path = "pydoc_data/pydoc.css"
         css_link = (
             '<link rel="stylesheet" type="text/css" href="%s">' %
             css_path)
