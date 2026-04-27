@@ -489,18 +489,20 @@ def _find_dr_record_by_name(vd, path, encoding):
 
     entry = root_dir_record
 
-    tmpdr = dr.DirectoryRecord()
-
     while True:
         child = None
 
         thelist = entry.children
+        # Bisect for currpath among the real entries.  Children index 0/1 are
+        # dot/dotdot, so we start at 2.  All entries from index 2 on are real
+        # names that compare bytewise, matching dr.__lt__ on the real-entry
+        # path; comparing file_ident directly avoids materializing a scratch
+        # DirectoryRecord just to drive __lt__.
         lo = 2
         hi = len(thelist)
         while lo < hi:
             mid = (lo + hi) // 2
-            tmpdr.file_ident = currpath
-            if thelist[mid] < tmpdr:
+            if thelist[mid].file_ident < currpath:
                 lo = mid + 1
             else:
                 hi = mid

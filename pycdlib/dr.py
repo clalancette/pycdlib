@@ -164,7 +164,7 @@ class DirectoryRecord:
                  'index_in_parent', 'dr_len', 'xattr_len', 'file_flags',
                  'file_unit_size', 'interleave_gap_size', 'len_fi', 'isdir',
                  'orig_extent_loc', 'data_length', 'seqnum', 'is_root',
-                 'parent', 'rock_ridge', 'xa_record', 'file_ident')
+                 'parent', 'rock_ridge', 'xa_record', 'file_ident', '_sort_key')
 
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -285,12 +285,20 @@ class DirectoryRecord:
 
         if self.is_root:
             self._printable_name = '/'.encode(vd.encoding)
+            self._sort_key = b'\x00'
         elif self.file_ident == b'\x00':
             self._printable_name = '.'.encode(vd.encoding)
+            self._sort_key = b'\x00'
         elif self.file_ident == b'\x01':
             self._printable_name = '..'.encode(vd.encoding)
+            self._sort_key = b'\x01'
         else:
             self._printable_name = self.file_ident
+            # Bisect sort key for __lt__: dot/dotdot get b'\x00'/b'\x01' so
+            # they always sort first; real names get a 0xff prefix so they
+            # stay above dotdot even for Joliet, where UCS-2 names start
+            # with a 0x00 byte and would otherwise compare lower than b'\x01'.
+            self._sort_key = b'\xff' + self.file_ident
 
         if self.parent is not None:
             if xa:
@@ -514,12 +522,16 @@ class DirectoryRecord:
 
         if self.is_root:
             self._printable_name = '/'.encode(vd.encoding)
+            self._sort_key = b'\x00'
         elif self.file_ident == b'\x00':
             self._printable_name = '.'.encode(vd.encoding)
+            self._sort_key = b'\x00'
         elif self.file_ident == b'\x01':
             self._printable_name = '..'.encode(vd.encoding)
+            self._sort_key = b'\x01'
         else:
             self._printable_name = self.file_ident
+            self._sort_key = b'\xff' + self.file_ident
 
         self.vd = vd
 
@@ -1255,36 +1267,14 @@ class DirectoryRecord:
     ############# END BACKWARDS COMPATIBILITY #################################
 
     def __lt__(self, other):
-        # This method is used for the bisect.insort_left() when adding a child.
-        # It needs to return whether self is less than other.  Here we use the
-        # ISO9660 sorting order which is essentially:
-        #
-        # 1.  The \x00 is always the 'dot' record, and is always first.
-        # 2.  The \x01 is always the 'dotdot' record, and is always second.
-        # 3.  Other entries are sorted lexically; this does not exactly match
-        #     the sorting method specified in Ecma-119, but does OK for now.
-        #
-        # Ecma-119 Section 9.3 specifies that we need to pad out the shorter of
-        # the two files with 0x20 (spaces), then compare byte-by-byte until
-        # they differ.  However, we can more easily just do the string equality
-        # comparison, since it will always be the case that 0x20 will be less
-        # than any of the other allowed characters in the strings.
-        if self.file_ident == b'\x00':
-            if other.file_ident == b'\x00':
-                return False
-            return True
-        if other.file_ident == b'\x00':
-            return False
-
-        if self.file_ident == b'\x01':
-            if other.file_ident == b'\x00':
-                return False
-            return True
-
-        if other.file_ident == b'\x01':
-            # If self.file_ident was '\x00', it would have been caught above.
-            return False
-        return self.file_ident < other.file_ident
+        # Used by bisect.bisect_left() in _add_child().  Both records carry a
+        # precomputed _sort_key (set when file_ident is finalized) that
+        # encodes the ECMA-119 ordering: dot first, then dotdot, then real
+        # names — see the _sort_key assignments in parse() / _new().  Real
+        # names compare bytewise; that doesn't match the strict ECMA-119
+        # 9.3 padding rule but is equivalent here, since the pad byte 0x20
+        # is less than any other allowed file-identifier character.
+        return self._sort_key < other._sort_key
 
     def __ne__(self, other):
         # type: (object) -> bool
