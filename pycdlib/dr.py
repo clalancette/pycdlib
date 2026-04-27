@@ -792,6 +792,11 @@ class DirectoryRecord:
                     if not allow_duplicate:
                         raise pycdlibexception.PyCdlibInvalidInput('Failed adding duplicate name to parent')
 
+                    # For multi-extent files (3+ chunks), there can already be
+                    # multiple contiguous duplicates here.  Walk forward to the
+                    # last one so we link onto the tail of the existing chain.
+                    while index + 1 < len(self.children) and self.children[index + 1].file_ident == child.file_ident:
+                        index += 1
                     self.children[index].data_continuation = child
                     self.children[index].file_flags |= (1 << self.FILE_FLAG_MULTI_EXTENT_BIT)
                     index += 1
