@@ -2839,6 +2839,81 @@ def test_new_add_directory_creation_time_no_storage_errors():
     assert('creation_time' in str(excinfo.value))
     iso.close()
 
+def test_new_dir_subextent_data_length_opens():
+    # Regression test: real-world ISOs (Windows XP / 2003 install media,
+    # PS2 GT4) declare a directory data_length that ends inside an
+    # extent, with the trailing partial extent zero-padded.  The parser
+    # used to demand a *full* logical-block-sized run of zeros after a
+    # zero-length DR, which fails when data_length runs out partway
+    # through.  Build a small ISO, byte-patch root's data_length to
+    # claim an extra 100 bytes that fall in the zero pad past the real
+    # content, and check that re-opening still works.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    # Force root into multiple extents so there's a zero-padded tail
+    # past the last DR but still inside the directory's extents on
+    # disk.  We can then patch root.data_length to claim 100 of those
+    # zero bytes without colliding with file data.
+    for i in range(80):
+        name = '/F%03d.;1' % i
+        iso.add_fp(io.BytesIO(b'x'), 1, name)
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    data = bytearray(out.getvalue())
+
+    # PVD root_directory_record lives at offset 156 within the PVD
+    # (extent 16).  DR layout: byte 0=dr_len, byte 1=xattr_len,
+    # bytes 2-9=extent_le|extent_be, bytes 10-17=data_length_le|be.
+    pvd_root_dr_off = 16 * 2048 + 156
+    root_extent_le, _root_extent_be, root_data_length_le, _root_data_length_be = \
+        struct.unpack_from('<LLLL', data, pvd_root_dr_off + 2)
+    # Need root to span more than one extent so there's zero-pad space
+    # past the last DR but before the next ISO descriptor.
+    assert(root_data_length_le > 2048)
+    assert(root_data_length_le % 2048 == 0)
+
+    # Extend data_length by 100 bytes.  The 100 extra bytes need to be
+    # zero -- they live in what would otherwise be the directory's
+    # zero-pad tail past the last DR.  Force them to be zero (they
+    # generally already are from pycdlib's writer, but being explicit
+    # keeps the test stable against writer changes).
+    extra = 100
+    new_dl = root_data_length_le + extra
+    pad_start = root_extent_le * 2048 + root_data_length_le
+    for i in range(extra):
+        data[pad_start + i] = 0
+
+    def patch_data_length(off):
+        struct.pack_into('<L', data, off + 10, new_dl)
+        # The big-endian copy lives at offset+14, computed via swab.
+        be = ((new_dl & 0xff) << 24) | ((new_dl & 0xff00) << 8) | \
+             ((new_dl & 0xff0000) >> 8) | ((new_dl >> 24) & 0xff)
+        struct.pack_into('<L', data, off + 14, be)
+
+    # 1. PVD root DR.
+    patch_data_length(pvd_root_dr_off)
+    # 2. Root's dot DR (first DR at start of root extent).
+    root_extent_off = root_extent_le * 2048
+    patch_data_length(root_extent_off)
+    # 3. Root's dotdot DR (second DR; for root's parent-is-self, this
+    # also reports root's data_length).  Dot DR is dr_len=34.
+    patch_data_length(root_extent_off + 34)
+
+    # Verify it opens.
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(bytes(data)))
+    # Sanity: round-trip through pycdlib once more to confirm we
+    # didn't just paper over a parse error -- the rewritten ISO
+    # should still be coherent.
+    out2 = io.BytesIO()
+    iso2.write_fp(out2)
+    iso2.close()
+    iso3 = pycdlib.PyCdlib()
+    iso3.open_fp(io.BytesIO(out2.getvalue()))
+    iso3.close()
+
 def test_new_walk_with_non_utf8_directory_name():
     # Regression test for https://github.com/clalancette/pycdlib/issues/109.
     # The 1.15.0 walk encoding work decoded the file/directory names that

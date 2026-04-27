@@ -1076,13 +1076,23 @@ class PyCdlib:
                     # the end of this extent.  Move the offset to the start of
                     # the next extent.
                     padsize = self.logical_block_size - (offset % self.logical_block_size)
-                    if data[offset:offset + padsize] != b'\x00' * padsize:
+                    # ECMA-119 says DRs must not cross extent boundaries, so
+                    # the rest of the current extent after a zero-length DR
+                    # is padding zeros.  Most ISOs declare a data_length
+                    # that's a multiple of the logical block size, so the
+                    # full padsize matters.  But some real-world ISOs
+                    # (Windows XP / 2003 install media, PS2 GT4) declare a
+                    # sub-extent-aligned data_length where the last partial
+                    # extent is just trailing zero pad; in that case we
+                    # must not require zero bytes past data_length.
+                    pad_check = min(padsize, length - offset)
+                    if data[offset:offset + pad_check] != b'\x00' * pad_check:
                         # For now we are pedantic, and throw an exception if the
                         # padding bytes are not all zero.  We may have to loosen
                         # this check depending on what we see in the wild.
                         raise pycdlibexception.PyCdlibInvalidISO('Invalid padding on ISO')
 
-                    offset = offset + padsize
+                    offset = offset + pad_check
                     continue
 
                 new_record = dr.DirectoryRecord()
