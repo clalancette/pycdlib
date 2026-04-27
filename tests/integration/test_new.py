@@ -4918,6 +4918,140 @@ def test_new_udf_very_large(tmpdir):
 
     iso.close()
 
+def test_new_udf_above_multi_extent_threshold(tmpdir):
+    # Regression test for issue #65: a UDF file larger than the ISO9660
+    # multi-extent boundary (0xfffff800 ~= 4 GiB) used to leave the UDF
+    # File Entry pointing at only the last fragment's inode while the
+    # earlier fragments became orphaned inodes.  Use a sparse input and
+    # verify the in-memory state without writing the (~4 GiB) ISO out.
+    indir = tmpdir.mkdir('udfabovemulti')
+    largefile = os.path.join(str(indir), 'foo')
+
+    SIZE = 0xfffff800 + 1
+    with open(largefile, 'wb') as outfp:
+        outfp.truncate(SIZE)
+
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=3, udf='2.60')
+    iso.add_file(largefile, udf_path='/foo')
+
+    fe = iso.udf_root.fi_descs[1].file_entry
+    assert(fe.info_len == SIZE)
+    assert(sum(ad.extent_length for ad in fe.alloc_descs) == SIZE)
+    assert(fe.inode is not None)
+    assert(fe.inode.data_length == SIZE)
+    assert(fe.inode.fp_offset == 0)
+    # Exactly one inode should be tracked: the full-file UDF inode.  Without
+    # the fix, the splitting loop would also leave an orphaned per-chunk
+    # inode behind.
+    assert(len(iso.inodes) == 1)
+    assert(iso.inodes[0] is fe.inode)
+    assert(len(fe.inode.linked_records) == 1)
+
+    iso.close()
+
+@pytest.mark.slow
+def test_new_udf_above_multi_extent_threshold_roundtrip(tmpdir):
+    # Round-trip companion to test_new_udf_above_multi_extent_threshold:
+    # write a >4 GiB UDF file to a real ISO and read it back to verify the
+    # data on either side of the multi-extent boundary survives intact.
+    indir = tmpdir.mkdir('udfabovemultirt')
+    largefile = os.path.join(str(indir), 'foo')
+    output_iso = os.path.join(str(indir), 'udfabovemulti.iso')
+    extracted = os.path.join(str(indir), 'extracted')
+
+    SIZE = 0xfffff800 + 4096
+    boundary = 0xfffff800
+    with open(largefile, 'wb') as outfp:
+        outfp.truncate(SIZE)
+        outfp.seek(0)
+        outfp.write(b'\xaa' * 16)
+        outfp.seek(boundary - 8)
+        outfp.write(b'\xbb' * 16)
+        outfp.seek(SIZE - 16)
+        outfp.write(b'\xcc' * 16)
+
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=3, udf='2.60')
+    iso.add_file(largefile, udf_path='/foo')
+    iso.write(output_iso)
+    iso.close()
+
+    newiso = pycdlib.PyCdlib()
+    newiso.open(output_iso)
+    newiso.get_file_from_iso(extracted, udf_path='/foo')
+    newiso.close()
+
+    assert(os.stat(extracted).st_size == SIZE)
+    with open(extracted, 'rb') as fp:
+        assert(fp.read(16) == b'\xaa' * 16)
+        fp.seek(boundary - 8)
+        assert(fp.read(16) == b'\xbb' * 16)
+        fp.seek(SIZE - 16)
+        assert(fp.read(16) == b'\xcc' * 16)
+
+@pytest.mark.slow
+def test_new_udf_bridge_above_multi_extent_threshold(tmpdir):
+    # UDF Bridge round-trip for a file larger than 0xfffff800 bytes.  Both
+    # the ISO9660 and UDF views must point at the same physical extents
+    # (single copy of the file data on disc, per ECMA-167) and both must
+    # extract identical content.
+    indir = tmpdir.mkdir('bridgeabovemultirt')
+    largefile = os.path.join(str(indir), 'foo')
+    output_iso = os.path.join(str(indir), 'bridge.iso')
+    extracted_iso = os.path.join(str(indir), 'extracted_iso')
+    extracted_udf = os.path.join(str(indir), 'extracted_udf')
+
+    SIZE = 0xfffff800 + 4096
+    boundary = 0xfffff800
+    with open(largefile, 'wb') as outfp:
+        outfp.truncate(SIZE)
+        outfp.seek(0)
+        outfp.write(b'\xaa' * 16)
+        outfp.seek(boundary - 8)
+        outfp.write(b'\xbb' * 16)
+        outfp.seek(SIZE - 16)
+        outfp.write(b'\xcc' * 16)
+
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=3, udf='2.60')
+    iso.add_file(largefile, '/FOO.;1', udf_path='/foo')
+
+    # Single shared inode across the ISO9660 multi-extent chunks and the UDF
+    # File Entry: confirm we don't have separate per-chunk inodes for the
+    # ISO9660 view.
+    file_inodes = [ino for ino in iso.inodes if ino.data_length > 0]
+    assert(len(file_inodes) == 1)
+    assert(file_inodes[0].data_length == SIZE)
+    # 2 ISO9660 multi-extent chunks + 1 UDF File Entry = 3 linked records.
+    assert(len(file_inodes[0].linked_records) == 3)
+
+    iso.write(output_iso)
+    iso.close()
+
+    # The on-disc file should contain a single copy of the data.  An
+    # over-budget bound: header/metadata extents + ceil(SIZE/2048) data
+    # extents + a small slack for trailing UDF anchors and padding.  If the
+    # data were duplicated, the size would balloon by roughly another SIZE.
+    iso_size = os.stat(output_iso).st_size
+    data_extents = (SIZE + 2047) // 2048
+    assert(iso_size < (data_extents + 4096) * 2048)
+
+    newiso = pycdlib.PyCdlib()
+    newiso.open(output_iso)
+    newiso.get_file_from_iso(extracted_iso, iso_path='/FOO.;1')
+    newiso.get_file_from_iso(extracted_udf, udf_path='/foo')
+    newiso.close()
+
+    for extracted in (extracted_iso, extracted_udf):
+        assert(os.stat(extracted).st_size == SIZE)
+        with open(extracted, 'rb') as fp:
+            assert(fp.read(16) == b'\xaa' * 16)
+            fp.seek(boundary - 8)
+            assert(fp.read(16) == b'\xbb' * 16)
+            fp.seek(SIZE - 16)
+            assert(fp.read(16) == b'\xcc' * 16)
+
 def test_new_lookup_after_rmdir():
     iso = pycdlib.PyCdlib()
     iso.new()

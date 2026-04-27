@@ -1154,9 +1154,10 @@ class PyCdlib:
                         # The end of the file is beyond the size of the ISO.
                         # Since this can't be true, truncate the file size.
                         if new_record.inode is not None:
-                            new_record.inode.data_length = iso_file_length - extent_to_use * self.logical_block_size
+                            truncated_length = iso_file_length - extent_to_use * self.logical_block_size
+                            new_record.inode.data_length = truncated_length
                             for rec, is_pvd in new_record.inode.linked_records:
-                                rec.set_data_length(new_end)
+                                rec.set_data_length(truncated_length)
                     else:
                         # The new end is still within the file size, but the PVD
                         # size is wrong.  Set the lastbyte appropriately, which
@@ -1518,8 +1519,15 @@ class PyCdlib:
 
         ino.set_extent_location(current_extent)
         for rec, pvd_unused in ino.linked_records:
-            rec.set_data_location(current_extent,
-                                  current_extent - part_start)
+            # ISO9660 multi-extent chunks share a single Inode; each
+            # DirectoryRecord for a chunk carries the block offset of its
+            # slice within the inode's allocated extent run.  UDF File
+            # Entries leave data_extent_offset at 0 -- their
+            # set_data_location walks alloc_descs consecutively from the
+            # inode's start.
+            rec_offset = getattr(rec, 'data_extent_offset', 0)
+            rec.set_data_location(current_extent + rec_offset,
+                                  current_extent + rec_offset - part_start)
 
         current_extent += utils.ceiling_div(ino.get_data_length(),
                                             self.logical_block_size)
@@ -2220,6 +2228,16 @@ class PyCdlib:
                         else:
                             if abs_file_data_extent in extent_to_inode:
                                 ino = extent_to_inode[abs_file_data_extent]
+                                # In a UDF Bridge ISO, the UDF File Entry
+                                # describes the whole file in one Inode while
+                                # the ISO9660 side splits it into multi-extent
+                                # chunks.  When pycdlib parses the ISO9660
+                                # chunks first, only chunk 1's length lives in
+                                # the deduplicated inode.  Extend that inode
+                                # to UDF's full info_len so a UDF read returns
+                                # the complete file.
+                                if next_entry.get_data_length() > ino.data_length:
+                                    ino.data_length = next_entry.get_data_length()
                             else:
                                 ino = inode.Inode()
                                 ino.parse(abs_file_data_extent,
@@ -2554,13 +2572,25 @@ class PyCdlib:
         if found_record.inode is None:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot write out a file without data')
 
-        while found_record.get_data_length() > 0:
-            with inode.InodeOpenData(found_record.inode, self.logical_block_size) as (data_fp, data_len):
-                # Copy the data into the output file descriptor.  If a boot info
-                # table is present, overlay the table over bytes 8-64 of the
-                # file.  Note that we never return more bytes than the length
-                # of the file, so the boot info table may get truncated.
-                if found_record.inode.boot_info_table is not None:
+        # Walk the multi-extent data_continuation chain.  Each chunk reads
+        # rec.data_length bytes starting at its slice within the inode --
+        # this covers both the parse-mode case (each chunk has its own
+        # per-chunk Inode at offset 0) and the _add_fp case (all chunks
+        # share a single Inode with data_extent_offset describing each
+        # chunk's block offset into the run).
+        first_chunk = True
+        while found_record.inode is not None and found_record.data_length > 0:
+            with inode.InodeOpenData(found_record.inode, self.logical_block_size) as (data_fp, _):
+                if found_record.data_extent_offset:
+                    data_fp.seek(found_record.data_extent_offset * self.logical_block_size,
+                                 os.SEEK_CUR)
+                data_len = found_record.data_length
+                # Copy the data into the output file descriptor.  If a boot
+                # info table is present, overlay the table over bytes 8-64
+                # of the first chunk.  Note that we never return more bytes
+                # than the length of the chunk, so the boot info table may
+                # get truncated.
+                if first_chunk and found_record.inode.boot_info_table is not None:
                     header_len = min(data_len, 8)
                     outfp.write(data_fp.read(header_len))
                     data_len -= header_len
@@ -2575,6 +2605,7 @@ class PyCdlib:
                 else:
                     utils.copy_data(data_len, blocksize, data_fp, outfp)
 
+            first_chunk = False
             if found_record.data_continuation is not None:
                 found_record = found_record.data_continuation
             else:
@@ -3124,8 +3155,9 @@ class PyCdlib:
             self._needs_reshuffle = True
 
     def _add_hard_link_to_inode(self, data_ino, length, file_mode,
-                                boot_catalog_old, creation_time, **kwargs):
-        # type: (Optional[inode.Inode], int, int, bool, Optional[float], Optional[str]) -> int
+                                boot_catalog_old, creation_time,
+                                data_extent_offset_blocks=0, **kwargs):
+        # type: (Optional[inode.Inode], int, int, bool, Optional[float], int, Optional[str]) -> int
         """
         Add a hard link to the ISO.  Hard links are alternate names for the
         same file contents that don't take up any additional space on the ISO.
@@ -3207,6 +3239,7 @@ class PyCdlib:
             new_rec.new_file(vd, length, new_name, new_parent,
                              vd.sequence_number(), rr, rr_name, xa, file_mode,
                              time.time(), creation_time)
+            new_rec.data_extent_offset = data_extent_offset_blocks
 
             num_bytes_to_add += self._add_child_to_dr(new_rec)
             num_bytes_to_add += self._update_rr_ce_entry(new_rec)
@@ -3315,47 +3348,57 @@ class PyCdlib:
         if length > (2**32) - 1 and self.interchange_level < 3:
             raise pycdlibexception.PyCdlibInvalidInput('File sizes for interchange level < 3 must be less than 4GiB')
 
-        left = length
-        offset = 0
-        done = False
-        num_bytes_to_add = 0
-        while not done:
-            # The maximum length we allow in one directory record is 0xfffff800
-            # (this is taken from xorriso, though I don't really know why).
-            thislen = min(left, 0xfffff800)
+        # The maximum length representable in a single ISO9660 directory
+        # record (taken from xorriso).  Files larger than this are split
+        # across multiple multi-extent directory records on the ISO9660 /
+        # Joliet side, while UDF represents the same file as a single File
+        # Entry whose allocation descriptors cover the full extent run.
+        # Both views reference the same physical extents on disc -- the
+        # "UDF Bridge" layout described in ECMA-167.
+        single_chunk_length = 0xfffff800
 
-            ino = None
-            if fp is not None:
-                ino = inode.Inode()
-                ino.new(thislen, fp, manage_fp, offset)
+        # Single Inode covering the whole file.  Every view (ISO9660 chunks,
+        # Joliet chunks, and UDF) links to this same Inode.  Each ISO9660 /
+        # Joliet chunk records its block offset within the inode's extent
+        # run via DirectoryRecord.data_extent_offset; the UDF File Entry's
+        # alloc_descs walk consecutively from the inode's start.
+        ino = None
+        if fp is not None:
+            ino = inode.Inode()
+            ino.new(length, fp, manage_fp, 0)
 
-            num_bytes_to_add += thislen
-            if iso_path:
-                num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
-                                                                 fmode,
-                                                                 eltorito_catalog,
-                                                                 creation_time,
-                                                                 iso_new_path=iso_path,
-                                                                 rr_name=rr_name)
+        num_bytes_to_add = length
 
-            if joliet_path:
-                # If this is a Joliet ISO, then we can re-use add_hard_link to do
-                # most of the work.
-                num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
-                                                                 fmode,
-                                                                 eltorito_catalog,
-                                                                 creation_time,
-                                                                 joliet_new_path=joliet_path)
+        if iso_path or joliet_path:
+            left = length
+            chunk_offset_blocks = 0
+            done = False
+            while not done:
+                thislen = min(left, single_chunk_length)
 
-            # This goes after the hard link so we only track the new Inode if
-            # everything above succeeds
-            if ino is not None:
-                self.inodes.append(ino)
+                if iso_path:
+                    num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
+                                                                     fmode,
+                                                                     eltorito_catalog,
+                                                                     creation_time,
+                                                                     iso_new_path=iso_path,
+                                                                     rr_name=rr_name,
+                                                                     data_extent_offset_blocks=chunk_offset_blocks)
 
-            left -= thislen
-            offset += thislen
-            if left == 0:
-                done = True
+                if joliet_path:
+                    # If this is a Joliet ISO, then we can re-use add_hard_link to do
+                    # most of the work.
+                    num_bytes_to_add += self._add_hard_link_to_inode(ino, thislen,
+                                                                     fmode,
+                                                                     eltorito_catalog,
+                                                                     creation_time,
+                                                                     joliet_new_path=joliet_path,
+                                                                     data_extent_offset_blocks=chunk_offset_blocks)
+
+                left -= thislen
+                chunk_offset_blocks += thislen // self.logical_block_size
+                if left == 0:
+                    done = True
 
         if udf_path:
             num_bytes_to_add += self._add_hard_link_to_inode(ino, length,
@@ -3363,6 +3406,11 @@ class PyCdlib:
                                                              eltorito_catalog,
                                                              creation_time,
                                                              udf_new_path=udf_path)
+
+        # Track the Inode after all linked records have been created so that
+        # a failure in one of the hard-link calls leaves no orphan behind.
+        if ino is not None:
+            self.inodes.append(ino)
 
         return num_bytes_to_add
 

@@ -481,7 +481,10 @@ def internal_check_file(dirrecord, name, dr_len, loc, datalen, hidden, multi_ext
         assert(dirrecord.file_flags == 128)
     else:
         assert(dirrecord.file_flags == 0)
-    assert(dirrecord.get_data_length() == datalen)
+    # data_length is the per-chunk on-disc value; get_data_length() may report
+    # the shared inode's full-file length when this DR is one chunk of a
+    # multi-extent file added via _add_fp.
+    assert(dirrecord.data_length == datalen)
 
 def internal_generate_inorder_names(numdirs):
     tmp = []

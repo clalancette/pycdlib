@@ -163,8 +163,9 @@ class DirectoryRecord:
                  'rr_children', 'inode', '_printable_name', 'date',
                  'index_in_parent', 'dr_len', 'xattr_len', 'file_flags',
                  'file_unit_size', 'interleave_gap_size', 'len_fi', 'isdir',
-                 'orig_extent_loc', 'data_length', 'seqnum', 'is_root',
-                 'parent', 'rock_ridge', 'xa_record', 'file_ident', '_sort_key')
+                 'orig_extent_loc', 'data_length', 'data_extent_offset',
+                 'seqnum', 'is_root', 'parent', 'rock_ridge', 'xa_record',
+                 'file_ident', '_sort_key')
 
     FILE_FLAG_EXISTENCE_BIT = 0
     FILE_FLAG_DIRECTORY_BIT = 1
@@ -184,6 +185,13 @@ class DirectoryRecord:
         self.extents_to_here = 1
         self.offset_to_here = 0
         self.data_continuation = None  # type: Optional[DirectoryRecord]
+        # data_extent_offset is the offset (in logical blocks) of this record's
+        # data slice from the start of its inode's allocated extent run.  It is
+        # always 0 except for the second-and-later chunks of an ISO9660
+        # multi-extent file that shares a single Inode with its sibling chunks
+        # (the UDF Bridge layout produced by _add_fp for files larger than
+        # 0xfffff800 bytes).
+        self.data_extent_offset = 0
         self.children = []  # type: List[DirectoryRecord]
         self.rr_children = []  # type: List[DirectoryRecord]
         self.index_in_parent = -1
