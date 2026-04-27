@@ -1535,6 +1535,66 @@ def test_rr_update_ce_block_not_initialized():
         rr.update_ce_block(None)
     assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
+def test_rr_parse_continuation_does_not_downgrade_version():
+    # Regression test: RockRidge.parse() runs once for the inline DR area
+    # and a second time (with continuation=True) for the CE block.  Each
+    # call recomputes its own rr_version from the records it sees in
+    # that buffer.  Before the fix, the second call would unconditionally
+    # overwrite self.rr_version, so an ISO whose 44-byte (RR 1.12) PX
+    # was inline but whose CE block carried only NM/SL/etc. would end
+    # up with rr_version demoted back to '1.09'.  On write, that
+    # produced a 36-byte PX (8 bytes shorter than the dr_len field
+    # claimed) and the next round-trip would fail with "Invalid RR
+    # version 0!" parsing the resulting 8 bytes of trailing slop.
+    def le_be(val):
+        return struct.pack('<L', val) + struct.pack('>L', val)
+
+    ts7 = b'\x00\x00\x01\x01\x01\x01\x00'  # valid 7-byte DirectoryRecordDate
+
+    # Inline RR: SP + RR + PX (44-byte / 1.12 form) + TF + CE.
+    sp = b'SP\x07\x01\xbe\xef\x00'
+    rr_rec = b'RR\x05\x01\x81'
+    px_1_12 = (b'PX\x2c\x01' + le_be(0o100644) + le_be(1)
+               + le_be(0) + le_be(0) + le_be(0))
+    tf = b'TF\x1a\x01\x0e' + ts7 * 3
+    ce = b'CE\x1c\x01' + le_be(0) + le_be(0) + le_be(0)
+    inline = sp + rr_rec + px_1_12 + tf + ce
+    assert(len(inline) == 110)  # sanity
+
+    # Continuation block: a single NM record.  No PX, no SF, no ES, no
+    # ER -- nothing that signals 1.12.
+    nm = b'NM\x06\x01\x00X'
+
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(inline, True, 0, False, b'.')
+    assert(rr.rr_version == '1.12')
+
+    rr.parse(nm, False, 0, True, b'.')
+    assert(rr.rr_version == '1.12')
+
+def test_rr_parse_continuation_can_upgrade_version():
+    # Inverse of the above: if the inline area has no 1.12 signals but
+    # the continuation does, rr_version should escalate to '1.12'.
+    def le_be(val):
+        return struct.pack('<L', val) + struct.pack('>L', val)
+
+    ts7 = b'\x00\x00\x01\x01\x01\x01\x00'
+
+    # Inline: just SP and CE (no PX), so rr_version starts at '1.09'.
+    inline = (b'SP\x07\x01\xbe\xef\x00'
+              + b'CE\x1c\x01' + le_be(0) + le_be(0) + le_be(0))
+
+    # Continuation carries a 44-byte PX (1.12 signal).
+    px_1_12 = (b'PX\x2c\x01' + le_be(0o100644) + le_be(1)
+               + le_be(0) + le_be(0) + le_be(0))
+
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(inline, True, 0, False, b'.')
+    assert(rr.rr_version == '1.09')
+
+    rr.parse(px_1_12, False, 0, True, b'.')
+    assert(rr.rr_version == '1.12')
+
 # RockRidgeContinuationBlock and RockRidgeContinuationEntry
 def test_rrcontentry_track_into_empty():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)

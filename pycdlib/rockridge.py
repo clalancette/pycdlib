@@ -2694,13 +2694,30 @@ class RockRidge:
         # above as a hint, and allow for some wiggle room.
 
         if px_record_length == 44 or sf_record_length == 21 or has_es_record or er_id == EXT_ID_112:
-            self.rr_version = '1.12'
+            this_call_version = '1.12'
+        elif sf_record_length == 12:
+            this_call_version = '1.10'
         else:
-            # Not 1.12, so either 1.09 or 1.10.
-            if sf_record_length == 12:
-                self.rr_version = '1.10'
-            else:
-                self.rr_version = '1.09'
+            this_call_version = '1.09'
+
+        if continuation:
+            # parse() runs once for the inline DR area (continuation=False)
+            # and a second time for the CE block (continuation=True).
+            # The 1.09 / 1.10 / 1.12 signals can appear on either side --
+            # e.g. an ISO whose 44-byte PX is inline but whose CE block
+            # carries only NM/SL records would, on the second call, see
+            # no 1.12 evidence and (without this guard) demote
+            # rr_version back to '1.09'.  That demotion silently
+            # downsizes the PX record on write, which produces an ISO
+            # with a dr_len longer than the bytes actually emitted (the
+            # tail then bleeds into the next record on re-parse).  Only
+            # let the continuation pass *upgrade* rr_version, never
+            # downgrade it.
+            ranks = {'1.09': 0, '1.10': 1, '1.12': 2}
+            if ranks[this_call_version] > ranks[self.rr_version]:
+                self.rr_version = this_call_version
+        else:
+            self.rr_version = this_call_version
 
         namelist = [nm.posix_name for nm in self.dr_entries.nm_records]
         namelist.extend([nm.posix_name for nm in self.ce_entries.nm_records])
