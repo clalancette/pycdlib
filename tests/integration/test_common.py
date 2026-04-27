@@ -8,8 +8,13 @@ import struct
 import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# Also expose tests/ so we can pull shared test helpers out of
+# tests/conftest.py via a normal `from conftest import ...`.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import pycdlib
+
+from conftest import uses_deprecated  # re-exported for `from test_common import *`
 
 # Technically, Rock Ridge doesn't impose a length limitation on NM (alternate
 # name) or SL (symlinks).  However, in practice, the Linux kernel (at least

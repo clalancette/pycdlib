@@ -2798,6 +2798,7 @@ def test_hybrid_rr_hidden_relocated(tmpdir):
 
     iso.close()
 
+@uses_deprecated("list_dir")
 def test_hybrid_rr_relocated_list_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('rrdeeplistdir')

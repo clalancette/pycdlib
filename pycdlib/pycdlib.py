@@ -25,6 +25,7 @@ import os
 import struct
 import sys
 import time
+import warnings
 
 from pycdlib import dr
 from pycdlib import eltorito
@@ -4512,6 +4513,9 @@ class PyCdlib:
         Returns:
          Nothing.
         """
+        warnings.warn('get_and_write is deprecated; use get_file_from_iso instead.',
+                      DeprecationWarning, stacklevel=2)
+
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -4536,6 +4540,9 @@ class PyCdlib:
         Returns:
          Nothing.
         """
+        warnings.warn('get_and_write_fp is deprecated; use get_file_from_iso_fp instead.',
+                      DeprecationWarning, stacklevel=2)
+
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5295,6 +5302,8 @@ class PyCdlib:
         Returns:
          Nothing.
         """
+        warnings.warn("add_joliet_directory is deprecated; use add_directory(joliet_path=...) instead.",
+                      DeprecationWarning, stacklevel=2)
         self.add_directory(joliet_path=joliet_path)
 
     def rm_file(self, iso_path=None, rr_name=None, joliet_path=None,  # pylint: disable=unused-argument
@@ -5466,6 +5475,8 @@ class PyCdlib:
         Returns:
          Nothing.
         """
+        warnings.warn("rm_joliet_directory is deprecated; use rm_directory(joliet_path=...) instead.",
+                      DeprecationWarning, stacklevel=2)
         self.rm_directory(joliet_path=joliet_path)
 
     def add_eltorito(self, bootfile_path, bootcatfile=None,
@@ -5872,6 +5883,9 @@ class PyCdlib:
         Returns:
          Nothing.
         """
+        warnings.warn('list_dir is deprecated; use list_children instead.',
+                      DeprecationWarning, stacklevel=2)
+
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
@@ -5956,6 +5970,9 @@ class PyCdlib:
         Returns:
          A dr.DirectoryRecord object representing the path.
         """
+        warnings.warn('get_entry is deprecated; use get_record instead.',
+                      DeprecationWarning, stacklevel=2)
+
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 

@@ -3926,6 +3926,7 @@ def test_new_rm_joliet_hard_link():
 
     iso.close()
 
+@uses_deprecated("add_joliet_directory")
 def test_new_add_joliet_directory_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
@@ -3934,6 +3935,7 @@ def test_new_add_joliet_directory_not_initialized():
         iso.add_joliet_directory('/foo')
     assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
+@uses_deprecated("add_joliet_directory")
 def test_new_add_joliet_directory():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
@@ -3946,6 +3948,7 @@ def test_new_add_joliet_directory():
 
     iso.close()
 
+@uses_deprecated("add_joliet_directory")
 def test_new_add_joliet_directory_isolevel4():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
@@ -3961,6 +3964,7 @@ def test_new_add_joliet_directory_isolevel4():
 
     iso.close()
 
+@uses_deprecated("add_joliet_directory")
 def test_new_add_joliet_directory_always_consistent():
     # Create a new ISO.
     iso = pycdlib.PyCdlib(always_consistent=True)
@@ -3973,6 +3977,7 @@ def test_new_add_joliet_directory_always_consistent():
 
     iso.close()
 
+@uses_deprecated("rm_joliet_directory")
 def test_new_rm_joliet_directory():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
@@ -3987,6 +3992,7 @@ def test_new_rm_joliet_directory():
 
     iso.close()
 
+@uses_deprecated("rm_joliet_directory")
 def test_new_rm_joliet_directory_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
@@ -3995,6 +4001,7 @@ def test_new_rm_joliet_directory_not_initialized():
         iso.rm_joliet_directory('/dir1')
     assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
+@uses_deprecated("rm_joliet_directory")
 def test_new_rm_joliet_directory_always_consistent():
     # Create a new ISO.
     iso = pycdlib.PyCdlib(always_consistent=True)
@@ -4009,6 +4016,7 @@ def test_new_rm_joliet_directory_always_consistent():
 
     iso.close()
 
+@uses_deprecated("rm_joliet_directory")
 def test_new_rm_joliet_directory_iso_level4():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
@@ -4165,6 +4173,7 @@ def test_new_rm_directory_no_path():
 
     iso.close()
 
+@uses_deprecated("add_joliet_directory")
 def test_new_rm_directory_joliet_only():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
@@ -4177,6 +4186,7 @@ def test_new_rm_directory_joliet_only():
 
     iso.close()
 
+@uses_deprecated("get_and_write_fp")
 def test_new_get_and_write_dir():
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -4190,6 +4200,7 @@ def test_new_get_and_write_dir():
 
     iso.close()
 
+@uses_deprecated("get_and_write_fp")
 def test_new_get_and_write_joliet():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -4204,6 +4215,7 @@ def test_new_get_and_write_joliet():
 
     iso.close()
 
+@uses_deprecated("get_and_write_fp")
 def test_new_get_and_write_iso9660():
     iso = pycdlib.PyCdlib()
     iso.new(joliet=3)
@@ -4218,6 +4230,7 @@ def test_new_get_and_write_iso9660():
 
     iso.close()
 
+@uses_deprecated("get_and_write_fp")
 def test_new_get_and_write_rr():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge='1.09')
@@ -4232,6 +4245,7 @@ def test_new_get_and_write_rr():
 
     iso.close()
 
+@uses_deprecated("get_and_write_fp")
 def test_new_get_and_write_iso9660_no_rr():
     iso = pycdlib.PyCdlib()
     iso.new()
@@ -4481,6 +4495,7 @@ def test_new_list_children():
 
     iso.close()
 
+@uses_deprecated("list_dir")
 def test_new_list_dir_joliet():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
