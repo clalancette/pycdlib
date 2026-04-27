@@ -3,10 +3,7 @@
 
 # Import standard python modules.
 import sys
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 # Import pycdlib itself.
 import pycdlib

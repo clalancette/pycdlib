@@ -4,10 +4,7 @@ The first 32768 bytes of any ISO are designated as "system use".  In a normal IS
 Here's the complete code for the example:
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 
@@ -15,10 +12,10 @@ iso = pycdlib.PyCdlib()
 
 iso.new()
 
-bootstr = b'boot\n'
-iso.add_fp(BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
+iso.add_fp(BytesIO(isolinuxstr), len(isolinuxstr), '/BOOT.;1')
 
-iso.add_eltorito('/BOOT.;1')
+iso.add_eltorito('/BOOT.;1', boot_load_size=4)
 
 iso.add_isohybrid()
 
@@ -30,10 +27,7 @@ iso.close()
 Let's take a closer look at the code.
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 ```

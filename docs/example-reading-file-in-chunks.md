@@ -2,10 +2,7 @@
 It may be useful in some applications to be able to read a file from an ISO a bit at a time and do some processing on it.  PyCdlib provides the context manager [open_file_from_iso](pycdlib-api.html#PyCdlib-open_file_from_iso) API to allow opening a file and reading in parts of it.  Here's the complete code for this example:
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 
@@ -26,10 +23,7 @@ iso.close()
 Let's take a closer look at the code.
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 ```
@@ -52,10 +46,10 @@ with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
 Here we use the [open_file_from_iso](pycdlib-api.html#PyCdlib-open_file_from_iso) API to get a context manager to the file that we created; this will be used in the rest of the explanations below.
 
 ```python
-    all = infp.read()
+    all1 = infp.read()
 ```
 
-The first `read` call reads in all of the data in the file, so at the end of the call the "all" variable will contain `foofoo\n`. 
+The first `read` call reads in all of the data in the file, so at the end of the call the "all1" variable will contain `foofoo\n`. 
 
 ```python
     infp.seek(0)

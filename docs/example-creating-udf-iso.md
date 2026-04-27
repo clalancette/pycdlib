@@ -2,10 +2,7 @@
 This example will show how to create an ISO with the [UDF](standards.md#udf) bridge format.  Here's the complete code for the example:
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 
@@ -21,10 +18,7 @@ iso.close()
 Let's take a closer look at the code.
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 ```

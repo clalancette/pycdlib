@@ -13,10 +13,7 @@ The data can be referred to zero, one, or many times from each of these contexts
 An example should help to illustrate the concept.  Here's the complete code for the example:
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 
@@ -39,10 +36,7 @@ iso.close()
 Let's take a closer look at the code.
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 ```

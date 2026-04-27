@@ -1,11 +1,8 @@
 # Example: Walking the ISO filesystem
-In some circumstances it may be useful to walk all or some of the filesystem tree on the ISO.  For that purpose, PyCdlib provides the [walk](pycdlib-api.html#PyCdlib-walk) API.  Much like the built-in Python [os.walk](https://docs.python.org/3.6/library/os.html#os.walk) API, this method takes a PyCdlib full path, and iterates over the entire filesystem starting at that root.  For each directory, the method returns a 3-tuple of `(dirpath, dirnames, filenames)` that can be used by the user.  Here's the complete code for this example:
+In some circumstances it may be useful to walk all or some of the filesystem tree on the ISO.  For that purpose, PyCdlib provides the [walk](pycdlib-api.html#PyCdlib-walk) API.  Much like the built-in Python [os.walk](https://docs.python.org/3/library/os.html#os.walk) API, this method takes a PyCdlib full path, and iterates over the entire filesystem starting at that root.  For each directory, the method returns a 3-tuple of `(dirpath, dirnames, filenames)` that can be used by the user.  Here's the complete code for this example:
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 
@@ -33,10 +30,7 @@ iso.close()
 Let's take a closer look at the code.
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 ```

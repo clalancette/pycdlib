@@ -2,10 +2,7 @@
 This example will show how to extract data from an existing ISO.  Here's the complete code for this example:
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 
@@ -28,10 +25,7 @@ print(extracted.getvalue().decode('utf-8'))
 Let's take a closer look at the code.
 
 ```python
-try:
-    from cStringIO import StringIO as BytesIO
-except ImportError:
-    from io import BytesIO
+from io import BytesIO
 
 import pycdlib
 ```
@@ -54,7 +48,7 @@ This code creates a new ISO, adds a single file to it, and writes it out.  This 
 iso.open_fp(out)
 ```
 
-Here we open up the ISO we created above.  We can safely re-use the PyCdlib object because we called the [close](pycdlib-apihtml#PyCdlib-close) method earlier.  Also note that we use [open_fp](pycdlib-api.html#PyCdlib-open_fp) to open the file-like object we wrote into using [write_fp](pycdlib-api.html#PyCdlib-write_fp) above.
+Here we open up the ISO we created above.  We can safely re-use the PyCdlib object because we called the [close](pycdlib-api.html#PyCdlib-close) method earlier.  Also note that we use [open_fp](pycdlib-api.html#PyCdlib-open_fp) to open the file-like object we wrote into using [write_fp](pycdlib-api.html#PyCdlib-write_fp) above; we do not need to seek `out` back to the beginning first because [open_fp](pycdlib-api.html#PyCdlib-open_fp) seeks the file pointer to the start of the ISO internally.
 
 ```python
 extracted = BytesIO()
@@ -66,7 +60,7 @@ Now we use the [get_file_from_iso_fp](pycdlib-api.html#PyCdlib-get_file_from_iso
 ```python
 iso.close()
 
-print(extracted)
+print(extracted.getvalue().decode('utf-8'))
 ```
 
 As is the case in other examples, we close out the PyCdlib object, and print out the data we extracted.
