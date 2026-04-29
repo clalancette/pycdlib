@@ -1431,13 +1431,13 @@ class UDFPrimaryVolumeDescriptor:
             return self.orig_extent_loc
         return self.new_extent_loc
 
-    def new(self):
-        # type: () -> None
+    def new(self, vol_ident):
+        # type: (str) -> None
         """
         Create a new UDF Primary Volume Descriptor.
 
         Parameters:
-         None.
+         vol_ident - The volume identifier string to use for this descriptor.
         Returns:
          Nothing.
         """
@@ -1449,7 +1449,7 @@ class UDFPrimaryVolumeDescriptor:
 
         self.vol_desc_seqnum = 0  # FIXME: let the user set this
         self.desc_num = 0  # FIXME: let the user set this
-        self.vol_ident = _ostaunicode_zero_pad('CDROM', 32)
+        self.vol_ident = _ostaunicode_zero_pad(vol_ident, 32)
         # According to UDF 2.60, 2.2.2.5, the VolumeSetIdentifier should have
         # at least the first 16 characters be a unique value.  Further, the
         # first 8 bytes of that should be a time value in ASCII hexadecimal
@@ -1576,14 +1576,14 @@ class UDFImplementationUseVolumeDescriptorImplementationUse:
                            self.lv_info1, self.lv_info2, self.lv_info3,
                            self.impl_ident.record(), self.impl_use)
 
-    def new(self):
-        # type: () -> None
+    def new(self, vol_ident):
+        # type: (str) -> None
         """
         Create a new UDF Implementation Use Volume Descriptor Implementation Use
         field.
 
         Parameters:
-         None:
+         vol_ident - The logical volume identifier string to use for this field.
         Returns:
          Nothing.
         """
@@ -1592,7 +1592,7 @@ class UDFImplementationUseVolumeDescriptorImplementationUse:
 
         self.char_set = UDFCharspec()
         self.char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: let the user set this
-        self.log_vol_ident = _ostaunicode_zero_pad('CDROM', 128)
+        self.log_vol_ident = _ostaunicode_zero_pad(vol_ident, 128)
         self.lv_info1 = b'\x00' * 36
         self.lv_info2 = b'\x00' * 36
         self.lv_info3 = b'\x00' * 36
@@ -1698,13 +1698,13 @@ class UDFImplementationUseVolumeDescriptor:
             return self.orig_extent_loc
         return self.new_extent_loc
 
-    def new(self):
-        # type: () -> None
+    def new(self, vol_ident):
+        # type: (str) -> None
         """
         Create a new UDF Implementation Use Volume Descriptor.
 
         Parameters:
-         None:
+         vol_ident - The logical volume identifier string to use for this descriptor.
         Returns:
          Nothing.
         """
@@ -1720,7 +1720,7 @@ class UDFImplementationUseVolumeDescriptor:
         self.impl_ident.new(0, b'*UDF LV Info', b'\x02\x01')
 
         self.impl_use = UDFImplementationUseVolumeDescriptorImplementationUse()
-        self.impl_use.new()
+        self.impl_use.new(vol_ident)
 
         self._initialized = True
 
@@ -2769,13 +2769,13 @@ class UDFLogicalVolumeDescriptor:
             return self.orig_extent_loc
         return self.new_extent_loc
 
-    def new(self):
-        # type: () -> None
+    def new(self, vol_ident):
+        # type: (str) -> None
         """
         Create a new UDF Logical Volume Descriptor.
 
         Parameters:
-         None.
+         vol_ident - The logical volume identifier string to use for this descriptor.
         Returns:
          Nothing.
         """
@@ -2789,7 +2789,7 @@ class UDFLogicalVolumeDescriptor:
         self.desc_char_set = UDFCharspec()
         self.desc_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: let the user set this
 
-        self.logical_vol_ident = _ostaunicode_zero_pad('CDROM', 128)
+        self.logical_vol_ident = _ostaunicode_zero_pad(vol_ident, 128)
 
         self.domain_ident = UDFEntityID()
         self.domain_ident.new(0, b'*OSTA UDF Compliant', b'\x02\x01\x03')
@@ -3558,13 +3558,14 @@ class UDFFileSetDescriptor:
             return self.orig_extent_loc
         return self.new_extent_loc
 
-    def new(self):
-        # type: () -> None
+    def new(self, vol_ident):
+        # type: (str) -> None
         """
         Create a new UDF File Set Descriptor.
 
         Parameters:
-         None.
+         vol_ident - The logical volume / file set identifier string to use for
+                     this descriptor.
         Returns:
          Nothing.
         """
@@ -3586,10 +3587,10 @@ class UDFFileSetDescriptor:
         self.file_set_num = 0
         self.log_vol_char_set = UDFCharspec()
         self.log_vol_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: let the user set this
-        self.log_vol_ident = _ostaunicode_zero_pad('CDROM', 128)
+        self.log_vol_ident = _ostaunicode_zero_pad(vol_ident, 128)
         self.file_set_char_set = UDFCharspec()
         self.file_set_char_set.new(0, b'OSTA Compressed Unicode')  # FIXME: let the user set this
-        self.file_set_ident = _ostaunicode_zero_pad('CDROM', 32)
+        self.file_set_ident = _ostaunicode_zero_pad(vol_ident, 32)
         self.copyright_file_ident = b'\x00' * 32  # FIXME: let the user set this
         self.abstract_file_ident = b'\x00' * 32  # FIXME: let the user set this
 

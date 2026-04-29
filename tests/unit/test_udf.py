@@ -797,9 +797,9 @@ def test_pvd_extent_location_not_initialized():
 
 def test_pvd_new_initialized_twice():
     pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
-    pvd.new()
+    pvd.new('CDROM')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        pvd.new()
+        pvd.new('CDROM')
     assert(str(excinfo.value) == 'UDF Primary Volume Descriptor already initialized')
 
 def test_pvd_set_extent_location_not_initialized():
@@ -810,10 +810,10 @@ def test_pvd_set_extent_location_not_initialized():
 
 def test_pvd_equals():
     pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
-    pvd.new()
+    pvd.new('CDROM')
 
     pvd2 = pycdlib.udf.UDFPrimaryVolumeDescriptor()
-    pvd2.new()
+    pvd2.new('CDROM')
     pvd2.vol_set_ident = pvd.vol_set_ident
     pvd2.recording_date = pvd.recording_date
 
@@ -821,7 +821,7 @@ def test_pvd_equals():
 
 def test_pvd_eq_not_same_object_type():
     pvd = pycdlib.udf.UDFPrimaryVolumeDescriptor()
-    pvd.new()
+    pvd.new('CDROM')
 
     not_a_pvd = object()
 
@@ -843,23 +843,23 @@ def test_impl_use_impl_use_record_not_initialized():
 
 def test_impl_use_impl_use_new_initialized_twice():
     impl = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
-    impl.new()
+    impl.new('CDROM')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        impl.new()
+        impl.new('CDROM')
     assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
 
 def test_impl_use_impl_use_equals():
     impl = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
-    impl.new()
+    impl.new('CDROM')
 
     impl2 = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
-    impl2.new()
+    impl2.new('CDROM')
 
     assert(impl == impl2)
 
 def test_impl_use_impl_use_eq_not_same_object_type():
     impl = pycdlib.udf.UDFImplementationUseVolumeDescriptorImplementationUse()
-    impl.new()
+    impl.new('CDROM')
 
     not_an_impl = object()
 
@@ -897,9 +897,9 @@ def test_impl_use_extent_location_not_initialized():
 
 def test_impl_use_new_initialized_twice():
     impl = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
-    impl.new()
+    impl.new('CDROM')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        impl.new()
+        impl.new('CDROM')
     assert(str(excinfo.value) == 'UDF Implementation Use Volume Descriptor already initialized')
 
 def test_impl_use_set_extent_location_not_initialized():
@@ -910,16 +910,16 @@ def test_impl_use_set_extent_location_not_initialized():
 
 def test_impl_use_equals():
     impl = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
-    impl.new()
+    impl.new('CDROM')
 
     impl2 = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
-    impl2.new()
+    impl2.new('CDROM')
 
     assert(impl == impl2)
 
 def test_impl_use_eq_not_same_object_type():
     impl = pycdlib.udf.UDFImplementationUseVolumeDescriptor()
-    impl.new()
+    impl.new('CDROM')
 
     not_an_impl = object()
 
@@ -1456,9 +1456,9 @@ def test_logvoldesc_extent_location_not_initialized():
 
 def test_logvoldesc_new_initialized_twice():
     logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
-    logvol.new()
+    logvol.new('CDROM')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        logvol.new()
+        logvol.new('CDROM')
     assert(str(excinfo.value) == 'UDF Logical Volume Descriptor already initialized')
 
 def test_logvoldesc_add_partition_map_not_initialized():
@@ -1469,26 +1469,26 @@ def test_logvoldesc_add_partition_map_not_initialized():
 
 def test_logvoldesc_add_partition_map_type_0():
     logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
-    logvol.new()
+    logvol.new('CDROM')
     logvol.add_partition_map(0)
     assert(len(logvol.partition_maps) == 1)
 
 def test_logvoldesc_add_partition_map_type_2():
     logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
-    logvol.new()
+    logvol.new('CDROM')
     logvol.add_partition_map(2)
     assert(len(logvol.partition_maps) == 1)
 
 def test_logvoldesc_add_partition_map_invalid_type():
     logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
-    logvol.new()
+    logvol.new('CDROM')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         logvol.add_partition_map(3)
     assert(str(excinfo.value) == 'UDF Partition map type must be 0, 1, or 2')
 
 def test_logvoldesc_add_partition_map_too_many_maps():
     logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
-    logvol.new()
+    logvol.new('CDROM')
     logvol.add_partition_map(2)
     logvol.add_partition_map(2)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
@@ -1509,16 +1509,16 @@ def test_logvoldesc_set_integrity_location_not_initialized():
 
 def test_logvoldesc_equals():
     logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
-    logvol.new()
+    logvol.new('CDROM')
 
     logvol2 = pycdlib.udf.UDFLogicalVolumeDescriptor()
-    logvol2.new()
+    logvol2.new('CDROM')
 
     assert(logvol == logvol2)
 
 def test_logvoldesc_eq_not_same_object_type():
     logvol = pycdlib.udf.UDFLogicalVolumeDescriptor()
-    logvol.new()
+    logvol.new('CDROM')
 
     not_a_logvol = object()
 
@@ -1798,9 +1798,9 @@ def test_file_set_extent_location_not_initialized():
 
 def test_file_set_new_initialized_twice():
     fileset = pycdlib.udf.UDFFileSetDescriptor()
-    fileset.new()
+    fileset.new('CDROM')
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        fileset.new()
+        fileset.new('CDROM')
     assert(str(excinfo.value) == 'UDF File Set Descriptor already initialized')
 
 def test_file_set_set_extent_location_not_initialized():
@@ -2818,11 +2818,11 @@ def test_descriptor_sequence_append_to_list():
     seq = pycdlib.udf.UDFDescriptorSequence()
 
     pvd1 = pycdlib.udf.UDFPrimaryVolumeDescriptor()
-    pvd1.new()
+    pvd1.new('CDROM')
     seq.append_to_list('pvds', pvd1)
 
     pvd2 = pycdlib.udf.UDFPrimaryVolumeDescriptor()
-    pvd2.new()
+    pvd2.new('CDROM')
     pvd2.desc_num = 1
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         seq.append_to_list('pvds', pvd2)

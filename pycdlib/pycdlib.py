@@ -4032,6 +4032,9 @@ class PyCdlib:
 
         if udf:
             self._has_udf = True
+            # If no volume identifier was given, use 'CDROM' as the historical
+            # default for the UDF identifier fields.
+            udf_vol_ident = vol_ident or 'CDROM'
             # Create the UDF Bridge Recognition Volume Sequence.
             udf_bea = udfmod.BEAVolumeStructure()
             udf_bea.new()
@@ -4057,11 +4060,11 @@ class PyCdlib:
 
             # Create the Main Volume Descriptor Sequence.
             pvd = udfmod.UDFPrimaryVolumeDescriptor()
-            pvd.new()
+            pvd.new(udf_vol_ident)
             self.udf_main_descs.pvds.append(pvd)
 
             impl_use = udfmod.UDFImplementationUseVolumeDescriptor()
-            impl_use.new()
+            impl_use.new(udf_vol_ident)
             self.udf_main_descs.impl_use.append(impl_use)
 
             partition = udfmod.UDFPartitionVolumeDescriptor()
@@ -4069,7 +4072,7 @@ class PyCdlib:
             self.udf_main_descs.partitions.append(partition)
 
             logical_volume = udfmod.UDFLogicalVolumeDescriptor()
-            logical_volume.new()
+            logical_volume.new(udf_vol_ident)
             logical_volume.add_partition_map(1)
             self.udf_main_descs.logical_volumes.append(logical_volume)
 
@@ -4083,11 +4086,11 @@ class PyCdlib:
 
             # Create the Reserve Volume Descriptor Sequence.
             reserve_pvd = udfmod.UDFPrimaryVolumeDescriptor()
-            reserve_pvd.new()
+            reserve_pvd.new(udf_vol_ident)
             self.udf_reserve_descs.pvds.append(reserve_pvd)
 
             reserve_impl_use = udfmod.UDFImplementationUseVolumeDescriptor()
-            reserve_impl_use.new()
+            reserve_impl_use.new(udf_vol_ident)
             self.udf_reserve_descs.impl_use.append(reserve_impl_use)
 
             reserve_partition = udfmod.UDFPartitionVolumeDescriptor()
@@ -4095,7 +4098,7 @@ class PyCdlib:
             self.udf_reserve_descs.partitions.append(reserve_partition)
 
             reserve_logical_volume = udfmod.UDFLogicalVolumeDescriptor()
-            reserve_logical_volume.new()
+            reserve_logical_volume.new(udf_vol_ident)
             reserve_logical_volume.add_partition_map(1)
             self.udf_reserve_descs.logical_volumes.append(reserve_logical_volume)
 
@@ -4124,7 +4127,7 @@ class PyCdlib:
             num_bytes_to_add += self.logical_block_size
 
             # Create the File Set
-            self.udf_file_set.new()
+            self.udf_file_set.new(udf_vol_ident)
 
             self.udf_file_set_terminator = udfmod.UDFTerminatingDescriptor()
             self.udf_file_set_terminator.new()

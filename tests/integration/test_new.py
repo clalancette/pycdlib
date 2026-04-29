@@ -4647,6 +4647,35 @@ def test_new_udf_nofiles():
 
     iso.close()
 
+def test_new_udf_custom_vol_ident():
+    # Regression test for https://github.com/clalancette/pycdlib/issues/40.
+    # vol_ident passed to PyCdlib.new() must propagate to the UDF identifier
+    # fields, not just the ISO9660 PVD.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60', vol_ident='MYDISK')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    out.seek(0)
+    iso2.open_fp(out)
+
+    expected_32 = b'\x08MYDISK' + b'\x00' * 24 + b'\x07'
+    expected_128 = b'\x08MYDISK' + b'\x00' * 120 + b'\x07'
+
+    assert(iso2.pvd.volume_identifier.rstrip() == b'MYDISK')
+    assert(iso2.udf_main_descs.pvds[0].vol_ident == expected_32)
+    assert(iso2.udf_main_descs.impl_use[0].impl_use.log_vol_ident == expected_128)
+    assert(iso2.udf_main_descs.logical_volumes[0].logical_vol_ident == expected_128)
+    assert(iso2.udf_reserve_descs.pvds[0].vol_ident == expected_32)
+    assert(iso2.udf_reserve_descs.impl_use[0].impl_use.log_vol_ident == expected_128)
+    assert(iso2.udf_reserve_descs.logical_volumes[0].logical_vol_ident == expected_128)
+    assert(iso2.udf_file_set.log_vol_ident == expected_128)
+    assert(iso2.udf_file_set.file_set_ident == expected_32)
+
+    iso2.close()
+
 def test_new_udf_onedir():
     iso = pycdlib.PyCdlib()
     iso.new(udf='2.60')
