@@ -4373,6 +4373,124 @@ class PyCdlib:
             self._get_file_from_iso_fp(outfp, blocksize, iso_path, rr_path,
                                        joliet_path)
 
+    def get_file_byte_extents(self, **kwargs):
+        # type: (str) -> List[Tuple[int, int]]
+        """
+        Get the byte offsets and lengths of the contiguous runs of data
+        that back a file on the ISO.
+
+        Most users do NOT need this method.  For ordinary file extraction,
+        use get_file_from_iso() / get_file_from_iso_fp().  This method is
+        intended for advanced callers that need to address file data
+        directly inside an ISO image without extracting it -- for example,
+        telling a downstream tool the absolute byte ranges of a kernel or
+        initrd within an .iso so the bytes can be read in place rather
+        than copied out.
+
+        The returned list contains one (byte_offset, length) tuple per
+        contiguous run of bytes used by the file, in file order, so that
+        concatenating the runs yields the file's content.  Most files
+        consist of a single contiguous run; multi-extent ISO9660 files
+        (>4GB) and UDF files with multiple allocation descriptors can
+        return more than one entry.
+
+        The offsets reflect the on-disk layout of the ISO: after open() /
+        open_fp() they correspond to positions in the source ISO; for an
+        ISO produced by new() they are valid only after a successful
+        write_fp().
+
+        Parameters:
+         iso_path - The absolute ISO9660 path to lookup on the ISO (exclusive
+                    with rr_path, joliet_path, and udf_path).
+         rr_path - The absolute Rock Ridge path to lookup on the ISO (exclusive
+                   with iso_path, joliet_path, and udf_path).
+         joliet_path - The absolute Joliet path to lookup on the ISO (exclusive
+                       with iso_path, rr_path, and udf_path).
+         udf_path - The absolute UDF path to lookup on the ISO (exclusive with
+                    iso_path, rr_path, and joliet_path).
+        Returns:
+         A list of (byte_offset, length) tuples in file order.
+        """
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
+
+        iso_path = None
+        rr_path = None
+        joliet_path = None
+        udf_path = None
+        num_paths = 0
+        for key, value in kwargs.items():
+            if key == 'iso_path':
+                if isinstance(value, str):
+                    iso_path = utils.normpath(value)
+                    num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('iso_path must be a string')
+            elif key == 'rr_path':
+                if isinstance(value, str):
+                    rr_path = utils.normpath(value)
+                    num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('rr_path must be a string')
+            elif key == 'joliet_path':
+                if isinstance(value, str):
+                    joliet_path = utils.normpath(value)
+                    num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('joliet_path must be a string')
+            elif key == 'udf_path':
+                if isinstance(value, str):
+                    udf_path = utils.normpath(value)
+                    num_paths += 1
+                elif value is not None:
+                    raise pycdlibexception.PyCdlibInvalidInput('udf_path must be a string')
+            else:
+                raise pycdlibexception.PyCdlibInvalidInput('Unknown keyword %s' % (key))
+
+        if num_paths != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
+
+        extents = []  # type: List[Tuple[int, int]]
+
+        if udf_path is not None:
+            if self.udf_root is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
+            (ident_unused, found_file_entry) = self._find_udf_record(udf_path)
+            if found_file_entry is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot get extents for an empty UDF File Entry')
+            if not found_file_entry.is_file():
+                raise pycdlibexception.PyCdlibInvalidInput('Can only get extents for a file')
+            part_start = self.udf_main_descs.partitions[0].part_start_location
+            for desc in found_file_entry.alloc_descs:
+                byte_offset = (part_start + desc.log_block_num) * self.logical_block_size + desc.offset
+                extents.append((byte_offset, desc.extent_length))
+        else:
+            if joliet_path is not None:
+                if self.joliet_vd is None:
+                    raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a joliet_path from a non-Joliet ISO')
+                found_record = self._find_joliet_record(joliet_path)
+            elif rr_path is not None:
+                if not self.rock_ridge:
+                    raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
+                found_record = self._find_rr_record(rr_path)
+            else:
+                found_record = self._find_iso_record(iso_path)
+
+            if found_record.is_dir():
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot get extents for a directory')
+            if found_record.is_symlink():
+                raise pycdlibexception.PyCdlibInvalidInput('Symlinks have no data associated with them')
+
+            rec = found_record  # type: Optional[dr.DirectoryRecord]
+            while rec is not None:
+                if rec.inode is None or rec.data_length == 0:
+                    break
+                byte_offset = (rec.inode.extent_location() + rec.data_extent_offset) * self.logical_block_size
+                extents.append((byte_offset, rec.data_length))
+                rec = rec.data_continuation
+
+        return extents
+
     def get_and_write(self, iso_path, local_path, blocksize=8192):
         # type: (str, str, int) -> None
         """

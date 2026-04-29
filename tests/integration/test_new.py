@@ -4647,6 +4647,42 @@ def test_new_udf_nofiles():
 
     iso.close()
 
+def test_new_get_file_byte_extents():
+    # Regression test for https://github.com/clalancette/pycdlib/issues/104.
+    # Build an ISO9660+UDF image with a single small file, write it out, and
+    # verify get_file_byte_extents returns offsets that, when read directly
+    # from the on-disk image, contain exactly the file's bytes -- exercising
+    # both the iso_path and udf_path lookup paths.
+    payload = b'kernel-payload-bytes'
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_fp(io.BytesIO(payload), len(payload), '/FOO.;1', udf_path='/foo')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    out.seek(0)
+    iso2.open_fp(out)
+    raw = out.getvalue()
+
+    iso_extents = iso2.get_file_byte_extents(iso_path='/FOO.;1')
+    assert(len(iso_extents) == 1)
+    iso_off, iso_len = iso_extents[0]
+    assert(iso_len == len(payload))
+    assert(raw[iso_off:iso_off + iso_len] == payload)
+
+    udf_extents = iso2.get_file_byte_extents(udf_path='/foo')
+    assert(len(udf_extents) == 1)
+    udf_off, udf_len = udf_extents[0]
+    assert(udf_len == len(payload))
+    assert(raw[udf_off:udf_off + udf_len] == payload)
+
+    # Both views should resolve to the same on-disk bytes (linked Inodes).
+    assert(iso_extents == udf_extents)
+
+    iso2.close()
+
 def test_new_udf_custom_vol_ident():
     # Regression test for https://github.com/clalancette/pycdlib/issues/40.
     # vol_ident passed to PyCdlib.new() must propagate to the UDF identifier
