@@ -4807,6 +4807,13 @@ class PyCdlib:
                 while node is not None and id(node) not in rewritten_parents:
                     rewritten_parents.add(id(node))
                     self._rewrite_dir_record_extent(node)
+                    # Each subdirectory of `node` has a dotdot record
+                    # (in its own extent) whose data_length carries
+                    # node.data_length.  _add_child / _remove_child
+                    # keep those dotdots in sync in memory, but the
+                    # bytes on disk haven't been touched unless we
+                    # rewrite them here.
+                    self._rewrite_subdir_dotdots(node)
                     node = node.parent
             elif isinstance(record, udfmod.UDFFileEntry):
                 record.set_data_length(length)
@@ -4869,6 +4876,45 @@ class PyCdlib:
         if last_byte < end_byte:
             self._cdfp.seek(last_byte)
             self._cdfp.write(b'\x00' * (end_byte - last_byte))
+
+    def _rewrite_subdir_dotdots(self, parent):
+        # type: (dr.DirectoryRecord) -> None
+        """
+        Patch each subdirectory of `parent` so its on-disk dotdot
+        record matches the in-memory dotdot.  Each subdirectory's
+        dotdot record carries `parent.data_length` (the "size of the
+        parent's directory data extent" field per ISO9660); when
+        `_remove_child`'s underflow handler or `_add_child`'s overflow
+        handler changes parent.data_length, it updates each
+        subdirectory's in-memory dotdot to match -- but those dotdot
+        records live in their respective subdirectories' own extents
+        on disk, which `modify_file_in_place` does not otherwise
+        rewrite.  Without this writeback the on-disk dotdots claim a
+        stale parent data_length.  Real parsers don't use the field
+        for navigation (they follow dotdot.extent_location and bound
+        reads via the grandparent's record of the parent), but the
+        on-disk state is spec-inconsistent.
+
+        Idempotent: subdirectories whose in-memory dotdot already
+        matches the on-disk bytes get the same bytes written back.
+
+        Parameters:
+         parent - The DirectoryRecord whose subdirectories' dotdot
+                  records should be brought up to date on disk.
+        Returns:
+         Nothing.
+        """
+        lbs = self.logical_block_size
+        for subdir in parent._subdir_children:
+            if len(subdir.children) < 2:
+                continue
+            dot = subdir.children[0]
+            dotdot = subdir.children[1]
+            # dotdot lives at offset dot.dr_len within subdir's first
+            # extent (it is always the second record, right after dot).
+            offset = subdir.extent_location() * lbs + dot.dr_len
+            self._cdfp.seek(offset)
+            self._cdfp.write(dotdot.record())
 
     def add_hard_link(self, **kwargs):
         # type: (...) -> None
