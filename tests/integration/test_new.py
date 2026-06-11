@@ -2840,6 +2840,57 @@ def test_new_modify_file_in_place_rewrites_grandparent_after_underflow():
         assert buf.getvalue() == (name + '\n').encode()
     iso3.close()
 
+def test_new_modify_file_in_place_rewrites_subdir_dotdots_after_underflow():
+    # Companion to the grandparent rewrite test.  When _remove_child's
+    # underflow handler shrinks parent.data_length, the in-memory
+    # update also touches each subdirectory's dotdot record (because
+    # dotdot.data_length carries the parent's size).  Those dotdot
+    # records live in their respective subdirectories' own extents,
+    # which modify_file_in_place doesn't otherwise touch.  Without the
+    # subdir-dotdot rewrite, each subdirectory's on-disk dotdot field
+    # is stale -- an internal inconsistency that pedantic ISO9660
+    # validators flag even though no real parser uses dotdot's
+    # data_length for navigation.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_directory('/PARENT')
+    # SUBDIR is the subdirectory whose on-disk dotdot we'll inspect.
+    iso.add_directory('/PARENT/SUBDIR')
+    # Pack PARENT with enough file children to span two extents.
+    names = [f'F{i:03d}' for i in range(60)]
+    for name in names:
+        iso.add_fp(io.BytesIO((name + '\n').encode()), 5, f'/PARENT/{name}.;1')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    out.seek(0)
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    parent = iso2._find_iso_record(b'/PARENT')
+    original_data_length = parent.data_length
+    assert original_data_length > 2048
+    # Remove enough children to trigger _remove_child's underflow,
+    # shrinking PARENT.data_length by one extent.
+    for i in range(50):
+        iso2.rm_file(iso_path=f'/PARENT/F{i:03d}.;1')
+    assert parent.data_length < original_data_length
+    # Modify a remaining sibling.  Without the dotdot rewrite,
+    # PARENT/SUBDIR's on-disk dotdot still claims PARENT.data_length
+    # is the original (larger) value.
+    iso2.modify_file_in_place(io.BytesIO(b'aaa\n'), 4, '/PARENT/F059.;1')
+    iso2.close()
+
+    iso3 = pycdlib.PyCdlib()
+    iso3.open_fp(out)
+    parent3 = iso3._find_iso_record(b'/PARENT')
+    subdir3 = iso3._find_iso_record(b'/PARENT/SUBDIR')
+    # The dotdot (children[1]) is parsed from SUBDIR's on-disk extent;
+    # its data_length should match the parent's actual data_length.
+    assert subdir3.children[1].is_dotdot()
+    assert subdir3.children[1].data_length == parent3.data_length
+    iso3.close()
+
 def test_new_udf_boot_descriptor_parsed():
     # Coverage for the UDF BOOT2 (Boot Descriptor) dispatch in
     # _parse_volume_descriptors.  pycdlib's writer doesn't emit BOOT2 on
