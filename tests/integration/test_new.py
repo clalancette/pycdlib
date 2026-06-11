@@ -2771,6 +2771,75 @@ def test_new_rewrite_dir_record_extent_pads_across_extent_transition():
     assert buf.getvalue() == b'aaa\n'
     iso3.close()
 
+def test_new_modify_file_in_place_rewrites_grandparent_after_underflow():
+    # When rm_file shrinks a parent's data_length via _remove_child's
+    # underflow handler, the parent's on-disk directory record (stored
+    # in the grandparent's extent) still has the original, larger
+    # data_length.  Without the grandparent rewrite,
+    # modify_file_in_place updates the parent's extent but leaves the
+    # grandparent's record for the parent stale.  When the ISO is
+    # re-parsed, the parser walks the parent's data using the stale
+    # on-disk data_length and reads past the new in-memory layout into
+    # the dropped extent's stale bytes, producing phantom records or
+    # parse failures.
+    #
+    # Build a directory whose children span two extents, rm enough
+    # children to trigger underflow (parent.data_length shrinks from
+    # 2 extents to 1), modify a remaining sibling, and verify the
+    # re-parsed ISO reflects the shrunken span -- no phantom records.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_directory('/DIR')
+    # 60 children at level-1 ISO9660 spans roughly two extents.
+    names = [f'F{i:03d}' for i in range(60)]
+    for name in names:
+        iso.add_fp(io.BytesIO((name + '\n').encode()), 5, f'/DIR/{name}.;1')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    out.seek(0)
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    dir_record = iso2._find_iso_record(b'/DIR')
+    original_dir_data_length = dir_record.data_length
+    assert original_dir_data_length > 2048
+    # Removing 50 children drops the in-memory total well below one
+    # extent, which fires _remove_child's underflow once and shrinks
+    # parent.data_length by logical_block_size.
+    for i in range(50):
+        iso2.rm_file(iso_path=f'/DIR/F{i:03d}.;1')
+    assert dir_record.data_length < original_dir_data_length
+    # Modifying a remaining sibling exercises modify_file_in_place's
+    # rewrite of parent (and now grandparent) extents on disk.
+    iso2.modify_file_in_place(io.BytesIO(b'aaa\n'), 4, '/DIR/F059.;1')
+    iso2.close()
+
+    iso3 = pycdlib.PyCdlib()
+    iso3.open_fp(out)
+    dir_record3 = iso3._find_iso_record(b'/DIR')
+    # The on-disk data_length for /DIR (read from root's extent) must
+    # reflect the shrunken in-memory value.  Without the fix, this
+    # still holds the original value and the parser reads stale bytes
+    # from the dropped extent.
+    assert dir_record3.data_length == dir_record.data_length
+    # Exactly the surviving 10 children should be visible.
+    remaining = [f'F{i:03d}' for i in range(50, 60)]
+    children = sorted(
+        ch.file_identifier()
+        for ch in dir_record3.children
+        if ch.file_identifier() not in (b'.', b'..')
+    )
+    assert children == sorted(f'{name}.;1'.encode() for name in remaining)
+    buf = io.BytesIO()
+    iso3.get_file_from_iso_fp(buf, iso_path='/DIR/F059.;1')
+    assert buf.getvalue() == b'aaa\n'
+    for name in ('F050', 'F055', 'F058'):
+        buf = io.BytesIO()
+        iso3.get_file_from_iso_fp(buf, iso_path=f'/DIR/{name}.;1')
+        assert buf.getvalue() == (name + '\n').encode()
+    iso3.close()
+
 def test_new_udf_boot_descriptor_parsed():
     # Coverage for the UDF BOOT2 (Boot Descriptor) dispatch in
     # _parse_volume_descriptors.  pycdlib's writer doesn't emit BOOT2 on
