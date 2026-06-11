@@ -4790,10 +4790,24 @@ class PyCdlib:
                 if record.parent is None:
                     raise pycdlibexception.PyCdlibInternalError('Modifying file with empty parent')
                 record.set_data_length(length)
-                parent_id = id(record.parent)
-                if parent_id not in rewritten_parents:
-                    rewritten_parents.add(parent_id)
-                    self._rewrite_dir_record_extent(record.parent)
+                # Walk up the parent chain, rewriting each ancestor's
+                # extent.  The immediate parent's rewrite captures the
+                # modified file's new data_length; each higher
+                # ancestor's rewrite captures the data_length of its
+                # child (which may have shrunk via _remove_child's
+                # underflow handler when a sibling was removed).
+                # Without the up-walk, an in-memory data_length change
+                # never reaches the on-disk record that the parser
+                # uses to bound the data extent, and the parser reads
+                # stale bytes from a dropped extent.  We stop at the
+                # root: the root's data_length lives in the PVD's
+                # root_directory_record, which is already written out
+                # earlier in modify_file_in_place.
+                node = record.parent
+                while node is not None and id(node) not in rewritten_parents:
+                    rewritten_parents.add(id(node))
+                    self._rewrite_dir_record_extent(node)
+                    node = node.parent
             elif isinstance(record, udfmod.UDFFileEntry):
                 record.set_data_length(length)
                 abs_offset = record.extent_location() * self.logical_block_size
