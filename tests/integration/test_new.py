@@ -2620,6 +2620,157 @@ def test_new_modify_file_in_place_unsorted_dir_records():
         assert(buf.getvalue() == expected)
     iso3.close()
 
+def test_new_rewrite_dir_record_extent_pads_after_rm():
+    # Regression test for the zero-padding bug in
+    # _rewrite_dir_record_extent.  Before the fix, the function wrote
+    # the in-memory children list consecutively into the parent's
+    # directory extent on disk but did not clear bytes past the new
+    # last record.  After rm_file + modify_file_in_place in the same
+    # parent, the post-rewrite extent retained the trailing bytes of
+    # the removed record, which either failed the parser's
+    # zero-padding check ("Invalid padding on ISO") or produced a
+    # phantom record.
+    #
+    # Build a directory with several siblings, rm one, modify another,
+    # then verify the ISO re-parses cleanly and the rm and modify both
+    # took effect.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    for name in ('AAA', 'BBB', 'CCC', 'DDD', 'EEE'):
+        iso.add_fp(io.BytesIO((name + '\n').encode()), 4, f'/{name}.;1')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    out.seek(0)
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    iso2.rm_file(iso_path='/CCC.;1')
+    iso2.modify_file_in_place(io.BytesIO(b'aaa\n'), 4, '/AAA.;1')
+    iso2.close()
+
+    # Reopen and verify the ISO is well-formed.  Without the zero-pad
+    # fix, this raises "Invalid padding on ISO".
+    iso3 = pycdlib.PyCdlib()
+    iso3.open_fp(out)
+    # All remaining files should be present and rm'd file should be
+    # absent.  Without the fix, a phantom record could synthesize an
+    # unexpected entry here.
+    children = sorted(
+        ch.file_identifier()
+        for ch in iso3.pvd.root_dir_record.children
+        if ch.file_identifier() not in (b'.', b'..')
+    )
+    assert children == [b'AAA.;1', b'BBB.;1', b'DDD.;1', b'EEE.;1']
+    for path, expected in [('/AAA.;1', b'aaa\n'),
+                           ('/BBB.;1', b'BBB\n'),
+                           ('/DDD.;1', b'DDD\n'),
+                           ('/EEE.;1', b'EEE\n')]:
+        buf = io.BytesIO()
+        iso3.get_file_from_iso_fp(buf, iso_path=path)
+        assert(buf.getvalue() == expected)
+    iso3.close()
+
+def test_new_rewrite_dir_record_extent_pads_after_rm_multi_extent():
+    # Same as the previous test but with a parent directory whose
+    # children span multiple extents.  The rm is small enough that the
+    # in-memory layout still occupies the same number of extents (i.e.,
+    # data_length does not shrink), so the parser still expects to read
+    # the full multi-extent span.  Without the zero-pad fix, the
+    # trailing bytes of the last extent the rewrite touches contain
+    # stale bytes from the removed record.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    # Each record at level-1 is roughly 40+ bytes with Rock Ridge off;
+    # 60 children of similar names easily spill into a second extent.
+    names = [f'F{i:03d}' for i in range(60)]
+    for name in names:
+        iso.add_fp(io.BytesIO((name + '\n').encode()), 5, f'/{name}.;1')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    out.seek(0)
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    # Confirm the parent really does span >1 extent on disk.
+    assert iso2.pvd.root_dir_record.data_length > 2048
+    # Remove a child from the middle of the sort order and modify
+    # another sibling.  The rewrite covers all of the original
+    # data_length span, so the bug surfaces in whichever extent the
+    # new last record lands in.
+    iso2.rm_file(iso_path='/F030.;1')
+    iso2.modify_file_in_place(io.BytesIO(b'aaa\n'), 4, '/F000.;1')
+    iso2.close()
+
+    iso3 = pycdlib.PyCdlib()
+    iso3.open_fp(out)
+    children = sorted(
+        ch.file_identifier()
+        for ch in iso3.pvd.root_dir_record.children
+        if ch.file_identifier() not in (b'.', b'..')
+    )
+    expected = sorted(f'{name}.;1'.encode() for name in names if name != 'F030')
+    assert children == expected
+    # Spot-check the modified file and a few unmodified ones.
+    buf = io.BytesIO()
+    iso3.get_file_from_iso_fp(buf, iso_path='/F000.;1')
+    assert buf.getvalue() == b'aaa\n'
+    for name in ('F001', 'F029', 'F031', 'F059'):
+        buf = io.BytesIO()
+        iso3.get_file_from_iso_fp(buf, iso_path=f'/{name}.;1')
+        assert buf.getvalue() == (name + '\n').encode()
+    iso3.close()
+
+def test_new_rewrite_dir_record_extent_pads_across_extent_transition():
+    # When _rewrite_dir_record_extent's serialized children pack
+    # differently than the on-disk layout (e.g., because a child was
+    # removed), the loop advances to a new extent partway through.
+    # Without the fix, the trailing bytes of the previous extent are
+    # left holding stale bytes from the on-disk layout.  This test
+    # exercises that intermediate-extent-transition case specifically:
+    # by removing an early-sorting child, the loop's transition point
+    # shifts and the trailing bytes of the first extent must be
+    # zero-padded.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    # Roughly 60 same-length children to span 2 extents; the rm of the
+    # first one shifts where the loop transitions to extent 2.
+    names = [f'F{i:03d}' for i in range(60)]
+    for name in names:
+        iso.add_fp(io.BytesIO((name + '\n').encode()), 5, f'/{name}.;1')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    out.seek(0)
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    assert iso2.pvd.root_dir_record.data_length > 2048
+    # Remove the first sortable child (after dot/dotdot) so every
+    # subsequent record shifts to a lower byte offset, including the
+    # boundary that decides which extent each record lands in.
+    iso2.rm_file(iso_path='/F000.;1')
+    iso2.modify_file_in_place(io.BytesIO(b'aaa\n'), 4, '/F059.;1')
+    iso2.close()
+
+    iso3 = pycdlib.PyCdlib()
+    iso3.open_fp(out)
+    children = sorted(
+        ch.file_identifier()
+        for ch in iso3.pvd.root_dir_record.children
+        if ch.file_identifier() not in (b'.', b'..')
+    )
+    expected = sorted(f'{name}.;1'.encode() for name in names if name != 'F000')
+    assert children == expected
+    buf = io.BytesIO()
+    iso3.get_file_from_iso_fp(buf, iso_path='/F059.;1')
+    assert buf.getvalue() == b'aaa\n'
+    iso3.close()
+
 def test_new_udf_boot_descriptor_parsed():
     # Coverage for the UDF BOOT2 (Boot Descriptor) dispatch in
     # _parse_volume_descriptors.  pycdlib's writer doesn't emit BOOT2 on
