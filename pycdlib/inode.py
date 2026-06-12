@@ -158,14 +158,19 @@ class Inode:
 
         self.boot_info_table = boot_info_table
 
-    def update_fp(self, fp, length):
-        # type: (BinaryIO, int) -> None
+    def update_fp(self, fp, length, manage_fp=False):
+        # type: (Union[BinaryIO, str], int, bool) -> None
         """
         Update the Inode to use a different file object and length.
 
         Parameters:
-         fp - A file object that contains the data for this Inode.
+         fp - A file object that contains the data for this Inode, or
+              a filename if `manage_fp` is True.
          length - The length of the data.
+         manage_fp - If True, `fp` is treated as a filename that pycdlib
+                     will open and close itself.  If False (the default),
+                     `fp` is a file-like object whose lifetime the caller
+                     manages.
         Returns:
          Nothing.
         """
@@ -176,6 +181,7 @@ class Inode:
         self.data_fp = fp
         self.data_length = length
         self.fp_offset = 0
+        self.manage_fp = manage_fp
 
 
 class InodeOpenData:
