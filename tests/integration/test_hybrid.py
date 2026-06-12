@@ -2264,7 +2264,7 @@ def test_hybrid_modify_in_place_grow_file(tmpdir):
     foostr = b'f'*2049
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso.modify_file_in_place(io.BytesIO(foostr), len(foostr), '/foo')
-    assert(str(excinfo.value) == 'When modifying a file in-place, the number of extents for a file cannot change!')
+    assert(str(excinfo.value) == 'When modifying a file in-place, the number of extents for a file cannot grow!')
 
     iso.close()
 

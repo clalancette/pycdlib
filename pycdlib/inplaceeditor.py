@@ -68,8 +68,13 @@ def _do_modify_file_in_place(iso, fp, length, iso_path, rr_name=None,  # pylint:
                                         iso.logical_block_size)
     new_num_extents = utils.ceiling_div(length, iso.logical_block_size)
 
-    if old_num_extents != new_num_extents:
-        raise pycdlibexception.PyCdlibInvalidInput('When modifying a file in-place, the number of extents for a file cannot change!')
+    # Growing the file's extent count is rejected: the next on-disk
+    # extent belongs to whatever sits after this file in the volume
+    # layout, and writing into it would corrupt that data.  Shrinking
+    # is allowed -- the orphaned extents inside the file's original
+    # allocation get zeroed below so we don't leak the old content.
+    if new_num_extents > old_num_extents:
+        raise pycdlibexception.PyCdlibInvalidInput('When modifying a file in-place, the number of extents for a file cannot grow!')
 
     if not child.is_file():
         raise pycdlibexception.PyCdlibInvalidInput('Cannot modify a directory with modify_file_in_place')
@@ -79,15 +84,12 @@ def _do_modify_file_in_place(iso, fp, length, iso_path, rr_name=None,  # pylint:
 
     child.inode.update_fp(fp, length)
 
-    # Remove the old size from the PVD size.
-    for pvd in iso.pvds:
-        pvd.remove_from_space_size(child.get_data_length())
-    # And add the new size to the PVD size.
-    for pvd in iso.pvds:
-        pvd.add_to_space_size(length)
-
-    if iso.enhanced_vd is not None:
-        iso.enhanced_vd.copy_sizes(iso.pvd)
+    # The file's on-disk extent allocation does not change: even on a
+    # shrink, the orphaned extents stay part of the volume (just
+    # unreferenced).  So we deliberately do not adjust PVD or Joliet
+    # space_size here -- decreasing them would tell the parser the
+    # volume is smaller than it is, truncating any file laid out past
+    # the file we just shrunk.
 
     # If we made it here, we have successfully updated all of the in-memory
     # metadata.  Now we can go and modify the on-disk file.
@@ -110,14 +112,24 @@ def _do_modify_file_in_place(iso, fp, length, iso_path, rr_name=None,  # pylint:
         rec = iso.enhanced_vd.record()
         iso._cdfp.write(rec)  # pylint: disable=protected-access
 
-    # We don't have to write anything out for UDF since it only tracks
-    # extents, and we know we aren't changing the number of extents.
+    # The UDF anchors, descriptors, and partition length aren't
+    # affected -- the file's on-disk extent allocation is unchanged.
+    # Only the UDF File Entry's data_length needs updating, which we
+    # handle below alongside the ISO9660/Joliet records.
 
     # Write out the actual file contents.
     iso._seek_to_extent(child.extent_location())  # pylint: disable=protected-access
     with inode.InodeOpenData(child.inode, iso.logical_block_size) as (data_fp, data_len):
         utils.copy_data(data_len, iso.logical_block_size, data_fp, iso._cdfp)  # pylint: disable=protected-access
         utils.zero_pad(iso._cdfp, data_len, iso.logical_block_size)  # pylint: disable=protected-access
+
+    # If the new content uses fewer extents than the old, the file's
+    # original allocation still holds the tail of the old content past
+    # the new (now shorter) data length.  Zero those orphaned extents
+    # so we don't leak the old data into the volume.
+    if new_num_extents < old_num_extents:
+        orphan_extents = old_num_extents - new_num_extents
+        iso._cdfp.write(b'\x00' * (orphan_extents * iso.logical_block_size))  # pylint: disable=protected-access
 
     # Finally update the directory record entries that reference this
     # file with the new length.  For UDF the file entry has its own
@@ -129,14 +141,9 @@ def _do_modify_file_in_place(iso, fp, length, iso_path, rr_name=None,  # pylint:
     # sorted order -- writing to the computed offset then corrupts
     # whichever sibling actually sits at that on-disk position
     # (issue #122).  Rewrite the parent's full child list instead.
-    first_joliet = True
     rewritten_parents = set()  # type: set
     for record, is_pvd_unused in child.inode.linked_records:
         if isinstance(record, dr.DirectoryRecord):
-            if iso.joliet_vd is not None and id(record.vd) == id(iso.joliet_vd) and first_joliet:
-                first_joliet = False
-                iso.joliet_vd.remove_from_space_size(record.get_data_length())
-                iso.joliet_vd.add_to_space_size(length)
             if record.parent is None:
                 raise pycdlibexception.PyCdlibInternalError('Modifying file with empty parent')
             record.set_data_length(length)
@@ -219,8 +226,12 @@ class InPlaceEditor:
         Constraints:
          - The file must already exist on the ISO.
          - The file must not be a directory.
-         - The new content must occupy the same number of extents as
-           the old content.
+         - The new content cannot occupy more extents than the old
+           content.  Within that ceiling the new length is free: a
+           file currently sized to N extents may be replaced with any
+           content from 0 bytes up through N*logical_block_size bytes.
+           Shrinking past an extent boundary zeroes the orphaned
+           extents inside the file's original on-disk allocation.
 
         Parameters:
          fp - A file-like object containing the new contents.
