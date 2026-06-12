@@ -2621,6 +2621,48 @@ def test_new_in_place_editor_propagates_exceptions(tmpdir):
         with pycdlib.InPlaceEditor(iso_path) as ed:
             ed.modify_file(io.BytesIO(b'x\n'), 2, '/NOPE.;1')
 
+def test_new_in_place_editor_shrinks_across_extent_boundary(tmpdir):
+    # modify_file allows the new content to occupy *fewer* extents
+    # than the old content.  The orphaned extents inside the file's
+    # original allocation are zeroed; the file's data_length on disk
+    # reflects the new (smaller) size.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    # 5000 bytes occupies three 2048-byte extents.
+    iso.add_fp(io.BytesIO(b'A' * 5000), 5000, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    # Shrink the file to 100 bytes (one extent) -- crosses two
+    # extent boundaries downward.
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.modify_file(io.BytesIO(b'b' * 100), 100, '/FOO.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/FOO.;1')
+    assert buf.getvalue() == b'b' * 100
+    iso2.close()
+
+def test_new_in_place_editor_rejects_growing_across_extent_boundary(tmpdir):
+    # Growing across an extent boundary is still rejected -- the
+    # next extent on disk belongs to whatever sits after this file
+    # in the volume layout.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+            ed.modify_file(io.BytesIO(b'f' * 2049), 2049, '/FOO.;1')
+
 def test_new_pycdlib_modify_file_in_place_warns(tmpdir):
     # PyCdlib.modify_file_in_place is the deprecated method-on-class
     # surface.  Verify it fires the DeprecationWarning that the
