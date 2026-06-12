@@ -4923,6 +4923,138 @@ class PyCdlib:
             self._cdfp.seek(offset)
             self._cdfp.write(dotdot.record())
 
+    def _update_file_contents(self, fp, length, manage_fp, iso_path, rr_path,
+                              joliet_path, udf_path):
+        # type: (Union[BinaryIO, str], int, bool, Optional[str], Optional[str], Optional[str], Optional[str]) -> None
+        """
+        Internal helper backing `update_file_contents_fp` and
+        `update_file_contents`.  Resolves the target file via exactly
+        one of the supplied paths, swaps the shared Inode's data
+        source, propagates the new length to every linked record, and
+        adjusts PVD/Joliet/UDF size accounting.  All disk writes are
+        deferred to the next `write_fp()` call.
+        """
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
+
+        num_paths = sum(p is not None for p in (iso_path, rr_path, joliet_path, udf_path))
+        if num_paths != 1:
+            raise pycdlibexception.PyCdlibInvalidInput("Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be provided")
+
+        # Resolve to the target's shared Inode via whichever path was given.
+        if udf_path is not None:
+            if self.udf_root is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot use udf_path on a non-UDF ISO')
+            _, file_entry = self._find_udf_record(utils.normpath(udf_path))
+            if file_entry is None or not file_entry.is_file():
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot update the contents of a directory or empty UDF entry')
+            ino = file_entry.inode
+        else:
+            if iso_path is not None:
+                record = self._find_iso_record(utils.normpath(iso_path))
+            elif rr_path is not None:
+                if not self.rock_ridge:
+                    raise pycdlibexception.PyCdlibInvalidInput('Cannot use rr_path on a non-Rock-Ridge ISO')
+                record = self._find_rr_record(utils.normpath(rr_path))
+            elif joliet_path is not None:
+                record = self._find_joliet_record(self._normalize_joliet_path(joliet_path))
+            else:
+                raise pycdlibexception.PyCdlibInternalError('No identifying path provided for update_file_contents')
+            if not record.is_file():
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot update the contents of a directory')
+            if record.is_symlink():
+                raise pycdlibexception.PyCdlibInvalidInput('Cannot update the contents of a symlink')
+            ino = record.inode
+
+        if ino is None:
+            raise pycdlibexception.PyCdlibInternalError('File found without an inode')
+
+        old_length = ino.data_length
+
+        # Swap the inode's data source.  Every linked record reads through
+        # this inode, so they all see the new content on the next write_fp().
+        ino.update_fp(fp, length, manage_fp=manage_fp)
+
+        # Propagate the new length to every linked DirectoryRecord and UDF
+        # File Entry so its serialized record reflects the right size when
+        # write_fp() runs.  El Torito entries don't go through set_data_length;
+        # if a file is both an El Torito boot image and a regular file, the
+        # El Torito side picks up the new size automatically via the shared
+        # Inode's data_length.
+        for record_obj, _is_pvd in ino.linked_records:
+            if isinstance(record_obj, (dr.DirectoryRecord, udfmod.UDFFileEntry)):
+                record_obj.set_data_length(length)
+
+        # Adjust PVD / Joliet / UDF size accounting via the existing helpers.
+        # These set _needs_reshuffle so the next write_fp() recomputes the
+        # layout cleanly.
+        self._finish_remove(old_length, is_partition=True)
+        self._finish_add(0, length)
+
+    def update_file_contents_fp(self, fp, length, iso_path=None, rr_path=None,
+                                joliet_path=None, udf_path=None):
+        # type: (BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[str]) -> None
+        """
+        Replace the contents of an existing file on the ISO with new
+        content read from `fp`, deferring all disk writes to the next
+        `write_fp()` call.
+
+        Exactly one of `iso_path`, `rr_path`, `joliet_path`, or
+        `udf_path` must be provided to identify the target file.  The
+        update propagates to every linked record (ISO9660 / Joliet /
+        UDF) automatically because they share the same Inode.
+
+        The caller is responsible for keeping `fp` open for the
+        lifetime of this PyCdlib object (until close() runs), the same
+        way `add_fp()` requires.
+
+        Parameters:
+         fp - A file-like object containing the new contents.
+         length - The length of the new contents.
+         iso_path - The ISO9660 absolute path to the file destination on
+                    the ISO.
+         rr_path - The Rock Ridge absolute path to the file destination
+                   on the ISO.
+         joliet_path - The Joliet absolute path to the file destination
+                       on the ISO.
+         udf_path - The UDF absolute path to the file destination on the
+                    ISO.
+        Returns:
+         Nothing.
+        """
+        self._update_file_contents(fp, length, False, iso_path, rr_path,
+                                   joliet_path, udf_path)
+
+    def update_file_contents(self, filename, iso_path=None, rr_path=None,
+                             joliet_path=None, udf_path=None):
+        # type: (str, Optional[str], Optional[str], Optional[str], Optional[str]) -> None
+        """
+        Replace the contents of an existing file on the ISO with the
+        contents of `filename` on the local filesystem, deferring all
+        disk writes to the next `write_fp()` call.
+
+        Same semantics as `update_file_contents_fp` except that
+        pycdlib opens `filename` and manages its lifetime, the same
+        way `add_file()` does relative to `add_fp()`.  The file is
+        closed when the PyCdlib object is closed.
+
+        Parameters:
+         filename - The local filename whose contents replace the
+                    target file's contents.
+         iso_path - The ISO9660 absolute path to the file destination on
+                    the ISO.
+         rr_path - The Rock Ridge absolute path to the file destination
+                   on the ISO.
+         joliet_path - The Joliet absolute path to the file destination
+                       on the ISO.
+         udf_path - The UDF absolute path to the file destination on the
+                    ISO.
+        Returns:
+         Nothing.
+        """
+        self._update_file_contents(filename, os.stat(filename).st_size, True,
+                                   iso_path, rr_path, joliet_path, udf_path)
+
     def add_hard_link(self, **kwargs):
         # type: (...) -> None
         """

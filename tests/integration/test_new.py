@@ -2891,6 +2891,222 @@ def test_new_modify_file_in_place_rewrites_subdir_dotdots_after_underflow():
     assert subdir3.children[1].data_length == parent3.data_length
     iso3.close()
 
+def test_new_update_file_contents_fp_basic():
+    # update_file_contents_fp replaces a file's contents in memory and
+    # the new content lands on disk via the next write_fp() call.
+    # Unlike modify_file_in_place there is no extent-count constraint.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'original'), 8, '/FOO.;1')
+
+    iso.update_file_contents_fp(io.BytesIO(b'updated content longer than original'), 36,
+                                iso_path='/FOO.;1')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    out.seek(0)
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/FOO.;1')
+    assert buf.getvalue() == b'updated content longer than original'
+    iso2.close()
+
+def test_new_update_file_contents_fp_shorter_content():
+    # Shrinking the content is fine -- write_fp recomputes the layout.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'A' * 5000), 5000, '/FOO.;1')
+
+    iso.update_file_contents_fp(io.BytesIO(b'tiny'), 4, iso_path='/FOO.;1')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    out.seek(0)
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/FOO.;1')
+    assert buf.getvalue() == b'tiny'
+    iso2.close()
+
+def test_new_update_file_contents_fp_propagates_to_joliet_and_udf():
+    # The shared Inode is what update_file_contents_fp swaps, so every
+    # tree that linked the file (ISO9660 + Joliet + UDF here) sees the
+    # new content automatically.  The caller only specifies one
+    # lookup path.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, rock_ridge='1.09', udf='2.60')
+    iso.add_fp(io.BytesIO(b'original'), 8, '/FOO.;1', rr_name='foo',
+               joliet_path='/foo', udf_path='/foo')
+
+    iso.update_file_contents_fp(io.BytesIO(b'updated'), 7, iso_path='/FOO.;1')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    out.seek(0)
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    # Reads via every tree return the new content.
+    for kwargs in ({'iso_path': '/FOO.;1'},
+                   {'rr_path': '/foo'},
+                   {'joliet_path': '/foo'},
+                   {'udf_path': '/foo'}):
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, **kwargs)
+        assert buf.getvalue() == b'updated', f'{kwargs} returned {buf.getvalue()!r}'
+    iso2.close()
+
+def test_new_update_file_contents_via_each_path_kwarg():
+    # Each of iso_path / rr_path / joliet_path / udf_path is a valid
+    # lookup for update_file_contents_fp on an ISO that has all three
+    # extensions.
+    for path_kwarg in ('iso_path', 'rr_path', 'joliet_path', 'udf_path'):
+        iso = pycdlib.PyCdlib()
+        iso.new(joliet=3, rock_ridge='1.09', udf='2.60')
+        iso.add_fp(io.BytesIO(b'before'), 6, '/FOO.;1', rr_name='foo',
+                   joliet_path='/foo', udf_path='/foo')
+        lookup = {'iso_path': '/FOO.;1', 'rr_path': '/foo',
+                  'joliet_path': '/foo', 'udf_path': '/foo'}[path_kwarg]
+        iso.update_file_contents_fp(io.BytesIO(b'after'), 5, **{path_kwarg: lookup})
+
+        out = io.BytesIO()
+        iso.write_fp(out)
+        iso.close()
+
+        out.seek(0)
+        iso2 = pycdlib.PyCdlib()
+        iso2.open_fp(out)
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, iso_path='/FOO.;1')
+        assert buf.getvalue() == b'after'
+        iso2.close()
+
+def test_new_update_file_contents_rejects_no_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'x'), 1, '/FOO.;1')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.update_file_contents_fp(io.BytesIO(b'y'), 1)
+    assert 'Exactly one of' in str(excinfo.value)
+    iso.close()
+
+def test_new_update_file_contents_rejects_multiple_paths():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    iso.add_fp(io.BytesIO(b'x'), 1, '/FOO.;1', joliet_path='/foo')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.update_file_contents_fp(io.BytesIO(b'y'), 1,
+                                    iso_path='/FOO.;1', joliet_path='/foo')
+    assert 'Exactly one of' in str(excinfo.value)
+    iso.close()
+
+def test_new_update_file_contents_rejects_directory():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_directory('/DIR')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.update_file_contents_fp(io.BytesIO(b'x'), 1, iso_path='/DIR')
+    assert 'directory' in str(excinfo.value)
+    iso.close()
+
+def test_new_update_file_contents_rejects_symlink():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_symlink('/SYM.;1', rr_symlink_name='sym', rr_path='target')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.update_file_contents_fp(io.BytesIO(b'x'), 1, iso_path='/SYM.;1')
+    assert 'symlink' in str(excinfo.value)
+    iso.close()
+
+def test_new_update_file_contents_rejects_not_initialized():
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.update_file_contents_fp(io.BytesIO(b'x'), 1, iso_path='/FOO.;1')
+    assert 'not initialized' in str(excinfo.value)
+
+def test_new_update_file_contents_filename(tmpdir):
+    # update_file_contents (filename variant) opens the file itself
+    # and manages its lifetime, the same way add_file does relative
+    # to add_fp.
+    src = tmpdir.join('payload')
+    src.write_binary(b'from a real file on disk')
+
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'placeholder'), 11, '/FOO.;1')
+
+    iso.update_file_contents(str(src), iso_path='/FOO.;1')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    out.seek(0)
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/FOO.;1')
+    assert buf.getvalue() == b'from a real file on disk'
+    iso2.close()
+
+def test_new_update_file_contents_composes_with_add_rm_then_write_fp():
+    # The reporter's actual workflow: open, do some mix of add_fp,
+    # rm_file, update_file_contents_fp, then write_fp.
+    # update_file_contents_fp is the supported alternative to
+    # modify_file_in_place for that pattern.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, rock_ridge='1.09')
+    iso.add_directory('/ISOLINUX', rr_name='isolinux', joliet_path='/isolinux')
+    iso.add_fp(io.BytesIO(b'OLD ISOLINUX CFG'), 16, '/ISOLINUX/ISOLINUX.CFG;1',
+               rr_name='isolinux.cfg', joliet_path='/isolinux/isolinux.cfg')
+    iso.add_fp(io.BytesIO(b'OLD GRUB'), 8, '/ISOLINUX/GRUB.CFG;1',
+               rr_name='grub.cfg', joliet_path='/isolinux/grub.cfg')
+    iso.add_fp(io.BytesIO(b'remove me'), 9, '/ISOLINUX/EXTRA.TXT;1',
+               rr_name='extra.txt', joliet_path='/isolinux/extra.txt')
+
+    seed = io.BytesIO()
+    iso.write_fp(seed)
+    iso.close()
+
+    seed.seek(0)
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(seed)
+    iso.rm_file(iso_path='/ISOLINUX/EXTRA.TXT;1', rr_name='extra.txt',
+                joliet_path='/isolinux/extra.txt')
+    iso.update_file_contents_fp(io.BytesIO(b'NEW ISOLINUX'), 12,
+                                iso_path='/ISOLINUX/ISOLINUX.CFG;1')
+    iso.add_fp(io.BytesIO(b'kickstart'), 9, '/KS.CFG;1',
+               rr_name='ks.cfg', joliet_path='/ks.cfg')
+    iso.update_file_contents_fp(io.BytesIO(b'NEW GRUB'), 8,
+                                joliet_path='/isolinux/grub.cfg')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    out.seek(0)
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    # The updated, added, and surviving files all read correctly.
+    for path, expected in [('/ISOLINUX/ISOLINUX.CFG;1', b'NEW ISOLINUX'),
+                           ('/ISOLINUX/GRUB.CFG;1',     b'NEW GRUB'),
+                           ('/KS.CFG;1',                b'kickstart')]:
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, iso_path=path)
+        assert buf.getvalue() == expected, f'{path}: {buf.getvalue()!r}'
+    # EXTRA.TXT is gone.
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso2.get_file_from_iso_fp(io.BytesIO(),
+                                  iso_path='/ISOLINUX/EXTRA.TXT;1')
+    iso2.close()
+
 def test_new_udf_boot_descriptor_parsed():
     # Coverage for the UDF BOOT2 (Boot Descriptor) dispatch in
     # _parse_volume_descriptors.  pycdlib's writer doesn't emit BOOT2 on
