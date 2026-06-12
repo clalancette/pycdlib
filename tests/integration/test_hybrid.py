@@ -1829,12 +1829,10 @@ def test_hybrid_modify_in_place_onefile(tmpdir):
     subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
                      '-o', str(outfile), str(indir)])
 
-    # Now open up the ISO with pycdlib and modify it.
-    iso = pycdlib.PyCdlib()
-    iso.open(str(outfile), 'r+b')
+    # Now modify it in place via the editor context manager.
     foostr = b'foo\n'
-    iso.modify_file_in_place(io.BytesIO(foostr), len(foostr), '/FOO.;1')
-    iso.close()
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        ed.modify_file(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     # Now re-open it and check things out.
     open_and_check(outfile, check_onefile)
@@ -1848,12 +1846,10 @@ def test_hybrid_joliet_modify_in_place_onefile(tmpdir):
     subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
                      '-J', '-o', str(outfile), str(indir)])
 
-    # Now open up the ISO with pycdlib and modify it.
-    iso = pycdlib.PyCdlib()
-    iso.open(str(outfile), 'r+b')
+    # Now modify it in place via the editor context manager.
     foostr = b'foo\n'
-    iso.modify_file_in_place(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
-    iso.close()
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        ed.modify_file(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
 
     # Now re-open it and check things out.
     open_and_check(outfile, check_joliet_onefile)
@@ -1867,14 +1863,11 @@ def test_hybrid_modify_in_place_iso_level4_onefile(tmpdir):
     subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '4', '-no-pad',
                      '-o', str(outfile), str(indir)])
 
-    # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyCdlib()
-    iso.open(str(outfile), 'r+b')
+    # Now modify it in place via the editor context manager.
     foostr = b'foo\n'
-    iso.modify_file_in_place(io.BytesIO(foostr), len(foostr), '/foo')
-    iso.close()
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        ed.modify_file(io.BytesIO(foostr), len(foostr), '/foo')
 
-    # Now open up the ISO with pycdlib and modify it.
     open_and_check(outfile, check_isolevel4_onefile)
 
 def test_hybrid_modify_in_place_udf(tmpdir):
@@ -1886,14 +1879,11 @@ def test_hybrid_modify_in_place_udf(tmpdir):
     subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
                      '-udf', '-o', str(outfile), str(indir)])
 
-    # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyCdlib()
-    iso.open(str(outfile), 'r+b')
+    # Now modify it in place via the editor context manager.
     foostr = b'foo\n'
-    iso.modify_file_in_place(io.BytesIO(foostr), len(foostr), '/FOO.;1')
-    iso.close()
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        ed.modify_file(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
-    # Now open up the ISO with pycdlib and modify it.
     open_and_check(outfile, check_udf_onefile)
 
 def test_hybrid_modify_in_place_udf_shrink(tmpdir):
@@ -1905,14 +1895,11 @@ def test_hybrid_modify_in_place_udf_shrink(tmpdir):
     subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
                      '-udf', '-o', str(outfile), str(indir)])
 
-    # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyCdlib()
-    iso.open(str(outfile), 'r+b')
+    # Now modify it in place via the editor context manager.
     foostr = b'foo\n'
-    iso.modify_file_in_place(io.BytesIO(foostr), len(foostr), '/FOO.;1')
-    iso.close()
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        ed.modify_file(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
-    # Now open up the ISO with pycdlib and modify it.
     open_and_check(outfile, check_udf_onefile)
 
 def test_hybrid_try_to_use_new_on_open_file(tmpdir):
@@ -1951,6 +1938,7 @@ def test_hybrid_try_to_use_open_on_new_file(tmpdir):
 
     iso.close()
 
+@uses_deprecated("modify_file_in_place")
 def test_hybrid_modify_in_place_not_initialized(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('modifyinplaceonefile')
@@ -1968,6 +1956,7 @@ def test_hybrid_modify_in_place_not_initialized(tmpdir):
         iso.modify_file_in_place(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/foo')
     assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
+@uses_deprecated("modify_file_in_place")
 def test_hybrid_modify_in_place_read_only(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('modifyinplaceonefile')
@@ -2235,6 +2224,7 @@ def test_hybrid_addfile_not_initialized(tmpdir):
         iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1')
     assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
 
+@uses_deprecated("modify_file_in_place")
 def test_hybrid_modify_in_place_bad_path(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('modifyinplaceisolevel4onefile')
@@ -2256,6 +2246,7 @@ def test_hybrid_modify_in_place_bad_path(tmpdir):
 
     iso.close()
 
+@uses_deprecated("modify_file_in_place")
 def test_hybrid_modify_in_place_grow_file(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('modifyinplaceisolevel4onefile')
@@ -2277,6 +2268,7 @@ def test_hybrid_modify_in_place_grow_file(tmpdir):
 
     iso.close()
 
+@uses_deprecated("modify_file_in_place")
 def test_hybrid_modify_in_place_modify_dir(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('modifyinplaceisolevel4onefile')
@@ -2396,14 +2388,11 @@ def test_hybrid_modify_in_place_dirrecord_spillover(tmpdir):
     subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
                      '-o', str(outfile), str(indir)])
 
-    # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyCdlib()
-    iso.open(str(outfile), 'r+b')
+    # Now modify it in place via the editor context manager.
     foostr = b'foo\n'
-    iso.modify_file_in_place(io.BytesIO(foostr), len(foostr), '/DIR1/FOO48.;1')
-    iso.close()
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        ed.modify_file(io.BytesIO(foostr), len(foostr), '/DIR1/FOO48.;1')
 
-    # Now open up the ISO with pycdlib and modify it.
     open_and_check(outfile, check_modify_in_place_spillover)
 
 def test_hybrid_modify_in_place_dirrecord_spillover2(tmpdir):
@@ -2418,14 +2407,11 @@ def test_hybrid_modify_in_place_dirrecord_spillover2(tmpdir):
     subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
                      '-o', str(outfile), str(indir)])
 
-    # Now open up the ISO with pycdlib and check some things out.
-    iso = pycdlib.PyCdlib()
-    iso.open(str(outfile), 'r+b')
+    # Now modify it in place via the editor context manager.
     foostr = b'foo\n'
-    iso.modify_file_in_place(io.BytesIO(foostr), len(foostr), '/DIR1/FOO40.;1')
-    iso.close()
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        ed.modify_file(io.BytesIO(foostr), len(foostr), '/DIR1/FOO40.;1')
 
-    # Now open up the ISO with pycdlib and modify it.
     open_and_check(outfile, check_modify_in_place_spillover)
 
 def test_hybrid_shuffle_deep(tmpdir):

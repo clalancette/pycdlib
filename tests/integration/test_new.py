@@ -2556,6 +2556,91 @@ def test_new_rr_onetwelve_missing_er_treated_as_non_rr():
     assert(not iso2.has_rock_ridge())
     iso2.close()
 
+def test_new_in_place_editor_modifies_file(tmpdir):
+    # The InPlaceEditor context manager opens an ISO, runs one or more
+    # in-place edits, and closes cleanly on exit.  The new content is
+    # readable from the same file after the with-block exits.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'old\n'), 4, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.modify_file(io.BytesIO(b'new\n'), 4, '/FOO.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/FOO.;1')
+    assert buf.getvalue() == b'new\n'
+    iso2.close()
+
+def test_new_in_place_editor_multiple_modifies(tmpdir):
+    # The editor can batch multiple modifications in a single session,
+    # amortizing the parse cost.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'AAA\n'), 4, '/A.;1')
+    iso.add_fp(io.BytesIO(b'BBB\n'), 4, '/B.;1')
+    iso.add_fp(io.BytesIO(b'CCC\n'), 4, '/C.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.modify_file(io.BytesIO(b'aaa\n'), 4, '/A.;1')
+        ed.modify_file(io.BytesIO(b'bbb\n'), 4, '/B.;1')
+        ed.modify_file(io.BytesIO(b'ccc\n'), 4, '/C.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    for path, expected in [('/A.;1', b'aaa\n'),
+                           ('/B.;1', b'bbb\n'),
+                           ('/C.;1', b'ccc\n')]:
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, iso_path=path)
+        assert buf.getvalue() == expected
+    iso2.close()
+
+def test_new_in_place_editor_propagates_exceptions(tmpdir):
+    # If modify_file raises (e.g., bad iso_path), the editor still
+    # closes the underlying ISO via __exit__.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        with pycdlib.InPlaceEditor(iso_path) as ed:
+            ed.modify_file(io.BytesIO(b'x\n'), 2, '/NOPE.;1')
+
+def test_new_pycdlib_modify_file_in_place_warns(tmpdir):
+    # PyCdlib.modify_file_in_place is the deprecated method-on-class
+    # surface.  Verify it fires the DeprecationWarning that the
+    # standalone-function and InPlaceEditor migrations should drive
+    # users toward.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'old\n'), 4, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path, mode='rb+')
+    with pytest.warns(DeprecationWarning, match='modify_file_in_place is deprecated'):
+        iso2.modify_file_in_place(io.BytesIO(b'new\n'), 4, '/FOO.;1')
+    iso2.close()
+
+@uses_deprecated("modify_file_in_place")
 def test_new_modify_file_in_place_unsorted_dir_records():
     # Regression test for https://github.com/clalancette/pycdlib/issues/122.
     # modify_file_in_place used to compute the on-disk byte offset of a
@@ -2620,6 +2705,7 @@ def test_new_modify_file_in_place_unsorted_dir_records():
         assert(buf.getvalue() == expected)
     iso3.close()
 
+@uses_deprecated("modify_file_in_place")
 def test_new_rewrite_dir_record_extent_pads_after_rm():
     # Regression test for the zero-padding bug in
     # _rewrite_dir_record_extent.  Before the fix, the function wrote
@@ -2672,6 +2758,7 @@ def test_new_rewrite_dir_record_extent_pads_after_rm():
         assert(buf.getvalue() == expected)
     iso3.close()
 
+@uses_deprecated("modify_file_in_place")
 def test_new_rewrite_dir_record_extent_pads_after_rm_multi_extent():
     # Same as the previous test but with a parent directory whose
     # children span multiple extents.  The rm is small enough that the
@@ -2724,6 +2811,7 @@ def test_new_rewrite_dir_record_extent_pads_after_rm_multi_extent():
         assert buf.getvalue() == (name + '\n').encode()
     iso3.close()
 
+@uses_deprecated("modify_file_in_place")
 def test_new_rewrite_dir_record_extent_pads_across_extent_transition():
     # When _rewrite_dir_record_extent's serialized children pack
     # differently than the on-disk layout (e.g., because a child was
@@ -2771,6 +2859,7 @@ def test_new_rewrite_dir_record_extent_pads_across_extent_transition():
     assert buf.getvalue() == b'aaa\n'
     iso3.close()
 
+@uses_deprecated("modify_file_in_place")
 def test_new_modify_file_in_place_rewrites_grandparent_after_underflow():
     # When rm_file shrinks a parent's data_length via _remove_child's
     # underflow handler, the parent's on-disk directory record (stored
@@ -2840,6 +2929,7 @@ def test_new_modify_file_in_place_rewrites_grandparent_after_underflow():
         assert buf.getvalue() == (name + '\n').encode()
     iso3.close()
 
+@uses_deprecated("modify_file_in_place")
 def test_new_modify_file_in_place_rewrites_subdir_dotdots_after_underflow():
     # Companion to the grandparent rewrite test.  When _remove_child's
     # underflow handler shrinks parent.data_length, the in-memory

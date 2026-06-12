@@ -4680,28 +4680,19 @@ class PyCdlib:
 
         self._finish_add(0, num_bytes_to_add)
 
-    def modify_file_in_place(self, fp, length, iso_path, rr_name=None,  # pylint: disable=unused-argument
-                             joliet_path=None, udf_path=None):          # pylint: disable=unused-argument
+    def modify_file_in_place(self, fp, length, iso_path, rr_name=None,
+                             joliet_path=None, udf_path=None):
         # type: (BinaryIO, int, str, Optional[str], Optional[str], Optional[str]) -> None
         """
-        An API to modify a file in place on the ISO.  This can be extremely fast
-        (much faster than calling the write method), but has many restrictions.
+        Modify a file in place on the ISO.
 
-        1.  The original ISO file pointer must have been opened for reading
-            and writing.
-        2.  Only an existing *file* can be modified; directories cannot be
-            changed.
-        3.  Only an existing file can be *modified*; no new files can be added
-            or removed.
-        4.  The new file contents must use the same number of extents (typically
-            2048 bytes) as the old file contents.  If using this API to shrink
-            a file, this is usually easy since the new contents can be padded
-            out with zeros or newlines to meet the requirement.  If using this
-            API to grow a file, the new contents can only grow up to the next
-            extent boundary.
-
-        Unlike all other APIs in PyCdlib, this API actually modifies the
-        originally opened on-disk file, so use it with caution.
+        .. deprecated::
+           Use :class:`pycdlib.InPlaceEditor` (a context manager)
+           instead.  It exposes the same in-place primitive but lives
+           on a focused class that intentionally does not surface
+           PyCdlib's mastering APIs, eliminating the silent
+           disk-corruption failure mode that arises when in-place edits
+           are mixed with ``add_*`` / ``rm_*`` / ``write_fp``.
 
         Parameters:
          fp - The file object to use for the contents of the new file.
@@ -4713,123 +4704,17 @@ class PyCdlib:
         Returns:
          Nothing.
         """
-        if not self._initialized:
-            raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
-
-        if hasattr(self._cdfp, 'mode') and not self._cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):
-            raise pycdlibexception.PyCdlibInvalidInput('To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
-
-        child = self._find_iso_record(utils.normpath(iso_path))
-
-        old_num_extents = utils.ceiling_div(child.get_data_length(),
-                                            self.logical_block_size)
-        new_num_extents = utils.ceiling_div(length, self.logical_block_size)
-
-        if old_num_extents != new_num_extents:
-            raise pycdlibexception.PyCdlibInvalidInput('When modifying a file in-place, the number of extents for a file cannot change!')
-
-        if not child.is_file():
-            raise pycdlibexception.PyCdlibInvalidInput('Cannot modify a directory with modify_file_in_place')
-
-        if child.inode is None:
-            raise pycdlibexception.PyCdlibInternalError('Child file found without inode')
-
-        child.inode.update_fp(fp, length)
-
-        # Remove the old size from the PVD size.
-        for pvd in self.pvds:
-            pvd.remove_from_space_size(child.get_data_length())
-        # And add the new size to the PVD size.
-        for pvd in self.pvds:
-            pvd.add_to_space_size(length)
-
-        if self.enhanced_vd is not None:
-            self.enhanced_vd.copy_sizes(self.pvd)
-
-        # If we made it here, we have successfully updated all of the in-memory
-        # metadata.  Now we can go and modify the on-disk file.
-
-        self._seek_to_extent(self.pvd.extent_location())
-
-        # First write out the PVD.
-        rec = self.pvd.record()
-        self._cdfp.write(rec)
-
-        # Write out the joliet VD.
-        if self.joliet_vd is not None:
-            self._seek_to_extent(self.joliet_vd.extent_location())
-            rec = self.joliet_vd.record()
-            self._cdfp.write(rec)
-
-        # Write out the enhanced VD.
-        if self.enhanced_vd is not None:
-            self._seek_to_extent(self.enhanced_vd.extent_location())
-            rec = self.enhanced_vd.record()
-            self._cdfp.write(rec)
-
-        # We don't have to write anything out for UDF since it only tracks
-        # extents, and we know we aren't changing the number of extents.
-
-        # Write out the actual file contents.
-        self._seek_to_extent(child.extent_location())
-        with inode.InodeOpenData(child.inode, self.logical_block_size) as (data_fp, data_len):
-            utils.copy_data(data_len, self.logical_block_size, data_fp, self._cdfp)
-            utils.zero_pad(self._cdfp, data_len, self.logical_block_size)
-
-        # Finally update the directory record entries that reference this
-        # file with the new length.  For UDF the file entry has its own
-        # extent, so we can write it directly.  For ISO9660/Joliet the
-        # record lives inside its parent's directory extent; we used to
-        # compute that record's byte offset from extents_to_here /
-        # offset_to_here (which reflect pycdlib's in-memory sorted order
-        # of children), but the on-disk order doesn't always match the
-        # sorted order -- writing to the computed offset then corrupts
-        # whichever sibling actually sits at that on-disk position
-        # (issue #122).  Rewrite the parent's full child list instead.
-        first_joliet = True
-        rewritten_parents = set()  # type: set
-        for record, is_pvd_unused in child.inode.linked_records:
-            if isinstance(record, dr.DirectoryRecord):
-                if self.joliet_vd is not None and id(record.vd) == id(self.joliet_vd) and first_joliet:
-                    first_joliet = False
-                    self.joliet_vd.remove_from_space_size(record.get_data_length())
-                    self.joliet_vd.add_to_space_size(length)
-                if record.parent is None:
-                    raise pycdlibexception.PyCdlibInternalError('Modifying file with empty parent')
-                record.set_data_length(length)
-                # Walk up the parent chain, rewriting each ancestor's
-                # extent.  The immediate parent's rewrite captures the
-                # modified file's new data_length; each higher
-                # ancestor's rewrite captures the data_length of its
-                # child (which may have shrunk via _remove_child's
-                # underflow handler when a sibling was removed).
-                # Without the up-walk, an in-memory data_length change
-                # never reaches the on-disk record that the parser
-                # uses to bound the data extent, and the parser reads
-                # stale bytes from a dropped extent.  We stop at the
-                # root: the root's data_length lives in the PVD's
-                # root_directory_record, which is already written out
-                # earlier in modify_file_in_place.
-                node = record.parent
-                while node is not None and id(node) not in rewritten_parents:
-                    rewritten_parents.add(id(node))
-                    self._rewrite_dir_record_extent(node)
-                    # Each subdirectory of `node` has a dotdot record
-                    # (in its own extent) whose data_length carries
-                    # node.data_length.  _add_child / _remove_child
-                    # keep those dotdots in sync in memory, but the
-                    # bytes on disk haven't been touched unless we
-                    # rewrite them here.
-                    self._rewrite_subdir_dotdots(node)
-                    node = node.parent
-            elif isinstance(record, udfmod.UDFFileEntry):
-                record.set_data_length(length)
-                abs_offset = record.extent_location() * self.logical_block_size
-                self._cdfp.seek(abs_offset)
-                self._cdfp.write(record.record())
-            else:
-                # This should never happen
-                raise pycdlibexception.PyCdlibInternalError('Invalid record type')
+        warnings.warn(
+            'PyCdlib.modify_file_in_place is deprecated; use '
+            'pycdlib.InPlaceEditor (context manager) instead.',
+            DeprecationWarning, stacklevel=2)
+        # Local import to avoid a circular import at module load time:
+        # inplaceeditor.py imports PyCdlib from this module.
+        from pycdlib.inplaceeditor import _do_modify_file_in_place  # pylint: disable=import-outside-toplevel
+        _do_modify_file_in_place(self, fp, length, iso_path,
+                                 rr_name=rr_name,
+                                 joliet_path=joliet_path,
+                                 udf_path=udf_path)
 
     def _rewrite_dir_record_extent(self, parent):
         # type: (dr.DirectoryRecord) -> None
