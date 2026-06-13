@@ -2663,6 +2663,321 @@ def test_new_in_place_editor_rejects_growing_across_extent_boundary(tmpdir):
         with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
             ed.modify_file(io.BytesIO(b'f' * 2049), 2049, '/FOO.;1')
 
+def test_new_in_place_editor_rm_file_basic(tmpdir):
+    # rm_file removes a file from the in-memory tree and commits the
+    # change to disk: the file's directory record is gone from the
+    # parent's extent on disk.  The file's data extent stays as
+    # orphaned bytes inside the volume.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'AAA\n'), 4, '/A.;1')
+    iso.add_fp(io.BytesIO(b'BBB\n'), 4, '/B.;1')
+    iso.add_fp(io.BytesIO(b'CCC\n'), 4, '/C.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.rm_file('/B.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    children = sorted(
+        ch.file_identifier()
+        for ch in iso2.pvd.root_dir_record.children
+        if ch.file_identifier() not in (b'.', b'..')
+    )
+    assert children == [b'A.;1', b'C.;1']
+    # The remaining files still read back correctly.
+    for path, expected in [('/A.;1', b'AAA\n'), ('/C.;1', b'CCC\n')]:
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, iso_path=path)
+        assert buf.getvalue() == expected
+    iso2.close()
+
+def test_new_in_place_editor_rm_file_joliet(tmpdir):
+    # rm_file is Joliet-aware: removing a file removes its record from
+    # both the ISO9660 and Joliet trees.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    iso.add_fp(io.BytesIO(b'AAA\n'), 4, '/A.;1', joliet_path='/a')
+    iso.add_fp(io.BytesIO(b'BBB\n'), 4, '/B.;1', joliet_path='/b')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.rm_file('/B.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    # Gone from ISO9660 root.
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso2.get_file_from_iso_fp(io.BytesIO(), iso_path='/B.;1')
+    # Gone from Joliet root too.
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso2.get_file_from_iso_fp(io.BytesIO(), joliet_path='/b')
+    iso2.close()
+
+def test_new_in_place_editor_rm_file_rejects_directory(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_directory('/DIR')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+            ed.rm_file('/DIR')
+
+def test_new_in_place_editor_rm_file_rejects_udf(tmpdir):
+    # UDF in-place rm is out of scope for v1.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', udf_path='/foo')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.rm_file('/FOO.;1')
+        assert 'UDF' in str(excinfo.value)
+
+def test_new_in_place_editor_rm_file_rock_ridge(tmpdir):
+    # rm_file on a Rock Ridge ISO removes the Rock Ridge-bearing
+    # directory record from the parent extent without leaving stale
+    # SUSP bytes behind that would fail re-parse.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'AAA\n'), 4, '/A.;1', rr_name='a')
+    iso.add_fp(io.BytesIO(b'BBB\n'), 4, '/B.;1', rr_name='b')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.rm_file('/B.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    children = sorted(
+        ch.file_identifier()
+        for ch in iso2.pvd.root_dir_record.children
+        if ch.file_identifier() not in (b'.', b'..')
+    )
+    assert children == [b'A.;1']
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, rr_path='/a')
+    assert buf.getvalue() == b'AAA\n'
+    iso2.close()
+
+def test_new_in_place_editor_rm_file_rejects_eltorito_boot_file(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'BOOT' * 512), 2048, '/BOOT.;1')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+            ed.rm_file('/BOOT.;1')
+
+def test_new_in_place_editor_add_fp_basic(tmpdir):
+    # add_fp appends a new file to the volume and inserts its
+    # directory record into the parent's extent on disk.  The file
+    # is readable from a freshly opened copy of the same ISO file.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'existing\n'), 9, '/EXIST.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.add_fp(io.BytesIO(b'new file contents\n'), 18, '/NEW.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    # Both files are present and read back correctly.
+    for path, expected in [('/EXIST.;1', b'existing\n'),
+                           ('/NEW.;1',   b'new file contents\n')]:
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, iso_path=path)
+        assert buf.getvalue() == expected
+    iso2.close()
+
+def test_new_in_place_editor_add_fp_joliet(tmpdir):
+    # add_fp with joliet_path inserts the record into both the
+    # ISO9660 and Joliet trees.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    iso.add_fp(io.BytesIO(b'existing\n'), 9, '/EXIST.;1', joliet_path='/exist')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.add_fp(io.BytesIO(b'new\n'), 4, '/NEW.;1', joliet_path='/new')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    for kwargs, expected in [({'iso_path': '/NEW.;1'},     b'new\n'),
+                              ({'joliet_path': '/new'},     b'new\n')]:
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, **kwargs)
+        assert buf.getvalue() == expected
+    iso2.close()
+
+def test_new_in_place_editor_add_file_filename_variant(tmpdir):
+    # The filename variant reads the new content from a file on the
+    # local filesystem (pycdlib manages opening/closing).
+    payload = tmpdir.join('payload')
+    payload.write_binary(b'from disk\n')
+
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'old\n'), 4, '/OLD.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.add_file(str(payload), '/NEW.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/NEW.;1')
+    assert buf.getvalue() == b'from disk\n'
+    iso2.close()
+
+def test_new_in_place_editor_add_fp_rejects_udf(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_fp(io.BytesIO(b'old\n'), 4, '/OLD.;1', udf_path='/old')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.add_fp(io.BytesIO(b'new\n'), 4, '/NEW.;1')
+        assert 'UDF' in str(excinfo.value)
+
+def test_new_in_place_editor_add_fp_rejects_rock_ridge(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'old\n'), 4, '/OLD.;1', rr_name='old')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.add_fp(io.BytesIO(b'new\n'), 4, '/NEW.;1')
+        assert 'Rock Ridge' in str(excinfo.value)
+
+def test_new_in_place_editor_add_fp_rejects_eltorito(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'BOOT' * 512), 2048, '/BOOT.;1')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.add_fp(io.BytesIO(b'new\n'), 4, '/NEW.;1')
+        assert 'El Torito' in str(excinfo.value)
+
+def test_new_in_place_editor_add_fp_rejects_parent_overflow(tmpdir):
+    # Pack root with enough children that adding one more would
+    # require a new extent.  Verify add_fp refuses cleanly with
+    # "would overflow" messaging.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    # 49 short-name files exactly fill root's one-extent allocation
+    # (under interchange level 1); the 50th forces overflow into a
+    # second extent.  Once written to disk, in-place add can't grow
+    # the parent extent, so adding any file after this point must
+    # refuse.
+    for i in range(49):
+        iso.add_fp(io.BytesIO(b'x'), 1, f'/F{i:03d}.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.add_fp(io.BytesIO(b'one more\n'), 9, '/ZZZ.;1')
+        assert 'overflow' in str(excinfo.value).lower()
+
+def test_new_in_place_editor_mixed_workflow(tmpdir):
+    # The point of InPlaceEditor: rm_file + modify_file + add_fp can
+    # all be interleaved freely in a single session without the
+    # silent-corruption failure mode that motivated the new class.
+    # This mirrors the reporter's actual workflow on a Fedora-style
+    # boot ISO -- minus the UDF/Rock-Ridge bits that the editor v1
+    # doesn't yet support.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    iso.add_directory('/IMAGES', joliet_path='/images')
+    iso.add_directory('/EFI', joliet_path='/EFI')
+    iso.add_directory('/EFI/BOOT', joliet_path='/EFI/BOOT')
+    iso.add_fp(io.BytesIO(b'OLD GRUB CFG'), 12, '/EFI/BOOT/GRUB.CFG;1',
+               joliet_path='/EFI/BOOT/grub.cfg')
+    iso.add_fp(io.BytesIO(b'install image bytes'), 19, '/IMAGES/INSTALL.IMG;1',
+               joliet_path='/images/install.img')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.rm_file('/IMAGES/INSTALL.IMG;1')
+        ed.modify_file(io.BytesIO(b'NEW GRUB CFG'), 12, '/EFI/BOOT/GRUB.CFG;1')
+        ed.add_fp(io.BytesIO(b'kickstart payload'), 17, '/KS.CFG;1',
+                  joliet_path='/ks.cfg')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    # GRUB.CFG has the new content.
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/EFI/BOOT/GRUB.CFG;1')
+    assert buf.getvalue() == b'NEW GRUB CFG'
+    # KS.CFG was added.
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/KS.CFG;1')
+    assert buf.getvalue() == b'kickstart payload'
+    # Via Joliet too.
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, joliet_path='/ks.cfg')
+    assert buf.getvalue() == b'kickstart payload'
+    # INSTALL.IMG is gone from both trees.
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso2.get_file_from_iso_fp(io.BytesIO(), iso_path='/IMAGES/INSTALL.IMG;1')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso2.get_file_from_iso_fp(io.BytesIO(), joliet_path='/images/install.img')
+    iso2.close()
+
 def test_new_pycdlib_modify_file_in_place_warns(tmpdir):
     # PyCdlib.modify_file_in_place is the deprecated method-on-class
     # surface.  Verify it fires the DeprecationWarning that the
