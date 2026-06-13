@@ -288,8 +288,8 @@ def _do_rm_file(iso, iso_path):
 
 
 def _do_add_fp(iso, data_source, length, manage_fp, iso_path,
-               joliet_path=None, file_mode=None):
-    # type: (PyCdlib, Union[BinaryIO, str], int, bool, str, Optional[str], Optional[int]) -> None
+               rr_name=None, joliet_path=None, file_mode=None):
+    # type: (PyCdlib, Union[BinaryIO, str], int, bool, str, Optional[str], Optional[str], Optional[int]) -> None
     """
     Implementation of in-place file addition.  Operates on an open
     :class:`pycdlib.PyCdlib` object's internal state; not a public API.
@@ -302,10 +302,14 @@ def _do_add_fp(iso, data_source, length, manage_fp, iso_path,
     extent must have enough slack to hold one more record.
 
     Refuses on:
-     - UDF, Rock Ridge, or El Torito ISOs (out of scope for v1).
+     - UDF or El Torito ISOs (out of scope for v1).
      - A target path whose parent's directory extent would need to
        grow to fit the new record (would require relocating the parent,
        cascading layout changes).
+     - Rock Ridge metadata that would require allocating a new
+       Continuation Entry (CE) block -- this happens when the SUSP
+       fields don't fit inside the directory record (e.g., very long
+       ``rr_name``).  Short-name Rock Ridge is supported.
     """
     if not iso._initialized:  # pylint: disable=protected-access
         raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -315,10 +319,15 @@ def _do_add_fp(iso, data_source, length, manage_fp, iso_path,
 
     if iso.udf_root is not None:
         raise pycdlibexception.PyCdlibInvalidInput('InPlaceEditor.add_fp does not support UDF ISOs yet; use PyCdlib.add_fp + write_fp() to produce a new ISO instead')
-    if iso.rock_ridge:
-        raise pycdlibexception.PyCdlibInvalidInput('InPlaceEditor.add_fp does not support Rock Ridge ISOs yet; use PyCdlib.add_fp + write_fp() to produce a new ISO instead')
     if iso.eltorito_boot_catalog is not None:
         raise pycdlibexception.PyCdlibInvalidInput('InPlaceEditor.add_fp does not support El Torito ISOs yet; use PyCdlib.add_fp + write_fp() to produce a new ISO instead')
+
+    # Rock Ridge: rr_name must be present iff the ISO is Rock Ridge,
+    # matching PyCdlib.add_fp's contract.
+    if iso.rock_ridge and rr_name is None:
+        raise pycdlibexception.PyCdlibInvalidInput('Must specify an rr_name when adding a file to a Rock Ridge ISO')
+    if not iso.rock_ridge and rr_name is not None:
+        raise pycdlibexception.PyCdlibInvalidInput('Cannot specify an rr_name on a non-Rock-Ridge ISO')
 
     # Resolve the ISO9660 path's parent and leaf name.
     iso_path_bytes = utils.normpath(iso_path)
@@ -336,25 +345,39 @@ def _do_add_fp(iso, data_source, length, manage_fp, iso_path,
     # Reserve the new file's data extent at the current end of the ISO.
     new_data_extent = iso.pvd.space_size
 
-    fmode = file_mode if file_mode is not None else 0
+    # Default Rock Ridge file mode matches PyCdlib's add_fp default
+    # for managed-fp callers (regular file, r--r--r--).
+    if file_mode is None:
+        fmode = 0o0100444 if iso.rock_ridge else 0
+    else:
+        fmode = file_mode
 
     # Create the shared Inode that backs every linked record.
     ino = inode.Inode()
     ino.new(length, data_source, manage_fp, 0)
     ino.set_extent_location(new_data_extent)
 
-    # Create the ISO9660 directory record, link it to the inode, and
-    # attempt to add it to the parent's children list.  add_child
-    # returns True if the parent would have to grow its data_length to
-    # fit the new record -- in-place is a fixed-allocation primitive,
-    # so we treat that as a hard failure and roll the change back.
+    # Create the ISO9660 directory record.  For a Rock Ridge ISO we
+    # pass the version and rr_name through so the SUSP entries land in
+    # the record; for a plain ISO9660 ISO we pass empty placeholders.
+    rr_version = iso.rock_ridge if iso.rock_ridge else ''
+    rr_name_bytes = rr_name.encode('utf-8') if rr_name is not None else b''
+
     new_iso_rec = dr.DirectoryRecord()
     new_iso_rec.new_file(iso.pvd, length, iso_name, iso_parent,
                          iso.pvd.sequence_number(),
-                         '', b'', iso.xa, fmode,
+                         rr_version, rr_name_bytes, iso.xa, fmode,
                          time.time(), None)
     new_iso_rec.set_data_location(new_data_extent, 0)
     new_iso_rec.inode = ino
+
+    # If Rock Ridge couldn't fit all its SUSP fields inline, the
+    # record now has a CE (Continuation Entry) referencing a separate
+    # block.  In-place add can't grow the on-disk RR CE allocation, so
+    # we refuse the add up front.  Catch this *before* mutating the
+    # parent so there's nothing to roll back.
+    if new_iso_rec.rock_ridge is not None and new_iso_rec.rock_ridge.dr_entries.ce_record is not None:
+        raise pycdlibexception.PyCdlibInvalidInput("Adding this file requires a Rock Ridge Continuation Entry (CE) block, which in-place add cannot allocate; use PyCdlib.add_fp + write_fp() to produce a new ISO instead")
 
     iso_overflowed = iso_parent.add_child(new_iso_rec, iso.logical_block_size)
     if iso_overflowed:
@@ -517,8 +540,9 @@ class InPlaceEditor:
         """
         _do_rm_file(self._iso, iso_path)
 
-    def add_fp(self, fp, length, iso_path, joliet_path=None, file_mode=None):
-        # type: (BinaryIO, int, str, Optional[str], Optional[int]) -> None
+    def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None,
+               file_mode=None):
+        # type: (BinaryIO, int, str, Optional[str], Optional[str], Optional[int]) -> None
         """
         Add a new file to the ISO in place, reading the content from
         a file-like object.
@@ -529,8 +553,12 @@ class InPlaceEditor:
         existing extent on disk.
 
         Constraints:
-         - The ISO must not be a UDF, Rock Ridge, or El Torito ISO
-           (out of scope for v1).
+         - The ISO must not be a UDF or El Torito ISO (out of scope
+           for v1).
+         - On a Rock Ridge ISO, ``rr_name`` must be provided.  Rock
+           Ridge SUSP fields whose serialized length would require a
+           new Continuation Entry block are refused (this typically
+           means very long ``rr_name`` values; short names are fine).
          - The target's parent directory must already exist on the ISO.
          - The parent's directory extent must have enough slack to
            hold one more record; if not, this raises and you must use
@@ -543,18 +571,22 @@ class InPlaceEditor:
          length - The length of the new content.
          iso_path - The ISO9660 absolute path identifying where to
                     insert the file.
+         rr_name - Rock Ridge name; required on Rock Ridge ISOs and
+                   rejected on non-Rock-Ridge ISOs.
          joliet_path - The Joliet absolute path; if provided, a Joliet
                        directory record is also inserted.
-         file_mode - File-mode bits (ignored on non-Rock-Ridge ISOs;
-                     since v1 refuses Rock Ridge, this is informational).
+         file_mode - File-mode bits (Rock Ridge only).
         Returns:
          Nothing.
         """
         _do_add_fp(self._iso, fp, length, False, iso_path,
-                   joliet_path=joliet_path, file_mode=file_mode)
+                   rr_name=rr_name,
+                   joliet_path=joliet_path,
+                   file_mode=file_mode)
 
-    def add_file(self, filename, iso_path, joliet_path=None, file_mode=None):
-        # type: (str, str, Optional[str], Optional[int]) -> None
+    def add_file(self, filename, iso_path, rr_name=None, joliet_path=None,
+                 file_mode=None):
+        # type: (str, str, Optional[str], Optional[str], Optional[int]) -> None
         """
         Add a new file to the ISO in place, reading the content from
         a file on the local filesystem.
@@ -569,12 +601,17 @@ class InPlaceEditor:
                     file's content on the ISO.
          iso_path - The ISO9660 absolute path identifying where to
                     insert the file.
+         rr_name - Rock Ridge name; required on Rock Ridge ISOs and
+                   rejected on non-Rock-Ridge ISOs.
          joliet_path - The Joliet absolute path; if provided, a Joliet
                        directory record is also inserted.
-         file_mode - File-mode bits (ignored on non-Rock-Ridge ISOs).
+         file_mode - File-mode bits (Rock Ridge only).
         Returns:
          Nothing.
         """
         import os  # pylint: disable=import-outside-toplevel
         _do_add_fp(self._iso, filename, os.stat(filename).st_size, True,
-                   iso_path, joliet_path=joliet_path, file_mode=file_mode)
+                   iso_path,
+                   rr_name=rr_name,
+                   joliet_path=joliet_path,
+                   file_mode=file_mode)

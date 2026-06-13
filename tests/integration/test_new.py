@@ -2878,7 +2878,35 @@ def test_new_in_place_editor_add_fp_rejects_udf(tmpdir):
             ed.add_fp(io.BytesIO(b'new\n'), 4, '/NEW.;1')
         assert 'UDF' in str(excinfo.value)
 
-def test_new_in_place_editor_add_fp_rejects_rock_ridge(tmpdir):
+def test_new_in_place_editor_add_fp_rock_ridge_short_name(tmpdir):
+    # Rock Ridge ISOs are supported as long as the SUSP fields fit
+    # inside the directory record (i.e., no Continuation Entry block
+    # needs to be allocated).  Short rr_name values comfortably fit.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'old\n'), 4, '/OLD.;1', rr_name='old')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.add_fp(io.BytesIO(b'new contents\n'), 13, '/NEW.;1', rr_name='new')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/NEW.;1')
+    assert buf.getvalue() == b'new contents\n'
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, rr_path='/new')
+    assert buf.getvalue() == b'new contents\n'
+    iso2.close()
+
+def test_new_in_place_editor_add_fp_rejects_rock_ridge_ce_required(tmpdir):
+    # When the rr_name is long enough to push the SUSP fields out of
+    # the directory record into a Continuation Entry block, in-place
+    # add can't allocate the CE storage and must refuse.
     iso_path = str(tmpdir.join('test.iso'))
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge='1.09')
@@ -2889,8 +2917,34 @@ def test_new_in_place_editor_add_fp_rejects_rock_ridge(tmpdir):
 
     with pycdlib.InPlaceEditor(iso_path) as ed:
         with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.add_fp(io.BytesIO(b'x'), 1, '/NEW.;1', rr_name='a' * 200)
+        assert 'Continuation Entry' in str(excinfo.value)
+
+def test_new_in_place_editor_add_fp_rock_ridge_requires_rr_name(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'old\n'), 4, '/OLD.;1', rr_name='old')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
             ed.add_fp(io.BytesIO(b'new\n'), 4, '/NEW.;1')
-        assert 'Rock Ridge' in str(excinfo.value)
+
+def test_new_in_place_editor_add_fp_rejects_rr_name_on_non_rock_ridge(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'old\n'), 4, '/OLD.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+            ed.add_fp(io.BytesIO(b'new\n'), 4, '/NEW.;1', rr_name='new')
 
 def test_new_in_place_editor_add_fp_rejects_eltorito(tmpdir):
     iso_path = str(tmpdir.join('test.iso'))
