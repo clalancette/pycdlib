@@ -14,6 +14,7 @@ for i in range(0, 3):
         prefix = '../' + prefix
 
 import pycdlib.dr
+import pycdlib.inode
 
 # XA
 def test_xa_parse_initialized_twice():
@@ -187,11 +188,12 @@ def test_dr_rr_dir_no_rr():
     assert(str(excinfo.value) == 'Parent does not have Rock Ridge; ISO is corrupt')
 
 def test_dr_rr_new_on_root():
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
-    root_dr.new_root(None, 1, 2048, time.time())
+    root_dr.new_root(pvd, 1, 2048, time.time())
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        root_dr._rr_new('1.09', b'', b'', False, False, False, 0)
+        root_dr._rr_new('1.09', b'', b'', False, False, False, 0, time.time())
     assert(str(excinfo.value) == 'Invalid call to create new Rock Ridge on root directory')
 
 def test_dr_new_dir_no_parent_rr():
@@ -209,7 +211,7 @@ def test_dr_new_dir_no_parent_rr():
                         False, False, 0, time.time())
     assert(str(excinfo.value) == 'Parent of the entry did not have Rock Ridge, ISO is corrupt')
 
-def test_dr_rr_new_on_root():
+def test_dr_new_dir_root_no_children():
     pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
     root_dr.new_root(pvd, 1, 2048, time.time())
@@ -493,3 +495,24 @@ def test_dr_add_child_multi_extent_chain():
     for chunk in chunks[:-1]:
         assert(chunk.file_flags & (1 << pycdlib.dr.DirectoryRecord.FILE_FLAG_MULTI_EXTENT_BIT))
     assert(not (chunks[-1].file_flags & (1 << pycdlib.dr.DirectoryRecord.FILE_FLAG_MULTI_EXTENT_BIT)))
+
+# Backwards-compatibility shim properties.  A freshly-constructed (un-parsed,
+# un-new'd) DirectoryRecord has no Inode attached, so the deprecated
+# data_fp/original_data_location/fp_offset accessors must degrade to None
+# rather than raising for the read-only downstream clients that still use them.
+def test_dr_compat_data_fp_no_inode():
+    rec = pycdlib.dr.DirectoryRecord()
+    assert(rec.data_fp is None)
+
+def test_dr_compat_original_data_location_no_inode():
+    rec = pycdlib.dr.DirectoryRecord()
+    assert(rec.original_data_location is None)
+
+def test_dr_compat_fp_offset_no_inode():
+    rec = pycdlib.dr.DirectoryRecord()
+    assert(rec.fp_offset is None)
+
+def test_dr_compat_data_location_constants():
+    rec = pycdlib.dr.DirectoryRecord()
+    assert(rec.DATA_ON_ORIGINAL_ISO == pycdlib.inode.Inode.DATA_ON_ORIGINAL_ISO)
+    assert(rec.DATA_IN_EXTERNAL_FP == pycdlib.inode.Inode.DATA_IN_EXTERNAL_FP)
