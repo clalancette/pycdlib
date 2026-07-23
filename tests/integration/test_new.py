@@ -6503,7 +6503,7 @@ def test_new_rr_symlink_no_iso_path():
 
     iso.close()
 
-def test_new_rr_symlink_no_iso_path():
+def test_new_symlink_no_type_specified():
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge='1.09')
 
@@ -8254,7 +8254,7 @@ def test_new_rm_dir_udf_only():
 
     iso.close()
 
-def test_new_eltorito_udf_rm_eltorito():
+def test_new_eltorito_udf_rm_file_referenced_by_eltorito():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
     iso.new(udf='2.60')
@@ -8437,4 +8437,79 @@ def test_new_isolevel1_largefile(tmpdir):
         iso.add_file(largefile, '/BIGFILE.;1')
     assert(str(excinfo.value) == 'File sizes for interchange level < 3 must be less than 4GiB')
 
+    iso.close()
+
+# Validation / error-path coverage for get_file_byte_extents().  The happy path
+# (iso_path + udf_path) is covered by test_new_get_file_byte_extents above;
+# these exercise the kwargs-parsing and lookup guards, which are all fast,
+# in-memory checks that raise before any real work.
+def test_new_get_file_byte_extents_not_initialized():
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(iso_path='/FOO.;1')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
+
+def test_new_get_file_byte_extents_unknown_keyword():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(bogus_path='/FOO.;1')
+    assert(str(excinfo.value) == 'Unknown keyword bogus_path')
+    iso.close()
+
+def test_new_get_file_byte_extents_no_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents()
+    assert(str(excinfo.value) == "Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
+    iso.close()
+
+def test_new_get_file_byte_extents_multiple_paths():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(iso_path='/FOO.;1', joliet_path='/foo')
+    assert(str(excinfo.value) == "Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
+    iso.close()
+
+def test_new_get_file_byte_extents_wrong_type():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(iso_path=42)
+    assert(str(excinfo.value) == 'iso_path must be a string')
+    iso.close()
+
+def test_new_get_file_byte_extents_udf_path_non_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(udf_path='/foo')
+    assert(str(excinfo.value) == 'Cannot fetch a udf_path from a non-UDF ISO')
+    iso.close()
+
+def test_new_get_file_byte_extents_joliet_path_non_joliet():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(joliet_path='/foo')
+    assert(str(excinfo.value) == 'Cannot fetch a joliet_path from a non-Joliet ISO')
+    iso.close()
+
+def test_new_get_file_byte_extents_rr_path_non_rr():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(rr_path='/foo')
+    assert(str(excinfo.value) == 'Cannot fetch a rr_path from a non-Rock Ridge ISO')
+    iso.close()
+
+def test_new_get_file_byte_extents_directory():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_directory('/DIR1')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(iso_path='/DIR1')
+    assert(str(excinfo.value) == 'Cannot get extents for a directory')
     iso.close()
