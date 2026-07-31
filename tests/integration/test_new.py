@@ -8513,3 +8513,33 @@ def test_new_get_file_byte_extents_directory():
         iso.get_file_byte_extents(iso_path='/DIR1')
     assert(str(excinfo.value) == 'Cannot get extents for a directory')
     iso.close()
+
+def test_new_rm_eltorito_hidden_boot_catalog():
+    # Regression test for https://github.com/clalancette/pycdlib/issues/175;
+    # an ISO whose El Torito boot catalog has no directory record (like
+    # Microsoft Windows installation ISOs) gets a 'fake' directory record
+    # during parsing, and rm_eltorito used to fail on it with
+    # 'Invalid child index to remove'.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    bootstr = b'boot\n'
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+
+    # Hide the boot catalog so it has no directory record on the ISO.
+    iso.rm_hard_link(iso_path='/BOOT.CAT;1')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+
+    iso2.rm_eltorito()
+    iso2.rm_file('/BOOT.;1')
+
+    do_a_test(iso2, check_nofiles)
+
+    iso2.close()
