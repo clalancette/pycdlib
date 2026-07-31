@@ -5667,6 +5667,15 @@ class PyCdlib:
         # the Boot Catalog.
         for rec in self.eltorito_boot_catalog.dirrecords:
             if isinstance(rec, dr.DirectoryRecord):
+                if rec.index_in_parent < 0:
+                    # A parse-time stand-in for a hidden boot catalog (see
+                    # _walk_directories); it was never added to its parent's
+                    # children and exists nowhere on the ISO, so there is
+                    # nothing to remove.  It must not carry an inode; if it
+                    # ever did, skipping it here would leak the inode linkage.
+                    if rec.inode is not None:
+                        raise pycdlibexception.PyCdlibInternalError('Hidden El Torito boot catalog record unexpectedly has an inode')
+                    continue
                 num_bytes_to_remove += self._rm_dr_link(rec)
             elif isinstance(rec, udfmod.UDFFileEntry):
                 num_bytes_to_remove += self._rm_udf_link(rec)
