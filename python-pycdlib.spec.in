@@ -11,9 +11,8 @@ Name:           python-%{srcname}
 Version:        @VERSION@
 Release:        @RELEASE@%{?dist}
 License:        LGPL-2.1-only
-Group:          Development/Libraries
 URL:            https://github.com/clalancette/%{srcname}
-Source0:        https://github.com/clalancette/%{srcname}/archive/v%{version}/%{srcname}-%{version}.tar.gz
+Source0:        %{url}/archive/v%{version}/%{srcname}-%{version}.tar.gz
 BuildArch:      noarch
 
 BuildRequires:  python3-devel
@@ -35,25 +34,27 @@ Summary:        Tools that rely on %{srcname}
 Requires:       python3-%{srcname} = %{version}-%{release}
 
 %description -n %{srcname}-tools
-Some tools that use the %{srcname} library.
+Tools that use the %{srcname} library.
 
 %prep
 %autosetup -n %{srcname}-%{version}
 
+%generate_buildrequires
+%pyproject_buildrequires
+
 %build
-%py3_build
+%pyproject_wheel
 
 %install
-%py3_install
+%pyproject_install
+%pyproject_save_files %{srcname}
 
 %check
 PYCDLIB_TRACK_WRITES=1 py.test-%{python3_version} -v tests
 
-%files -n python3-%{srcname}
+%files -n python3-%{srcname} -f %{pyproject_files}
 %license COPYING
 %doc README.md examples/
-%{python3_sitelib}/%{srcname}
-%{python3_sitelib}/%{srcname}-%{version}-py%{python3_version}.egg-info/
 
 %files -n %{srcname}-tools
 %license COPYING
