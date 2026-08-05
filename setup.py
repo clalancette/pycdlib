@@ -4,8 +4,8 @@ from distutils.command.sdist import sdist as _sdist
 import subprocess
 import time
 
-VERSION='1.17.0'
-RELEASE='0'
+VERSION='1.20.0'
+RELEASE='1'
 
 class sdist(_sdist):
     """Custom sdist command, to prep pycdlib.spec file for inclusion."""

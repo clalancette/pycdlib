@@ -317,6 +317,41 @@ Parameters:<br>
 Returns:<br>
 &nbsp;A&nbsp;dr.DirectoryRecord&nbsp;<a href="builtins.html#object">object</a>&nbsp;representing&nbsp;the&nbsp;path.</span></dd></dl>
 
+<dl><dt><a name="PyCdlib-get_file_byte_extents"><strong>get_file_byte_extents</strong></a>(self, **kwargs)</dt><dd><span class="code">Get&nbsp;the&nbsp;byte&nbsp;offsets&nbsp;and&nbsp;lengths&nbsp;of&nbsp;the&nbsp;contiguous&nbsp;runs&nbsp;of&nbsp;data<br>
+that&nbsp;back&nbsp;a&nbsp;file&nbsp;on&nbsp;the&nbsp;ISO.<br>
+&nbsp;<br>
+Most&nbsp;users&nbsp;do&nbsp;NOT&nbsp;need&nbsp;this&nbsp;method.&nbsp;&nbsp;For&nbsp;ordinary&nbsp;file&nbsp;extraction,<br>
+use&nbsp;<a href="#PyCdlib-get_file_from_iso">get_file_from_iso</a>()&nbsp;/&nbsp;<a href="#PyCdlib-get_file_from_iso_fp">get_file_from_iso_fp</a>().&nbsp;&nbsp;This&nbsp;method&nbsp;is<br>
+intended&nbsp;for&nbsp;advanced&nbsp;callers&nbsp;that&nbsp;need&nbsp;to&nbsp;address&nbsp;file&nbsp;data<br>
+directly&nbsp;inside&nbsp;an&nbsp;ISO&nbsp;image&nbsp;without&nbsp;extracting&nbsp;it&nbsp;--&nbsp;for&nbsp;example,<br>
+telling&nbsp;a&nbsp;downstream&nbsp;tool&nbsp;the&nbsp;absolute&nbsp;byte&nbsp;ranges&nbsp;of&nbsp;a&nbsp;kernel&nbsp;or<br>
+initrd&nbsp;within&nbsp;an&nbsp;.iso&nbsp;so&nbsp;the&nbsp;bytes&nbsp;can&nbsp;be&nbsp;read&nbsp;in&nbsp;place&nbsp;rather<br>
+than&nbsp;copied&nbsp;out.<br>
+&nbsp;<br>
+The&nbsp;returned&nbsp;list&nbsp;contains&nbsp;one&nbsp;(byte_offset,&nbsp;length)&nbsp;tuple&nbsp;per<br>
+contiguous&nbsp;run&nbsp;of&nbsp;bytes&nbsp;used&nbsp;by&nbsp;the&nbsp;file,&nbsp;in&nbsp;file&nbsp;order,&nbsp;so&nbsp;that<br>
+concatenating&nbsp;the&nbsp;runs&nbsp;yields&nbsp;the&nbsp;file's&nbsp;content.&nbsp;&nbsp;Most&nbsp;files<br>
+consist&nbsp;of&nbsp;a&nbsp;single&nbsp;contiguous&nbsp;run;&nbsp;multi-extent&nbsp;ISO9660&nbsp;files<br>
+(&gt;4GB)&nbsp;and&nbsp;UDF&nbsp;files&nbsp;with&nbsp;multiple&nbsp;allocation&nbsp;descriptors&nbsp;can<br>
+return&nbsp;more&nbsp;than&nbsp;one&nbsp;entry.<br>
+&nbsp;<br>
+The&nbsp;offsets&nbsp;reflect&nbsp;the&nbsp;on-disk&nbsp;layout&nbsp;of&nbsp;the&nbsp;ISO:&nbsp;after&nbsp;<a href="#PyCdlib-open">open</a>()&nbsp;/<br>
+<a href="#PyCdlib-open_fp">open_fp</a>()&nbsp;they&nbsp;correspond&nbsp;to&nbsp;positions&nbsp;in&nbsp;the&nbsp;source&nbsp;ISO;&nbsp;for&nbsp;an<br>
+ISO&nbsp;produced&nbsp;by&nbsp;<a href="#PyCdlib-new">new</a>()&nbsp;they&nbsp;are&nbsp;valid&nbsp;only&nbsp;after&nbsp;a&nbsp;successful<br>
+<a href="#PyCdlib-write_fp">write_fp</a>().<br>
+&nbsp;<br>
+Parameters:<br>
+&nbsp;iso_path&nbsp;-&nbsp;The&nbsp;absolute&nbsp;ISO9660&nbsp;path&nbsp;to&nbsp;lookup&nbsp;on&nbsp;the&nbsp;ISO&nbsp;(exclusive<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with&nbsp;rr_path,&nbsp;joliet_path,&nbsp;and&nbsp;udf_path).<br>
+&nbsp;rr_path&nbsp;-&nbsp;The&nbsp;absolute&nbsp;Rock&nbsp;Ridge&nbsp;path&nbsp;to&nbsp;lookup&nbsp;on&nbsp;the&nbsp;ISO&nbsp;(exclusive<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with&nbsp;iso_path,&nbsp;joliet_path,&nbsp;and&nbsp;udf_path).<br>
+&nbsp;joliet_path&nbsp;-&nbsp;The&nbsp;absolute&nbsp;Joliet&nbsp;path&nbsp;to&nbsp;lookup&nbsp;on&nbsp;the&nbsp;ISO&nbsp;(exclusive<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with&nbsp;iso_path,&nbsp;rr_path,&nbsp;and&nbsp;udf_path).<br>
+&nbsp;udf_path&nbsp;-&nbsp;The&nbsp;absolute&nbsp;UDF&nbsp;path&nbsp;to&nbsp;lookup&nbsp;on&nbsp;the&nbsp;ISO&nbsp;(exclusive&nbsp;with<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;iso_path,&nbsp;rr_path,&nbsp;and&nbsp;joliet_path).<br>
+Returns:<br>
+&nbsp;A&nbsp;list&nbsp;of&nbsp;(byte_offset,&nbsp;length)&nbsp;tuples&nbsp;in&nbsp;file&nbsp;order.</span></dd></dl>
+
 <dl><dt><a name="PyCdlib-get_file_from_iso"><strong>get_file_from_iso</strong></a>(self, local_path, **kwargs)</dt><dd><span class="code">Fetch&nbsp;a&nbsp;single&nbsp;file&nbsp;from&nbsp;the&nbsp;ISO&nbsp;and&nbsp;write&nbsp;it&nbsp;out&nbsp;to&nbsp;a&nbsp;local&nbsp;file.<br>
 &nbsp;<br>
 Parameters:<br>
@@ -447,24 +482,15 @@ Yields:<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
-<dl><dt><a name="PyCdlib-modify_file_in_place"><strong>modify_file_in_place</strong></a>(self, fp, length, iso_path, rr_name=None, joliet_path=None, udf_path=None)</dt><dd><span class="code">An&nbsp;API&nbsp;to&nbsp;modify&nbsp;a&nbsp;file&nbsp;in&nbsp;place&nbsp;on&nbsp;the&nbsp;ISO.&nbsp;&nbsp;This&nbsp;can&nbsp;be&nbsp;extremely&nbsp;fast<br>
-(much&nbsp;faster&nbsp;than&nbsp;calling&nbsp;the&nbsp;write&nbsp;method),&nbsp;but&nbsp;has&nbsp;many&nbsp;restrictions.<br>
+<dl><dt><a name="PyCdlib-modify_file_in_place"><strong>modify_file_in_place</strong></a>(self, fp, length, iso_path, rr_name=None, joliet_path=None, udf_path=None)</dt><dd><span class="code">Modify&nbsp;a&nbsp;file&nbsp;in&nbsp;place&nbsp;on&nbsp;the&nbsp;ISO.<br>
 &nbsp;<br>
-1.&nbsp;&nbsp;The&nbsp;original&nbsp;ISO&nbsp;file&nbsp;pointer&nbsp;must&nbsp;have&nbsp;been&nbsp;opened&nbsp;for&nbsp;reading<br>
-&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;writing.<br>
-2.&nbsp;&nbsp;Only&nbsp;an&nbsp;existing&nbsp;*file*&nbsp;can&nbsp;be&nbsp;modified;&nbsp;directories&nbsp;cannot&nbsp;be<br>
-&nbsp;&nbsp;&nbsp;&nbsp;changed.<br>
-3.&nbsp;&nbsp;Only&nbsp;an&nbsp;existing&nbsp;file&nbsp;can&nbsp;be&nbsp;*modified*;&nbsp;no&nbsp;new&nbsp;files&nbsp;can&nbsp;be&nbsp;added<br>
-&nbsp;&nbsp;&nbsp;&nbsp;or&nbsp;removed.<br>
-4.&nbsp;&nbsp;The&nbsp;new&nbsp;file&nbsp;contents&nbsp;must&nbsp;use&nbsp;the&nbsp;same&nbsp;number&nbsp;of&nbsp;extents&nbsp;(typically<br>
-&nbsp;&nbsp;&nbsp;&nbsp;2048&nbsp;bytes)&nbsp;as&nbsp;the&nbsp;old&nbsp;file&nbsp;contents.&nbsp;&nbsp;If&nbsp;using&nbsp;this&nbsp;API&nbsp;to&nbsp;shrink<br>
-&nbsp;&nbsp;&nbsp;&nbsp;a&nbsp;file,&nbsp;this&nbsp;is&nbsp;usually&nbsp;easy&nbsp;since&nbsp;the&nbsp;new&nbsp;contents&nbsp;can&nbsp;be&nbsp;padded<br>
-&nbsp;&nbsp;&nbsp;&nbsp;out&nbsp;with&nbsp;zeros&nbsp;or&nbsp;newlines&nbsp;to&nbsp;meet&nbsp;the&nbsp;requirement.&nbsp;&nbsp;If&nbsp;using&nbsp;this<br>
-&nbsp;&nbsp;&nbsp;&nbsp;API&nbsp;to&nbsp;grow&nbsp;a&nbsp;file,&nbsp;the&nbsp;new&nbsp;contents&nbsp;can&nbsp;only&nbsp;grow&nbsp;up&nbsp;to&nbsp;the&nbsp;next<br>
-&nbsp;&nbsp;&nbsp;&nbsp;extent&nbsp;boundary.<br>
-&nbsp;<br>
-Unlike&nbsp;all&nbsp;other&nbsp;APIs&nbsp;in&nbsp;<a href="#PyCdlib">PyCdlib</a>,&nbsp;this&nbsp;API&nbsp;actually&nbsp;modifies&nbsp;the<br>
-originally&nbsp;opened&nbsp;on-disk&nbsp;file,&nbsp;so&nbsp;use&nbsp;it&nbsp;with&nbsp;caution.<br>
+..&nbsp;deprecated::<br>
+&nbsp;&nbsp;&nbsp;Use&nbsp;:class:`pycdlib.InPlaceEditor`&nbsp;(a&nbsp;context&nbsp;manager)<br>
+&nbsp;&nbsp;&nbsp;instead.&nbsp;&nbsp;It&nbsp;exposes&nbsp;the&nbsp;same&nbsp;in-place&nbsp;primitive&nbsp;but&nbsp;lives<br>
+&nbsp;&nbsp;&nbsp;on&nbsp;a&nbsp;focused&nbsp;class&nbsp;that&nbsp;intentionally&nbsp;does&nbsp;not&nbsp;surface<br>
+&nbsp;&nbsp;&nbsp;<a href="#PyCdlib">PyCdlib</a>'s&nbsp;mastering&nbsp;APIs,&nbsp;eliminating&nbsp;the&nbsp;silent<br>
+&nbsp;&nbsp;&nbsp;disk-corruption&nbsp;failure&nbsp;mode&nbsp;that&nbsp;arises&nbsp;when&nbsp;in-place&nbsp;edits<br>
+&nbsp;&nbsp;&nbsp;are&nbsp;mixed&nbsp;with&nbsp;``add_*``&nbsp;/&nbsp;``rm_*``&nbsp;/&nbsp;``write_fp``.<br>
 &nbsp;<br>
 Parameters:<br>
 &nbsp;fp&nbsp;-&nbsp;The&nbsp;file&nbsp;<a href="builtins.html#object">object</a>&nbsp;to&nbsp;use&nbsp;for&nbsp;the&nbsp;contents&nbsp;of&nbsp;the&nbsp;new&nbsp;file.<br>
@@ -642,6 +668,56 @@ Parameters:<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
+<dl><dt><a name="PyCdlib-update_file_contents"><strong>update_file_contents</strong></a>(self, filename, iso_path=None, rr_path=None, joliet_path=None, udf_path=None)</dt><dd><span class="code">Replace&nbsp;the&nbsp;contents&nbsp;of&nbsp;an&nbsp;existing&nbsp;file&nbsp;on&nbsp;the&nbsp;ISO&nbsp;with&nbsp;the<br>
+contents&nbsp;of&nbsp;`filename`&nbsp;on&nbsp;the&nbsp;local&nbsp;filesystem,&nbsp;deferring&nbsp;all<br>
+disk&nbsp;writes&nbsp;to&nbsp;the&nbsp;next&nbsp;`<a href="#PyCdlib-write_fp">write_fp</a>()`&nbsp;call.<br>
+&nbsp;<br>
+Same&nbsp;semantics&nbsp;as&nbsp;`update_file_contents_fp`&nbsp;except&nbsp;that<br>
+pycdlib&nbsp;opens&nbsp;`filename`&nbsp;and&nbsp;manages&nbsp;its&nbsp;lifetime,&nbsp;the&nbsp;same<br>
+way&nbsp;`<a href="#PyCdlib-add_file">add_file</a>()`&nbsp;does&nbsp;relative&nbsp;to&nbsp;`<a href="#PyCdlib-add_fp">add_fp</a>()`.&nbsp;&nbsp;The&nbsp;file&nbsp;is<br>
+closed&nbsp;when&nbsp;the&nbsp;<a href="#PyCdlib">PyCdlib</a>&nbsp;<a href="builtins.html#object">object</a>&nbsp;is&nbsp;closed.<br>
+&nbsp;<br>
+Parameters:<br>
+&nbsp;filename&nbsp;-&nbsp;The&nbsp;local&nbsp;filename&nbsp;whose&nbsp;contents&nbsp;replace&nbsp;the<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;target&nbsp;file's&nbsp;contents.<br>
+&nbsp;iso_path&nbsp;-&nbsp;The&nbsp;ISO9660&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination&nbsp;on<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;ISO.<br>
+&nbsp;rr_path&nbsp;-&nbsp;The&nbsp;Rock&nbsp;Ridge&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;on&nbsp;the&nbsp;ISO.<br>
+&nbsp;joliet_path&nbsp;-&nbsp;The&nbsp;Joliet&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;on&nbsp;the&nbsp;ISO.<br>
+&nbsp;udf_path&nbsp;-&nbsp;The&nbsp;UDF&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination&nbsp;on&nbsp;the<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ISO.<br>
+Returns:<br>
+&nbsp;Nothing.</span></dd></dl>
+
+<dl><dt><a name="PyCdlib-update_file_contents_fp"><strong>update_file_contents_fp</strong></a>(self, fp, length, iso_path=None, rr_path=None, joliet_path=None, udf_path=None)</dt><dd><span class="code">Replace&nbsp;the&nbsp;contents&nbsp;of&nbsp;an&nbsp;existing&nbsp;file&nbsp;on&nbsp;the&nbsp;ISO&nbsp;with&nbsp;new<br>
+content&nbsp;read&nbsp;from&nbsp;`fp`,&nbsp;deferring&nbsp;all&nbsp;disk&nbsp;writes&nbsp;to&nbsp;the&nbsp;next<br>
+`<a href="#PyCdlib-write_fp">write_fp</a>()`&nbsp;call.<br>
+&nbsp;<br>
+Exactly&nbsp;one&nbsp;of&nbsp;`iso_path`,&nbsp;`rr_path`,&nbsp;`joliet_path`,&nbsp;or<br>
+`udf_path`&nbsp;must&nbsp;be&nbsp;provided&nbsp;to&nbsp;identify&nbsp;the&nbsp;target&nbsp;file.&nbsp;&nbsp;The<br>
+update&nbsp;propagates&nbsp;to&nbsp;every&nbsp;linked&nbsp;record&nbsp;(ISO9660&nbsp;/&nbsp;Joliet&nbsp;/<br>
+UDF)&nbsp;automatically&nbsp;because&nbsp;they&nbsp;share&nbsp;the&nbsp;same&nbsp;Inode.<br>
+&nbsp;<br>
+The&nbsp;caller&nbsp;is&nbsp;responsible&nbsp;for&nbsp;keeping&nbsp;`fp`&nbsp;open&nbsp;for&nbsp;the<br>
+lifetime&nbsp;of&nbsp;this&nbsp;<a href="#PyCdlib">PyCdlib</a>&nbsp;<a href="builtins.html#object">object</a>&nbsp;(until&nbsp;<a href="#PyCdlib-close">close</a>()&nbsp;runs),&nbsp;the&nbsp;same<br>
+way&nbsp;`<a href="#PyCdlib-add_fp">add_fp</a>()`&nbsp;requires.<br>
+&nbsp;<br>
+Parameters:<br>
+&nbsp;fp&nbsp;-&nbsp;A&nbsp;file-like&nbsp;<a href="builtins.html#object">object</a>&nbsp;containing&nbsp;the&nbsp;new&nbsp;contents.<br>
+&nbsp;length&nbsp;-&nbsp;The&nbsp;length&nbsp;of&nbsp;the&nbsp;new&nbsp;contents.<br>
+&nbsp;iso_path&nbsp;-&nbsp;The&nbsp;ISO9660&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination&nbsp;on<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;ISO.<br>
+&nbsp;rr_path&nbsp;-&nbsp;The&nbsp;Rock&nbsp;Ridge&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;on&nbsp;the&nbsp;ISO.<br>
+&nbsp;joliet_path&nbsp;-&nbsp;The&nbsp;Joliet&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;on&nbsp;the&nbsp;ISO.<br>
+&nbsp;udf_path&nbsp;-&nbsp;The&nbsp;UDF&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination&nbsp;on&nbsp;the<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ISO.<br>
+Returns:<br>
+&nbsp;Nothing.</span></dd></dl>
+
 <dl><dt><a name="PyCdlib-walk"><strong>walk</strong></a>(self, **kwargs)</dt><dd><span class="code">Walk&nbsp;the&nbsp;entries&nbsp;on&nbsp;the&nbsp;ISO,&nbsp;starting&nbsp;at&nbsp;the&nbsp;given&nbsp;path.&nbsp;&nbsp;One,&nbsp;and&nbsp;only<br>
 one,&nbsp;of&nbsp;iso_path,&nbsp;rr_path,&nbsp;joliet_path,&nbsp;and&nbsp;udf_path&nbsp;is&nbsp;allowed.<br>
 Similar&nbsp;to&nbsp;os.<a href="#PyCdlib-walk">walk</a>(),&nbsp;yield&nbsp;a&nbsp;3-tuple&nbsp;of&nbsp;(path-to-here,&nbsp;dirlist,&nbsp;filelist)<br>
@@ -744,7 +820,7 @@ Data descriptors defined here:<br>
 </dl>
 <hr>
 Data and other attributes defined here:<br>
-<dl><dt><strong>__firstlineno__</strong> = 536</dl>
+<dl><dt><strong>__firstlineno__</strong> = 533</dl>
 
 <dl><dt><strong>__static_attributes__</strong> = ('_always_consistent', '_cdfp', '_has_udf', '_initialized', '_managing_fp', '_needs_reshuffle', '_rr_moved_name', '_rr_moved_record', '_rr_moved_rr_name', '_track_writes', '_write_check_list', 'brs', 'eltorito_boot_catalog', 'enhanced_vd', 'inodes', 'interchange_level', 'isohybrid_mbr', 'joliet_vd', 'logical_block_size', 'pvd', ...)</dl>
 
