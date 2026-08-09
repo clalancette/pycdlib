@@ -1706,6 +1706,33 @@ def test_rrcontentry_add_multiple():
     assert(rr._entries[2].offset == 40)
     assert(rr._entries[2].length == 12)
 
+def test_rrcontentry_add_no_room_returns_none():
+    # Regression test for issue #177: when the continuation block is full,
+    # add_entry() must return None (as documented), not -1.  The caller in
+    # PrimaryOrSupplementaryVD.add_rr_ce_entry() checks 'is not None' to
+    # decide whether to allocate a new block, so a -1 return silently gets
+    # stored as the CE offset and later blows up in swab_32bit() on write.
+    rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
+    assert(rr.add_entry(2048) == 0)
+
+    assert(rr.add_entry(1) is None)
+    assert(len(rr._entries) == 1)
+
+def test_rrcontentry_add_no_room_at_beginning_returns_none():
+    # Same as above, but exercising the path where entries already exist and
+    # neither the leading gap nor the tail has room for the new entry.
+    rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
+    rr.track_entry(10, 2038)
+
+    assert(rr.add_entry(11) is None)
+    assert(len(rr._entries) == 1)
+
+def test_rrcontentry_add_larger_than_block_returns_none():
+    rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
+
+    assert(rr.add_entry(2049) is None)
+    assert(len(rr._entries) == 0)
+
 def test_rrcontblock_remove_entry_no_entry():
     rr = pycdlib.rockridge.RockRidgeContinuationBlock(24, 2048)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:

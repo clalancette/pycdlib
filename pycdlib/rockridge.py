@@ -3908,7 +3908,7 @@ class RockRidgeContinuationBlock:
         bisect.insort_left(self._entries, RockRidgeContinuationEntry(offset, length))
 
     def add_entry(self, length):
-        # type: (int) -> int
+        # type: (int) -> Optional[int]
         """
         Add a new entry to this Rock Ridge Continuation Block.  This method
         attempts to find a gap that fits the new length anywhere within this
@@ -3949,9 +3949,11 @@ class RockRidgeContinuationBlock:
                 if self._max_block_size >= length:
                     offset = 0
 
-        if offset >= 0:
-            bisect.insort_left(self._entries,
-                               RockRidgeContinuationEntry(offset, length))
+        if offset < 0:
+            return None
+
+        bisect.insort_left(self._entries,
+                           RockRidgeContinuationEntry(offset, length))
 
         return offset
 
