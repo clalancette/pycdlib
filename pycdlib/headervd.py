@@ -523,6 +523,12 @@ class PrimaryOrSupplementaryVD:
             block = rockridge.RockRidgeContinuationBlock(0, self.log_block_size)
             self.rr_ce_blocks.append(block)
             offset = block.add_entry(length)
+            if offset is None:
+                # A brand new block had no room, so this entry is larger than
+                # a whole logical block.  Rock Ridge allows a continuation area
+                # to chain to another one via a further CE record, but we don't
+                # implement that; refuse rather than writing a bogus offset.
+                raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge Continuation Entry of length %d is too large to fit into a Continuation Block of size %d' % (length, self.log_block_size))
             added_block = True
 
         return (added_block, block, offset)

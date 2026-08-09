@@ -8403,6 +8403,52 @@ def test_new_rr_empty_dir_get_record():
 
     iso.close()
 
+def test_new_rr_long_names_overflow_ce_block():
+    # Regression test for issue #177: enough files with long Rock Ridge names
+    # to overflow a single Rock Ridge Continuation Block.  Once the first
+    # block filled up, add_entry() returned -1 instead of None, which
+    # add_rr_ce_entry() accepted as a valid offset instead of allocating a
+    # second block.  The bogus -1 offset then failed on write.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    for i in range(40):
+        rr_name = ('f%03d' % i) + 'x' * 200
+        iso.add_fp(io.BytesIO(b'hello\n'), 6, '/FILE%03d.;1' % i, rr_name=rr_name)
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+
+    iso.close()
+
+    # Make sure the result round-trips and the long names survived.
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    for i in range(40):
+        rr_name = ('f%03d' % i) + 'x' * 200
+        rec = iso2.get_record(rr_path='/' + rr_name)
+        assert(rec.get_data_length() == 6)
+    iso2.close()
+
+def test_new_rr_symlink_too_long_for_ce_block():
+    # A symlink whose target needs a continuation area larger than a whole
+    # logical block cannot be represented, since we don't chain continuation
+    # areas together.  Make sure we refuse it up front rather than storing a
+    # bogus offset and failing much later during write.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    # 4019 bytes, with every component well under NAME_MAX (255) and the whole
+    # target under PATH_MAX (4096), so this is a symlink that can really exist
+    # on a Unix filesystem.  Anything past roughly a 2040-byte target needs
+    # more than one 2048-byte block for its continuation area.
+    target = '/'.join(['c' * 200] * 20)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_symlink('/SYM.;1', 'sym', target)
+    assert(str(excinfo.value) == 'Rock Ridge Continuation Entry of length 4046 is too large to fit into a Continuation Block of size 2048')
+
+    iso.close()
+
 def test_new_isolevel4_deep_directory():
     iso = pycdlib.PyCdlib()
     iso.new(interchange_level=4)
