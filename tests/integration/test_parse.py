@@ -3542,3 +3542,79 @@ def test_parse_duplicate_directory_records():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         _open_bytes(bytes(data))
     assert(str(excinfo.value) == 'Failed adding duplicate name to parent')
+
+def _iso_with_standalone_eltorito_entry():
+    # El Torito 2.4 requires a section entry to follow a section header, but
+    # ISOs exist in the wild that omit the header (Mageia 4, per the comment
+    # in EltoritoBootCatalog.parse).  The parser keeps such an entry as a
+    # 'standalone' entry.  Build one by overwriting a real section header with
+    # a copy of the section entry that followed it.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'boot\n'), 5, '/BOOT.;1')
+    iso.add_fp(io.BytesIO(b'efi\n'), 4, '/EFI.;1')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+    iso.add_eltorito('/EFI.;1', '/BOOT.CAT;1', efi=True)
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    catalog_extent = iso.eltorito_boot_catalog.extent_location()
+    iso.close()
+
+    data = bytearray(out.getvalue())
+    base = catalog_extent*2048
+    # Slots are 32 bytes each: validation, initial, section header, entry.
+    data[base+64:base+96] = data[base+96:base+128]
+    return bytes(data)
+
+def test_parse_standalone_eltorito_entry_gets_inode():
+    # A standalone entry has to be linked to an Inode like any other El Torito
+    # entry.  Without it, _reshuffle_extents dereferences entry.inode and any
+    # modification of the ISO fails with an AttributeError.
+    iso = _open_bytes(_iso_with_standalone_eltorito_entry())
+
+    entries = iso.eltorito_boot_catalog.standalone_entries
+    assert(len(entries) == 2)
+    for entry in entries:
+        assert(entry.inode is not None)
+
+    iso.close()
+
+def test_parse_standalone_eltorito_entry_survives_modification():
+    # Anything that forces a reshuffle walks the standalone entries, so these
+    # all used to fail on an ISO carrying them.
+    data = _iso_with_standalone_eltorito_entry()
+
+    iso = _open_bytes(data)
+    iso.force_consistency()
+    iso.close()
+
+    iso = _open_bytes(data)
+    iso.add_fp(io.BytesIO(b'new\n'), 4, '/NEW.;1')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    # The rewritten ISO still parses, still carries the standalone entries,
+    # and every file reads back correctly.
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    assert(len(iso2.eltorito_boot_catalog.standalone_entries) == 2)
+    for path, contents in (('/BOOT.;1', b'boot\n'), ('/EFI.;1', b'efi\n'),
+                           ('/NEW.;1', b'new\n')):
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, iso_path=path)
+        assert(buf.getvalue() == contents)
+    iso2.close()
+
+def test_parse_standalone_eltorito_entry_blocks_rm_file():
+    # A file referenced only by a standalone entry is still referenced by El
+    # Torito, so rm_file must refuse it with the same message it uses for a
+    # normal boot file rather than failing deeper in the removal.
+    iso = _open_bytes(_iso_with_standalone_eltorito_entry())
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.rm_file('/EFI.;1')
+    assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; use 'rm_eltorito' to remove El Torito, or use 'rm_hard_link' to hide the entry")
+
+    iso.close()

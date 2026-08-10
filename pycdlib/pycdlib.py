@@ -2065,6 +2065,14 @@ class PyCdlib:
         for sec in self.eltorito_boot_catalog.sections:
             for entry in sec.section_entries:
                 entries_to_assign.append(entry)
+        # Standalone entries are section entries that the ISO failed to
+        # precede with a section header; the parser keeps them rather than
+        # dropping them (see EltoritoBootCatalog.parse).  They need an Inode
+        # just like any other entry -- _reshuffle_extents walks them and
+        # dereferences entry.inode, so leaving them unassigned makes any
+        # subsequent modification of such an ISO fail.
+        for entry in self.eltorito_boot_catalog.standalone_entries:
+            entries_to_assign.append(entry)
 
         for entry in entries_to_assign:
             entry_extent = entry.get_rba()
@@ -3764,6 +3772,8 @@ class PyCdlib:
             for sec in self.eltorito_boot_catalog.sections:
                 for entry in sec.section_entries:
                     eltorito_entries.add(id(entry.inode))
+            for entry in self.eltorito_boot_catalog.standalone_entries:
+                eltorito_entries.add(id(entry.inode))
 
             if id(ino) in eltorito_entries:
                 raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is referenced by El Torito; use 'rm_eltorito' to remove El Torito, or use 'rm_hard_link' to hide the entry")
