@@ -13,26 +13,17 @@ docs:
 	python3 custom-pydoc.py > docs/pycdlib-api.html
 
 flake8:
-	-flake8-3 --ignore=E501,E266 --max-complexity 80 pycdlib tools/*
-
-# kernprof-3 comes from the "line_profiler" package.  It allows performance
-# profiling on a line-by-line basis, but needs to be told which functions to
-# profile by using an "@profile" decorator on particular functions.  The easiest
-# way to use this is to profile using the built-in cProfile module (like the
-# "profile" target), then mark the hotspots with "@profile", and then run
-# the "lineprof" target.
-lineprof:
-	kernprof-3 -v -l /usr/bin/py.test-3 --verbose tests
+	-python3 -m flake8 --ignore=E501,E266 --max-complexity 80 pycdlib tools/*
 
 mypy:
-	mypy --ignore-missing-imports -p pycdlib
+	python3 -m mypy --ignore-missing-imports -p pycdlib
 
 profile:
-	python3 -m cProfile -o profile /usr/bin/py.test-3 --verbose tests
+	python3 -m cProfile -o profile -m pytest --verbose tests
 	python3 -c "import pstats; p=pstats.Stats('profile');p.strip_dirs();p.sort_stats('time').print_stats(30)"
 
 pylint:
-	-pylint-3 --rcfile=pylint.conf pycdlib tools/*
+	-python3 -m pylint --rcfile=pylint.conf pycdlib tools/*
 
 rpm: sdist
 	rpmbuild -ba python-pycdlib.spec --define "_sourcedir `pwd`/dist"
@@ -41,17 +32,17 @@ sdist:
 	python3 setup.py sdist
 
 slowtests:
-	PYCDLIB_TRACK_WRITES=1 py.test-3 --basetemp=/var/tmp/pycdlib-tests --runslow --verbose tests
+	PYCDLIB_TRACK_WRITES=1 python3 -m pytest --basetemp=/var/tmp/pycdlib-tests --runslow --verbose tests
 
 srpm: sdist
 	rpmbuild -bs python-pycdlib.spec --define "_sourcedir `pwd`/dist"
 
 test-coverage:
-	PYCDLIB_TRACK_WRITES=1 coverage3 run --source pycdlib /usr/bin/py.test-3 --basetemp=/var/tmp/pycdlib-tests --runslow --verbose tests
-	coverage3 html
+	PYCDLIB_TRACK_WRITES=1 python3 -m coverage run --source pycdlib -m pytest --basetemp=/var/tmp/pycdlib-tests --runslow --verbose tests
+	python3 -m coverage html
 	xdg-open htmlcov/index.html
 
 tests:
-	py.test-3 --verbose tests
+	python3 -m pytest --verbose tests
 
 .PHONY: clean deb docs flake8 lineprof mypy profile pylint rpm sdist slowtests srpm test-coverage tests
