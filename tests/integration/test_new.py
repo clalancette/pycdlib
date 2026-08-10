@@ -2696,6 +2696,82 @@ def test_new_in_place_editor_rm_file_basic(tmpdir):
         assert buf.getvalue() == expected
     iso2.close()
 
+def test_new_in_place_editor_multi_extent_directory(tmpdir):
+    # Every other InPlaceEditor test operates on a directory that fits in a
+    # single extent, so the editor never exercises _rewrite_dir_record_extent's
+    # extent-transition and trailing-pad paths (the equivalent multi-extent
+    # tests all go through modify_file_in_place/rm_file instead).
+    #
+    # Build a root directory that genuinely spans two extents, then remove the
+    # first-sorting child so every later record shifts down -- which moves the
+    # byte at which the rewrite crosses into the second extent -- plus a child
+    # from the middle, and modify a child whose record lives in the second
+    # extent.  If the rewrite leaves stale bytes behind at either the extent
+    # transition or the tail, the re-parse below sees phantom records or fails.
+    iso_path = str(tmpdir.join('test.iso'))
+    names = ['F%03d' % i for i in range(60)]
+
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    for name in names:
+        iso.add_fp(io.BytesIO((name + '\n').encode()), 5, '/%s.;1' % name)
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    # Make the multi-extent precondition explicit rather than incidental.
+    probe = pycdlib.PyCdlib()
+    probe.open(iso_path)
+    assert probe.pvd.root_dir_record.data_length > 2048
+    probe.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.rm_file('/F000.;1')
+        ed.rm_file('/F030.;1')
+        ed.modify_file(io.BytesIO(b'zzz\n'), 4, '/F059.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    children = sorted(
+        ch.file_identifier()
+        for ch in iso2.pvd.root_dir_record.children
+        if ch.file_identifier() not in (b'.', b'..')
+    )
+    expected = sorted(('%s.;1' % name).encode()
+                      for name in names if name not in ('F000', 'F030'))
+    assert children == expected
+
+    # A record in the first extent, and the modified one in the second.
+    for path, contents in [('/F001.;1', b'F001\n'), ('/F059.;1', b'zzz\n')]:
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, iso_path=path)
+        assert buf.getvalue() == contents
+    root_extent = iso2.pvd.root_dir_record.extent_location()
+    root_data_length = iso2.pvd.root_dir_record.data_length
+    iso2.close()
+
+    # Now check the on-disk bytes.  The assertions above are not enough on
+    # their own: if the rewrite omitted the pad at the extent transition,
+    # every later record would simply shift down by the width of the gap and
+    # pycdlib's own parser would still walk them, so the child list would
+    # come back correct.  Ecma-119 6.8.1.1 forbids a directory record from
+    # straddling an extent boundary, so assert that directly, along with the
+    # gap at the end of each extent being zero-filled.
+    with open(iso_path, 'rb') as f:
+        data = f.read()
+
+    lbs = 2048
+    for extent in range(root_data_length // lbs):
+        base = (root_extent + extent) * lbs
+        offset = 0
+        while offset < lbs and data[base + offset] != 0:
+            reclen = data[base + offset]
+            assert offset + reclen <= lbs, \
+                'directory record straddles the end of extent %d' % extent
+            offset += reclen
+        assert data[base + offset:base + lbs] == b'\x00' * (lbs - offset), \
+            'stale bytes after the last record in extent %d' % extent
+
 def test_new_in_place_editor_rm_file_joliet(tmpdir):
     # rm_file is Joliet-aware: removing a file removes its record from
     # both the ISO9660 and Joliet trees.
