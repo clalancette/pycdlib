@@ -1,3 +1,4 @@
+import io
 import os
 import sys
 import struct
@@ -707,3 +708,57 @@ def test_dr_remove_child_parent_no_rr():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         dir1_dr.remove_child(dir2_dr, 2, 2048)
     assert(str(excinfo.value) == 'Child has Rock Ridge, but parent does not; ISO is corrupt')
+
+def test_xa_parse_both_candidate_offsets_have_room():
+    # parse() checks two candidate offsets for the XA signature: immediately
+    # after the Directory Record, and after the file-identifier padding that
+    # some ISOs insert.  Unlike test_xa_parse_no_signature above -- where the
+    # second candidate runs off the end of the buffer -- here both candidates
+    # have a full record's worth of bytes, so the loop runs to completion
+    # before reporting that there is no XA record.
+    xa = pycdlib.dr.XARecord()
+
+    # len_fi of 2 puts the second candidate at offset 2, leaving 14 bytes
+    # there, which is exactly enough for a record.
+    assert(not xa.parse(b'\x00'*16, 2))
+    assert(not xa._initialized)
+
+def test_xa_parse_false_positive_at_both_offsets():
+    # Both candidate offsets look like an XA record (the signature bytes are
+    # 'XA') but neither has all-zero reserved bytes, so both are rejected as
+    # SUSP payload that coincidentally contains 'XA'.
+    block = b'\x00'*6 + b'XA' + b'\x00'*5 + b'\x01'
+    assert(len(block) == 14)
+
+    xa = pycdlib.dr.XARecord()
+
+    # len_fi of 14 puts the second candidate at offset 14, the start of the
+    # second copy of the block.
+    assert(not xa.parse(block + block, 14))
+    assert(not xa._initialized)
+
+def test_dr_compat_properties_with_inode():
+    # The backwards-compatibility properties delegate to the Inode when there
+    # is one (the no-Inode case returns None and is covered elsewhere).
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    root_dr = pycdlib.dr.DirectoryRecord()
+    root_dr.new_root(pvd, 1, 2048, time.time())
+
+    rec = pycdlib.dr.DirectoryRecord()
+    rec.new_file(pvd, 4, b'FOO.;1', root_dr, 1, '', b'', False, 0, time.time(), None)
+
+    fp = io.BytesIO(b'foo\n')
+    ino = pycdlib.inode.Inode()
+    ino.new(4, fp, False, 7)
+    rec.inode = ino
+
+    assert(rec.data_fp is fp)
+    assert(rec.original_data_location == rec.DATA_IN_EXTERNAL_FP)
+    assert(rec.fp_offset == 7)
+
+def test_dr_ne_with_non_directory_record():
+    rec = pycdlib.dr.DirectoryRecord()
+
+    assert(rec.__ne__('not a directory record') is NotImplemented)
+    # Python falls back to identity comparison, so they are still unequal.
+    assert(rec != 'not a directory record')
