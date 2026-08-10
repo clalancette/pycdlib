@@ -65,7 +65,6 @@ _TF_FLAG_POPCOUNT = tuple(bin(i).count('1') for i in range(128))
 _RR_SINGLE_INSTANCE_FIELDS = {
     b'SP': operator.attrgetter('sp_record'),
     b'RR': operator.attrgetter('rr_record'),
-    b'CE': operator.attrgetter('ce_record'),
     b'PX': operator.attrgetter('px_record'),
     b'ST': operator.attrgetter('st_record'),
     b'ER': operator.attrgetter('er_record'),
@@ -2673,6 +2672,11 @@ class RockRidge:
         has_es_record = False
         sf_record_length = None
         er_id = None
+        # A CE record is single-instance per System Use area rather than per
+        # RockRidge object: an area may chain to a further area, and each link
+        # in that chain gets its own CE.  Since parse() is called once per
+        # area, a local flag enforces exactly the right invariant.
+        seen_ce = False
         while True:
             if left == 0:
                 break
@@ -2711,6 +2715,9 @@ class RockRidge:
                 entry_list.rr_record = RRRRRecord()
                 entry_list.rr_record.parse(recslice)
             elif rtype == b'CE':
+                if seen_ce:
+                    raise pycdlibexception.PyCdlibInvalidISO('Only single CE record supported')
+                seen_ce = True
                 entry_list.ce_record = RRCERecord()
                 entry_list.ce_record.parse(recslice)
             elif rtype == b'PX':

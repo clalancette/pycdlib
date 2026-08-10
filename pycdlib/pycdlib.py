@@ -43,7 +43,7 @@ from pycdlib import utils
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from typing import Any, BinaryIO, Callable, Deque, Dict, Generator, IO, List, Optional, Tuple, Union  # noqa: F401
+    from typing import Any, BinaryIO, Callable, Deque, Dict, Generator, IO, List, Optional, Set, Tuple, Union  # noqa: F401
 
 # There are a number of specific ways that numerical data is stored in the
 # ISO9660/Ecma-119 standard.  In the text these are reference by the section
@@ -534,15 +534,15 @@ class PyCdlib:
     """The main class for manipulating ISOs."""
     __slots__ = ('_initialized', '_cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd',
                  'rock_ridge', '_always_consistent', '_has_udf', 'joliet_vd',
-                 'eltorito_boot_catalog', 'isohybrid_mbr', '_managing_fp', 'xa',
-                 '_needs_reshuffle', '_rr_moved_record', '_rr_moved_name',
-                 '_rr_moved_rr_name', 'enhanced_vd', 'version_vd', 'inodes',
-                 'interchange_level', '_write_check_list', '_track_writes',
-                 'udf_beas', 'udf_nsr', 'udf_teas', 'udf_anchors',
-                 'udf_main_descs', 'udf_reserve_descs',
-                 'udf_logical_volume_integrity', 'udf_boots',
-                 'udf_logical_volume_integrity_terminator', 'udf_root',
-                 'udf_file_set', 'udf_file_set_terminator',
+                 '_has_chained_ce', 'eltorito_boot_catalog', 'isohybrid_mbr',
+                 '_managing_fp', 'xa', '_needs_reshuffle', '_rr_moved_record',
+                 '_rr_moved_name', '_rr_moved_rr_name', 'enhanced_vd',
+                 'version_vd', 'inodes', 'interchange_level',
+                 '_write_check_list', '_track_writes', 'udf_beas', 'udf_nsr',
+                 'udf_teas', 'udf_anchors', 'udf_main_descs',
+                 'udf_reserve_descs', 'udf_logical_volume_integrity',
+                 'udf_boots', 'udf_logical_volume_integrity_terminator',
+                 'udf_root', 'udf_file_set', 'udf_file_set_terminator',
                  'logical_block_size')
 
     def _initialize(self):
@@ -568,6 +568,7 @@ class PyCdlib:
         self._managing_fp = False
         self.pvds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
         self._has_udf = False
+        self._has_chained_ce = False
         self.udf_beas = []  # type: List[udfmod.BEAVolumeStructure]
         self.udf_boots = []  # type: List[udfmod.UDFBootDescriptor]
         self.udf_nsr = udfmod.NSRVolumeStructure()
@@ -1163,19 +1164,50 @@ class PyCdlib:
 
                 rr_ce = ''
                 if new_record.rock_ridge is not None and new_record.rock_ridge.dr_entries.ce_record is not None:
-                    ce_record = new_record.rock_ridge.dr_entries.ce_record
+                    ce_record = new_record.rock_ridge.dr_entries.ce_record  # type: Optional[rockridge.RRCERecord]
                     orig_pos = cdfp.tell()
-                    self._seek_to_extent(ce_record.bl_cont_area)
-                    cdfp.seek(ce_record.offset_cont_area, os.SEEK_CUR)
-                    con_block = cdfp.read(ce_record.len_cont_area)
-                    new_record.rock_ridge.parse(con_block, False,
-                                                new_record.rock_ridge.bytes_to_skip,
-                                                True, new_record.file_identifier())
+                    # A continuation area may itself end with a CE record
+                    # pointing at a further area, chaining as many times as
+                    # needed to hold the entries.  Follow the whole chain,
+                    # remembering where we have been so that an ISO whose CE
+                    # records form a cycle cannot spin us forever.
+                    seen_ce_areas = set()  # type: Set[Tuple[int, int, int]]
+                    num_ce_areas = 0
+                    while ce_record is not None:
+                        area = (ce_record.bl_cont_area,
+                                ce_record.offset_cont_area,
+                                ce_record.len_cont_area)
+                        if area in seen_ce_areas:
+                            raise pycdlibexception.PyCdlibInvalidISO('Rock Ridge Continuation Entries form a loop')
+                        seen_ce_areas.add(area)
+                        num_ce_areas += 1
+
+                        self._seek_to_extent(ce_record.bl_cont_area)
+                        cdfp.seek(ce_record.offset_cont_area, os.SEEK_CUR)
+                        con_block = cdfp.read(ce_record.len_cont_area)
+                        new_record.rock_ridge.parse(con_block, False,
+                                                    new_record.rock_ridge.bytes_to_skip,
+                                                    True, new_record.file_identifier())
+                        block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
+                                                           ce_record.offset_cont_area,
+                                                           ce_record.len_cont_area)
+                        new_record.rock_ridge.update_ce_block(block)
+
+                        # Parsing an area stores any CE it contained in
+                        # ce_entries; take it as the next link and clear it so
+                        # the following area can carry one of its own, and so
+                        # that no stale link is left behind at the end.
+                        ce_entries = new_record.rock_ridge.ce_entries
+                        ce_record = ce_entries.ce_record if ce_entries is not None else None
+                        if ce_entries is not None:
+                            ce_entries.ce_record = None
                     cdfp.seek(orig_pos)
-                    block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
-                                                       ce_record.offset_cont_area,
-                                                       ce_record.len_cont_area)
-                    new_record.rock_ridge.update_ce_block(block)
+
+                    if num_ce_areas > 1:
+                        # We can read these, but writing them back out would
+                        # need us to split the entries across areas again,
+                        # which we don't implement.
+                        self._has_chained_ce = True
 
                     rr_ce = new_record.rock_ridge.rr_version if new_record.rock_ridge else ''
                 # The PX record could be in the continuation blob, so
@@ -2875,6 +2907,13 @@ class PyCdlib:
         """
         if hasattr(outfp, 'mode') and 'b' not in outfp.mode:
             raise pycdlibexception.PyCdlibInvalidInput("The file to write out must be in binary mode (add 'b' to the open flags)")
+
+        if self._has_chained_ce:
+            # We can parse an ISO whose Rock Ridge continuation areas chain
+            # across several blocks, but writing one back out would mean
+            # splitting the entries across areas again, which we don't do.
+            # Refuse rather than writing out a mangled continuation area.
+            raise pycdlibexception.PyCdlibInvalidInput('Cannot write out an ISO with chained Rock Ridge Continuation Entries')
 
         if self._needs_reshuffle:
             self._reshuffle_extents()

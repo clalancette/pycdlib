@@ -1706,6 +1706,36 @@ def test_rrcontentry_add_multiple():
     assert(rr._entries[2].offset == 40)
     assert(rr._entries[2].length == 12)
 
+def _ce_record(block, offset, length):
+    def swab(x):
+        return struct.unpack('>I', struct.pack('<I', x))[0]
+    return b'CE' + bytes([28, 1]) + struct.pack('<IIIIII', block, swab(block),
+                                                offset, swab(offset),
+                                                length, swab(length))
+
+def test_rr_two_ce_records_in_one_area():
+    # A CE record is single-instance per System Use area, not per Rock Ridge
+    # object: an area is allowed to chain to a further area via its own CE, but
+    # two CE records in the same area is invalid.
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(_ce_record(24, 0, 100) + _ce_record(25, 0, 100), False, 0,
+                 True, b'foo')
+    assert(str(excinfo.value) == 'Only single CE record supported')
+
+def test_rr_ce_record_in_each_area():
+    # One CE in the directory record and another in the continuation area it
+    # points at is a legal chain, and must not trip the single-instance check.
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(_ce_record(24, 0, 100), False, 0, False, b'foo')
+    rr.parse(_ce_record(25, 0, 100), False, 0, True, b'foo')
+
+    assert(rr.dr_entries.ce_record is not None)
+    assert(rr.dr_entries.ce_record.bl_cont_area == 24)
+    assert(rr.ce_entries is not None)
+    assert(rr.ce_entries.ce_record is not None)
+    assert(rr.ce_entries.ce_record.bl_cont_area == 25)
+
 def test_rrcontentry_add_no_room_returns_none():
     # Regression test for issue #177: when the continuation block is full,
     # add_entry() must return None (as documented), not -1.  The caller in
