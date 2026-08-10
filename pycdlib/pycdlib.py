@@ -363,11 +363,12 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
                     file_list.append(dir_record.inode)
 
         if dir_record_rock_ridge is not None:
-            if dir_record_rock_ridge.dr_entries.ce_record is not None and dir_record_rock_ridge.ce_block is not None:
-                if dir_record_rock_ridge.ce_block.extent_location() < 0:
-                    dir_record_rock_ridge.ce_block.set_extent_location(current_extent)
-                    current_extent += 1
-                dir_record_rock_ridge.dr_entries.ce_record.update_extent(dir_record_rock_ridge.ce_block.extent_location())
+            if dir_record_rock_ridge.dr_entries.ce_record is not None and dir_record_rock_ridge.ce_areas:
+                for ce_area in dir_record_rock_ridge.ce_areas:
+                    if ce_area.block.extent_location() < 0:
+                        ce_area.block.set_extent_location(current_extent)
+                        current_extent += 1
+                dir_record_rock_ridge.dr_entries.ce_record.update_extent(dir_record_rock_ridge.ce_areas[0].extent_location())
             if dir_record_rock_ridge.cl_to_moved_dr is not None:
                 child_link_recs.append(dir_record)
 
@@ -533,8 +534,7 @@ def _find_dr_record_by_name(vd, path, encoding):
 class PyCdlib:
     """The main class for manipulating ISOs."""
     __slots__ = ('_initialized', '_cdfp', 'pvds', 'svds', 'vdsts', 'brs', 'pvd',
-                 'rock_ridge', '_always_consistent', '_has_udf', 'joliet_vd',
-                 '_has_chained_ce', 'eltorito_boot_catalog', 'isohybrid_mbr',
+                 'rock_ridge', '_always_consistent', '_has_udf', 'joliet_vd', 'eltorito_boot_catalog', 'isohybrid_mbr',
                  '_managing_fp', 'xa', '_needs_reshuffle', '_rr_moved_record',
                  '_rr_moved_name', '_rr_moved_rr_name', 'enhanced_vd',
                  'version_vd', 'inodes', 'interchange_level',
@@ -568,7 +568,6 @@ class PyCdlib:
         self._managing_fp = False
         self.pvds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
         self._has_udf = False
-        self._has_chained_ce = False
         self.udf_beas = []  # type: List[udfmod.BEAVolumeStructure]
         self.udf_boots = []  # type: List[udfmod.UDFBootDescriptor]
         self.udf_nsr = udfmod.NSRVolumeStructure()
@@ -1191,7 +1190,9 @@ class PyCdlib:
                         block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
                                                            ce_record.offset_cont_area,
                                                            ce_record.len_cont_area)
-                        new_record.rock_ridge.update_ce_block(block)
+                        new_record.rock_ridge.add_ce_area(block,
+                                                          ce_record.offset_cont_area,
+                                                          ce_record.len_cont_area)
 
                         # Parsing an area stores any CE it contained in
                         # ce_entries; take it as the next link and clear it so
@@ -1202,12 +1203,6 @@ class PyCdlib:
                         if ce_entries is not None:
                             ce_entries.ce_record = None
                     cdfp.seek(orig_pos)
-
-                    if num_ce_areas > 1:
-                        # We can read these, but writing them back out would
-                        # need us to split the entries across areas again,
-                        # which we don't implement.
-                        self._has_chained_ce = True
 
                     rr_ce = new_record.rock_ridge.rr_version if new_record.rock_ridge else ''
                 # The PX record could be in the continuation blob, so
@@ -2819,12 +2814,35 @@ class PyCdlib:
 
                 if child.rock_ridge is not None:
                     if child.rock_ridge.dr_entries.ce_record is not None:
-                        # The child has a continue block, so write it out here.
-                        ce_rec = child.rock_ridge.dr_entries.ce_record
-                        outfp.seek(ce_rec.bl_cont_area * self.logical_block_size + ce_rec.offset_cont_area)
-                        rec = child.rock_ridge.record_ce_entries()
-                        self._outfp_write_with_check(outfp, rec)
-                        progress.call(len(rec))
+                        # The child has continuation areas, so write them out
+                        # here.  There is usually just the one, but where the
+                        # entries do not fit they are chained across several.
+                        ce_areas = child.rock_ridge.ce_areas
+                        if ce_areas:
+                            ce_rec = child.rock_ridge.dr_entries.ce_record
+                            for ce_area, rec in zip(ce_areas, child.rock_ridge.record_ce_areas()):
+                                extent = ce_area.extent_location()
+                                if extent < 0:
+                                    # Reshuffling deliberately skips the dot and
+                                    # dotdot records, so their Continuation
+                                    # Blocks never get an extent assigned and
+                                    # they keep the one they were parsed with.
+                                    # Their entries are small and always fit in
+                                    # a single area, so there is no chain here.
+                                    extent = ce_rec.bl_cont_area
+                                outfp.seek(extent * self.logical_block_size + ce_area.offset)
+                                self._outfp_write_with_check(outfp, rec)
+                                progress.call(len(rec))
+                        else:
+                            # The Rock Ridge 'ER' area of the root gets an
+                            # extent of its own rather than a slot in a
+                            # Continuation Block, so it has no area tracked
+                            # against it; it is always small enough for one.
+                            ce_rec = child.rock_ridge.dr_entries.ce_record
+                            outfp.seek(ce_rec.bl_cont_area * self.logical_block_size + ce_rec.offset_cont_area)
+                            rec = child.rock_ridge.record_ce_entries()
+                            self._outfp_write_with_check(outfp, rec)
+                            progress.call(len(rec))
 
                     if child.rock_ridge.child_link_record_exists():
                         continue
@@ -2907,13 +2925,6 @@ class PyCdlib:
         """
         if hasattr(outfp, 'mode') and 'b' not in outfp.mode:
             raise pycdlibexception.PyCdlibInvalidInput("The file to write out must be in binary mode (add 'b' to the open flags)")
-
-        if self._has_chained_ce:
-            # We can parse an ISO whose Rock Ridge continuation areas chain
-            # across several blocks, but writing one back out would mean
-            # splitting the entries across areas again, which we don't do.
-            # Refuse rather than writing out a mangled continuation area.
-            raise pycdlibexception.PyCdlibInvalidInput('Cannot write out an ISO with chained Rock Ridge Continuation Entries')
 
         if self._needs_reshuffle:
             self._reshuffle_extents()
@@ -3115,12 +3126,25 @@ class PyCdlib:
          The number of additional bytes needed for this Rock Ridge CE entry.
         """
         if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
-            celen = rec.rock_ridge.dr_entries.ce_record.len_cont_area
-            added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
-            rec.rock_ridge.update_ce_block(block)
-            rec.rock_ridge.dr_entries.ce_record.update_offset(offset)
-            if added_block:
-                return self.logical_block_size
+            # The entries may need more than one area to hold them, in which
+            # case each area but the last ends with a CE record linking to the
+            # next.  Allocate them all; they need not be adjacent, or even in
+            # the same Continuation Block.
+            rec.rock_ridge.clear_ce_areas()
+            num_bytes_to_add = 0
+            for celen in rec.rock_ridge.ce_area_lengths(self.logical_block_size):
+                added_block, block, offset = self.pvd.add_rr_ce_entry(celen)
+                rec.rock_ridge.add_ce_area(block, offset, celen)
+                if added_block:
+                    num_bytes_to_add += self.logical_block_size
+
+            # The CE record in the directory record describes the first area
+            # only; the rest are reached by following the chain.
+            first = rec.rock_ridge.ce_areas[0]
+            rec.rock_ridge.dr_entries.ce_record.update_offset(first.offset)
+            rec.rock_ridge.dr_entries.ce_record.update_len(first.length)
+
+            return num_bytes_to_add
 
         return 0
 
@@ -5485,9 +5509,9 @@ class PyCdlib:
                 # child_link record because it is a 'fake' record that has no
                 # size.
 
-            if child.rock_ridge is not None and child.rock_ridge.dr_entries.ce_record is not None and child.rock_ridge.ce_block is not None:
-                child.rock_ridge.ce_block.remove_entry(child.rock_ridge.dr_entries.ce_record.offset_cont_area,
-                                                       child.rock_ridge.dr_entries.ce_record.len_cont_area)
+            if child.rock_ridge is not None and child.rock_ridge.dr_entries.ce_record is not None:
+                for ce_area in child.rock_ridge.ce_areas:
+                    ce_area.block.remove_entry(ce_area.offset, ce_area.length)
 
         if joliet_path is not None:
             num_bytes_to_remove += self._rm_joliet_dir(self._normalize_joliet_path(joliet_path))
