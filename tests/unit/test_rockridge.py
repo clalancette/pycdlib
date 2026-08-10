@@ -13,6 +13,7 @@ for i in range(0, 3):
     else:
         prefix = '../' + prefix
 
+import pycdlib.dates
 import pycdlib.dr
 import pycdlib.rockridge
 
@@ -913,6 +914,148 @@ def test_rrtfrecord_new_no_creation_seconds_keeps_flags():
     # No creation_seconds -> creation_time bit stays off, no field set.
     assert(not (tf.time_flags & 0x01))
     assert(tf.creation_time is None)
+
+# The seven TF timestamp fields, in SUSP/RRIP bit order (bit 0 through bit 6).
+_TF_FIELD_NAMES = ['creation_time', 'access_time', 'modification_time',
+                   'attribute_change_time', 'backup_time', 'expiration_time',
+                   'effective_time']
+
+def _tf_vol_desc_date(day):
+    # A 17-byte Volume Descriptor style date; the day of month is varied so
+    # that each timestamp in a record is distinguishable from the others.
+    return ('2020010%d00000000' % day).encode() + b'\x00'
+
+def _tf_dir_record_date(day):
+    # A 7-byte Directory Record style date, likewise varied by day of month.
+    return struct.pack('=BBBBBBb', 120, 1, day, 0, 0, 0, 0)
+
+def _tf_record_bytes(time_flags, dates_bytes):
+    return b'TF' + struct.pack('=BBB', 5 + len(dates_bytes), 1, time_flags) + dates_bytes
+
+def test_rrtfrecord_parse_all_fields_long_form():
+    # Bit 7 set selects the long (Volume Descriptor, 17-byte) form.  With all
+    # seven timestamps enabled, each one must land in its own field; giving
+    # each a distinct day of month catches any slip in the offset arithmetic.
+    days = list(range(1, 8))
+    data = _tf_record_bytes(0xFF, b''.join(_tf_vol_desc_date(d) for d in days))
+    assert(len(data) == pycdlib.rockridge.RRTFRecord.length(0xFF))
+
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.parse(data)
+
+    for name, day in zip(_TF_FIELD_NAMES, days):
+        field = getattr(tf, name)
+        assert(type(field) == pycdlib.dates.VolumeDescriptorDate)
+        assert(field.dayofmonth == day)
+
+def test_rrtfrecord_parse_all_fields_short_form():
+    # The same, for the short (Directory Record, 7-byte) form.
+    days = list(range(1, 8))
+    data = _tf_record_bytes(0x7F, b''.join(_tf_dir_record_date(d) for d in days))
+    assert(len(data) == pycdlib.rockridge.RRTFRecord.length(0x7F))
+
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.parse(data)
+
+    for name, day in zip(_TF_FIELD_NAMES, days):
+        field = getattr(tf, name)
+        assert(type(field) == pycdlib.dates.DirectoryRecordDate)
+        assert(field.day_of_month == day)
+
+def test_rrtfrecord_parse_backup_expiration_effective_only_long_form():
+    # Only the three trailing timestamps enabled, so the parser has to skip
+    # over the four disabled ones rather than reading them in sequence.
+    days = [5, 6, 7]
+    data = _tf_record_bytes(0xF0, b''.join(_tf_vol_desc_date(d) for d in days))
+    assert(len(data) == pycdlib.rockridge.RRTFRecord.length(0xF0))
+
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.parse(data)
+
+    for name in _TF_FIELD_NAMES[:4]:
+        assert(getattr(tf, name) is None)
+    assert(tf.backup_time.dayofmonth == 5)
+    assert(tf.expiration_time.dayofmonth == 6)
+    assert(tf.effective_time.dayofmonth == 7)
+
+def test_rrtfrecord_parse_backup_expiration_effective_only_short_form():
+    days = [5, 6, 7]
+    data = _tf_record_bytes(0x70, b''.join(_tf_dir_record_date(d) for d in days))
+    assert(len(data) == pycdlib.rockridge.RRTFRecord.length(0x70))
+
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.parse(data)
+
+    for name in _TF_FIELD_NAMES[:4]:
+        assert(getattr(tf, name) is None)
+    assert(tf.backup_time.day_of_month == 5)
+    assert(tf.expiration_time.day_of_month == 6)
+    assert(tf.effective_time.day_of_month == 7)
+
+def test_rrtfrecord_new_all_fields_short_form():
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.new(0x7F, 1234567890.0)
+
+    for name in _TF_FIELD_NAMES:
+        field = getattr(tf, name)
+        assert(type(field) == pycdlib.dates.DirectoryRecordDate)
+        assert(field.years_since_1900 == 109)
+        assert(field.month == 2)
+        assert(field.day_of_month == 13)
+
+def test_rrtfrecord_new_all_fields_long_form():
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.new(0xFF, 1234567890.0)
+
+    for name in _TF_FIELD_NAMES:
+        field = getattr(tf, name)
+        assert(type(field) == pycdlib.dates.VolumeDescriptorDate)
+        assert(field.year == 2009)
+        assert(field.month == 2)
+        assert(field.dayofmonth == 13)
+
+def test_rrtfrecord_new_backup_expiration_effective_only():
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.new(0x70, 1234567890.0)
+
+    for name in _TF_FIELD_NAMES[:4]:
+        assert(getattr(tf, name) is None)
+    for name in _TF_FIELD_NAMES[4:]:
+        assert(getattr(tf, name) is not None)
+
+def test_rrtfrecord_record_round_trip_short_form():
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.new(0x7F, 1234567890.0)
+
+    rec = tf.record()
+    assert(len(rec) == pycdlib.rockridge.RRTFRecord.length(0x7F))
+
+    parsed = pycdlib.rockridge.RRTFRecord()
+    parsed.parse(rec)
+    assert(parsed.time_flags == 0x7F)
+    for name in _TF_FIELD_NAMES:
+        original = getattr(tf, name)
+        field = getattr(parsed, name)
+        assert(field.years_since_1900 == original.years_since_1900)
+        assert(field.month == original.month)
+        assert(field.day_of_month == original.day_of_month)
+
+def test_rrtfrecord_record_round_trip_long_form():
+    tf = pycdlib.rockridge.RRTFRecord()
+    tf.new(0xFF, 1234567890.0)
+
+    rec = tf.record()
+    assert(len(rec) == pycdlib.rockridge.RRTFRecord.length(0xFF))
+
+    parsed = pycdlib.rockridge.RRTFRecord()
+    parsed.parse(rec)
+    assert(parsed.time_flags == 0xFF)
+    for name in _TF_FIELD_NAMES:
+        original = getattr(tf, name)
+        field = getattr(parsed, name)
+        assert(field.year == original.year)
+        assert(field.month == original.month)
+        assert(field.dayofmonth == original.dayofmonth)
 
 # SF record
 def test_rrsfrecord_parse_double_initialized():
@@ -1849,3 +1992,35 @@ def test_rr_record_ce_areas_entries_do_not_fit():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.record_ce_areas()
     assert(str(excinfo.value) == 'Rock Ridge Continuation entries do not fit into the areas allocated for them')
+
+def test_rr_parse_al_record():
+    # AL (Arbitrary Attribute) records round-trip: generate one via new(),
+    # then parse it back out of a SUSP byte string.
+    source = pycdlib.rockridge.RockRidge()
+    source.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28,
+               {b'name': b'value'}, time.time())
+    al_bytes = source.ce_entries.al_records[0].record()
+
+    rr = pycdlib.rockridge.RockRidge()
+    rr.parse(b'RR\x05\x01\x89' + al_bytes, False, 0, False, b'foo')
+
+    assert(len(rr.dr_entries.al_records) == 1)
+    components = rr.dr_entries.al_records[0].components
+    assert(len(components) == 2)
+    assert(components[0].data == b'name')
+    assert(components[1].data == b'value')
+
+def test_rr_record_ce_entries_includes_al_records():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28,
+           {b'name': b'value'}, time.time())
+    assert(len(rr.ce_entries.al_records) == 1)
+
+    ce = rr.record_ce_entries()
+    assert(rr.ce_entries.al_records[0].record() in ce)
+
+def test_rr_record_ce_entries_no_ce_entries():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    assert(rr.ce_entries is None)
+    assert(rr.record_ce_entries() == b'')
