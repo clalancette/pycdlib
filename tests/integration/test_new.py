@@ -9158,3 +9158,42 @@ def test_new_get_file_byte_extents_joliet_before_write():
 
     (offset, length) = joliet_extents[0]
     assert(out.getvalue()[offset:offset+length] == b'foo\n')
+
+def test_new_rr_find_record_missing_component():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', rr_name='foo')
+
+    # 'aaa' sorts before 'foo', so the binary search lands on an existing
+    # entry that simply does not match.  A name sorting after every entry
+    # currently raises IndexError instead; see the note in the commit that
+    # adds this test.
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso._find_rr_record(b'/aaa')
+    assert(str(excinfo.value) == 'Could not find path')
+
+    iso.close()
+
+def test_new_rr_find_record_component_is_not_a_directory():
+    # Walking '/foo/deeper' has to stop at 'foo', which is a file and so has
+    # no children to descend into.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', rr_name='foo')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso._find_rr_record(b'/foo/deeper')
+    assert(str(excinfo.value) == 'Could not find path')
+
+    iso.close()
+
+def test_new_get_file_byte_extents_zero_length_file():
+    # A zero-length file has an Inode but no data extents, so there are no
+    # byte ranges to report.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b''), 0, '/EMPTY.;1')
+
+    assert(iso.get_file_byte_extents(iso_path='/EMPTY.;1') == [])
+
+    iso.close()
