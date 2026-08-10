@@ -403,3 +403,11 @@ def test_file_or_text_ident_compare_other_object():
     file_or_text_ident.new('a'*128)
 
     assert(file_or_text_ident != 'foo')
+
+def test_pvd_add_rr_ce_entry_larger_than_block():
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd.log_block_size = 2048
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        pvd.add_rr_ce_entry(2049)
+    assert(str(excinfo.value) == 'Rock Ridge Continuation Entry of length 2049 is too large to fit into a Continuation Block of size 2048')

@@ -278,9 +278,49 @@ def test_eltorito_boot_catalog_add_extent_location_not_initialized():
         bc.extent_location()
     assert(str(excinfo.value) == 'El Torito Boot Catalog not initialized')
 
-def test_eltorito_boot_catalog_add_extent_location_not_initialized():
+def test_eltorito_boot_catalog_update_catalog_extent_not_initialized():
     bc = pycdlib.eltorito.EltoritoBootCatalog(None)
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         bc.update_catalog_extent(0)
     assert(str(excinfo.value) == 'El Torito Boot Catalog not initialized')
+
+def _make_parsed_boot_catalog():
+    # Drive an EltoritoBootCatalog through its parse state machine up to the
+    # point where it is expecting a section header, so that tests can feed it
+    # section headers and a terminator.
+    bc = pycdlib.eltorito.EltoritoBootCatalog(None)
+
+    val = pycdlib.eltorito.EltoritoValidationEntry()
+    val.new(0)
+    bc.parse(val.record())
+
+    entry = pycdlib.eltorito.EltoritoEntry()
+    entry.new(4, 0, 'noemul', 0, True)
+    bc.parse(entry.record())
+
+    return bc
+
+def _section_header(header_indicator, num_section_entries):
+    return struct.pack('<BBH28s', header_indicator, 0, num_section_entries, b'')
+
+def test_eltorito_boot_catalog_parse_section_entry_count_mismatch():
+    bc = _make_parsed_boot_catalog()
+
+    # Claim two section entries but supply none before the terminator.
+    bc.parse(_section_header(0x91, 2))
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        bc.parse(b'\x00'*32)
+    assert(str(excinfo.value) == 'El Torito section header specified 2 entries, only saw 0')
+
+def test_eltorito_boot_catalog_parse_intermediate_section_header_not_0x90():
+    bc = _make_parsed_boot_catalog()
+
+    # Two section headers, where the non-final one is not marked 0x90.
+    bc.parse(_section_header(0x91, 0))
+    bc.parse(_section_header(0x91, 0))
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        bc.parse(b'\x00'*32)
+    assert(str(excinfo.value) == 'Intermediate El Torito section header not properly specified')

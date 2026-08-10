@@ -8601,3 +8601,422 @@ def test_new_rm_eltorito_hidden_boot_catalog():
     do_a_test(iso2, check_nofiles)
 
     iso2.close()
+
+def test_new_get_file_from_iso_bad_blocksize():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso('junk', blocksize='foo')
+    assert(str(excinfo.value) == 'blocksize must be an integer')
+
+    iso.close()
+
+def test_new_get_file_from_iso_bad_iso_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso('junk', iso_path=1)
+    assert(str(excinfo.value) == 'iso_path must be a string')
+
+    iso.close()
+
+def test_new_get_file_from_iso_bad_rr_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso('junk', rr_path=1)
+    assert(str(excinfo.value) == 'iso_path must be a string')
+
+    iso.close()
+
+def test_new_get_file_from_iso_bad_joliet_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso('junk', joliet_path=1)
+    assert(str(excinfo.value) == 'iso_path must be a string')
+
+    iso.close()
+
+def test_new_get_file_from_iso_bad_udf_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso('junk', udf_path=1)
+    assert(str(excinfo.value) == 'iso_path must be a string')
+
+    iso.close()
+
+def test_new_get_file_from_iso_unknown_keyword():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso('junk', foo_path='/FOO.;1')
+    assert(str(excinfo.value) == 'Unknown keyword foo_path')
+
+    iso.close()
+
+def test_new_get_file_from_iso_no_paths():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso('junk')
+    assert(str(excinfo.value) == "Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
+
+    iso.close()
+
+def test_new_get_file_from_iso_fp_bad_blocksize():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso_fp(io.BytesIO(), blocksize='foo')
+    assert(str(excinfo.value) == 'blocksize must be an integer')
+
+    iso.close()
+
+def test_new_get_file_from_iso_fp_bad_iso_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso_fp(io.BytesIO(), iso_path=1)
+    assert(str(excinfo.value) == 'iso_path must be a string')
+
+    iso.close()
+
+def test_new_get_file_from_iso_fp_bad_rr_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso_fp(io.BytesIO(), rr_path=1)
+    assert(str(excinfo.value) == 'rr_path must be a string')
+
+    iso.close()
+
+def test_new_get_file_from_iso_fp_bad_joliet_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso_fp(io.BytesIO(), joliet_path=1)
+    assert(str(excinfo.value) == 'joliet_path must be a string')
+
+    iso.close()
+
+def test_new_get_file_from_iso_fp_bad_udf_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_from_iso_fp(io.BytesIO(), udf_path=1)
+    assert(str(excinfo.value) == 'udf_path must be a string')
+
+    iso.close()
+
+def test_new_get_file_byte_extents_bad_rr_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(rr_path=1)
+    assert(str(excinfo.value) == 'rr_path must be a string')
+
+    iso.close()
+
+def test_new_get_file_byte_extents_bad_joliet_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(joliet_path=1)
+    assert(str(excinfo.value) == 'joliet_path must be a string')
+
+    iso.close()
+
+def test_new_get_file_byte_extents_bad_udf_path():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(udf_path=1)
+    assert(str(excinfo.value) == 'udf_path must be a string')
+
+    iso.close()
+
+def test_new_get_file_byte_extents_symlink():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    foostr = b'foo\n'
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
+    iso.add_symlink('/SYM.;1', 'sym', 'foo')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(rr_path='/sym')
+    assert(str(excinfo.value) == 'Symlinks have no data associated with them')
+
+    iso.close()
+
+def test_new_get_iso9660_facade_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_iso9660_facade()
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
+
+def test_new_get_joliet_facade_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_joliet_facade()
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
+
+def test_new_get_joliet_facade_not_joliet():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_joliet_facade()
+    assert(str(excinfo.value) == 'Can only get a Joliet facade for a Joliet ISO')
+
+    iso.close()
+
+def test_new_get_rock_ridge_facade_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_rock_ridge_facade()
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
+
+def test_new_get_rock_ridge_facade_not_rock_ridge():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_rock_ridge_facade()
+    assert(str(excinfo.value) == 'Can only get a Rock Ridge facade for a Rock Ridge ISO')
+
+    iso.close()
+
+def test_new_get_udf_facade_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_udf_facade()
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
+
+def test_new_get_udf_facade_not_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_udf_facade()
+    assert(str(excinfo.value) == 'Can only get a UDF facade for a UDF ISO')
+
+    iso.close()
+
+def test_new_rr_add_directory_no_rr_name():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_directory('/DIR1')
+    assert(str(excinfo.value) == 'A rock ridge name must be passed for a rock-ridge ISO')
+
+    iso.close()
+
+def test_new_joliet_add_directory_empty_joliet_path():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_directory('/DIR1', joliet_path='')
+    assert(str(excinfo.value) == 'A Joliet path must be passed for a Joliet ISO')
+
+    iso.close()
+
+def test_new_add_file_creation_time_not_rr_or_udf(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    testout = tmpdir.join('foo')
+    testout.write('foo\n')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_file(str(testout), '/FOO.;1', creation_time=1.0)
+    assert(str(excinfo.value) == 'creation_time can only be stored on a Rock Ridge iso_path or a udf_path')
+
+    iso.close()
+
+def test_new_add_hard_link_creation_time_not_rock_ridge():
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09', joliet=3)
+
+    foostr = b'foo\n'
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/foo')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_hard_link(iso_old_path='/FOO.;1', joliet_new_path='/bar', creation_time=1.0)
+    assert(str(excinfo.value) == 'creation_time can only be stored on a Rock Ridge iso_new_path')
+
+    iso.close()
+
+def test_new_udf_get_file_byte_extents_directory():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(udf_path='/')
+    assert(str(excinfo.value) == 'Can only get extents for a file')
+
+    iso.close()
+
+def test_new_in_place_rm_file_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        pycdlib.inplaceeditor._do_rm_file(iso, '/FOO.;1')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
+
+def test_new_in_place_add_fp_not_initialized():
+    iso = pycdlib.PyCdlib()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        pycdlib.inplaceeditor._do_add_fp(iso, io.BytesIO(b'x'), 1, False, '/BAR.;1')
+    assert(str(excinfo.value) == 'This object is not initialized; call either open() or new() to create an ISO')
+
+def test_new_in_place_rm_file_read_only_iso(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'old\n'), 4, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    # open() uses a read-only mode, which in-place editing must refuse.
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        pycdlib.inplaceeditor._do_rm_file(iso2, '/FOO.;1')
+    assert(str(excinfo.value) == 'To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
+
+    iso2.close()
+
+def test_new_in_place_add_fp_read_only_iso(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'old\n'), 4, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        pycdlib.inplaceeditor._do_add_fp(iso2, io.BytesIO(b'x'), 1, False, '/BAR.;1')
+    assert(str(excinfo.value) == 'To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
+
+    iso2.close()
+
+def test_new_in_place_rm_file_eltorito_boot_catalog(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'boot\n'), 5, '/BOOT.;1')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.rm_file('/BOOT.CAT;1')
+        assert(str(excinfo.value) == 'Cannot remove a file that is the El Torito boot catalog; use PyCdlib.rm_eltorito + write_fp() to produce a new ISO instead')
+
+def test_new_in_place_add_fp_joliet_path_on_non_joliet(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'a\n'), 2, '/A.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.add_fp(io.BytesIO(b'b\n'), 2, '/B.;1', joliet_path='/b')
+        assert(str(excinfo.value) == 'Cannot use joliet_path on a non-Joliet ISO')
+
+def test_new_in_place_add_fp_explicit_file_mode(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'a\n'), 2, '/A.;1', rr_name='a')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.add_fp(io.BytesIO(b'b\n'), 2, '/B.;1', rr_name='b', file_mode=0o0100644)
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    rec = iso2._find_rr_record(b'/b')
+    assert(rec.rock_ridge.get_file_mode() == 0o0100644)
+    iso2.close()
+
+def test_new_update_file_contents_udf_path_on_non_udf():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'a\n'), 2, '/A.;1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.update_file_contents_fp(io.BytesIO(b'b\n'), 2, udf_path='/a')
+    assert(str(excinfo.value) == 'Cannot use udf_path on a non-UDF ISO')
+
+    iso.close()
+
+def test_new_update_file_contents_rr_path_on_non_rock_ridge():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'a\n'), 2, '/A.;1')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.update_file_contents_fp(io.BytesIO(b'b\n'), 2, rr_path='/a')
+    assert(str(excinfo.value) == 'Cannot use rr_path on a non-Rock-Ridge ISO')
+
+    iso.close()
+
+def test_new_update_file_contents_udf_directory():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_fp(io.BytesIO(b'a\n'), 2, '/A.;1', udf_path='/a')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.update_file_contents_fp(io.BytesIO(b'b\n'), 2, udf_path='/')
+    assert(str(excinfo.value) == 'Cannot update the contents of a directory or empty UDF entry')
+
+    iso.close()
+
+def test_new_write_progress_cb_wrong_arg_count():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.write_fp(io.BytesIO(), progress_cb=lambda done: None)
+    assert(str(excinfo.value) == 'The progress callback must take 2 or 3 arguments')
+
+    iso.close()
