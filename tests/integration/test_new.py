@@ -9241,12 +9241,34 @@ def test_new_rr_find_record_missing_component():
     iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', rr_name='foo')
 
     # 'aaa' sorts before 'foo', so the binary search lands on an existing
-    # entry that simply does not match.  A name sorting after every entry
-    # currently raises IndexError instead; see the note in the commit that
-    # adds this test.
+    # entry that simply does not match.
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
         iso._find_rr_record(b'/aaa')
     assert(str(excinfo.value) == 'Could not find path')
+
+    iso.close()
+
+def test_new_rr_find_record_missing_component_sorts_last():
+    # A name that sorts after every entry in the directory leaves the binary
+    # search with index == len(children), so looking it up has to report
+    # 'Could not find path' rather than running off the end of the list.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', rr_name='foo')
+    iso.add_directory('/DIR1', rr_name='dir1')
+
+    for path in (b'/zzz', b'/dir1/zzz'):
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            iso._find_rr_record(path)
+        assert(str(excinfo.value) == 'Could not find path')
+
+    # The same through the public API that callers actually use.
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_record(rr_path='/zzz')
+    assert(str(excinfo.value) == 'Could not find path')
+
+    # An entry sorting last is still findable.
+    assert(iso.get_record(rr_path='/foo').rock_ridge.name() == b'foo')
 
     iso.close()
 

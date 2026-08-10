@@ -772,9 +772,13 @@ class PyCdlib:
                 else:
                     hi = mid
             index = lo
-            tmpchild = thelist[index]
-            if index != len(thelist) and tmpchild.rock_ridge is not None and tmpchild.rock_ridge.name() == currpath:
-                child = thelist[index]
+            # The bisect leaves index == len(thelist) when currpath sorts after
+            # every entry, so the bounds check has to happen before the
+            # subscript (compare _find_dr_record_by_name, which does the same).
+            if index != len(thelist):
+                tmpchild = thelist[index]
+                if tmpchild.rock_ridge is not None and tmpchild.rock_ridge.name() == currpath:
+                    child = thelist[index]
 
             if child is None:
                 # We failed to find this component of the path, so break out of
