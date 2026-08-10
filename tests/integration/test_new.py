@@ -9121,3 +9121,40 @@ def test_new_in_place_add_fp_joliet_overflow_rolls_back(tmpdir):
     iso2.open(iso_path)
     assert(len(iso2.pvd.root_directory_record().children) == iso_children_before)
     iso2.close()
+
+def test_new_get_file_byte_extents_before_write():
+    # get_file_byte_extents() reports byte offsets derived from extent
+    # locations, which are only assigned during a reshuffle.  On an ISO built
+    # with new() and not yet written out, the call must still work (forcing
+    # the reshuffle itself) rather than reading an unassigned extent.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1')
+
+    extents = iso.get_file_byte_extents(iso_path='/FOO.;1')
+    assert(len(extents) == 1)
+
+    # The reported offset must match where the data actually lands on disk.
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    (offset, length) = extents[0]
+    assert(out.getvalue()[offset:offset+length] == b'foo\n')
+
+def test_new_get_file_byte_extents_joliet_before_write():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', joliet_path='/foo')
+
+    iso_extents = iso.get_file_byte_extents(iso_path='/FOO.;1')
+    joliet_extents = iso.get_file_byte_extents(joliet_path='/foo')
+    # Both names point at the same shared Inode, so the same bytes.
+    assert(iso_extents == joliet_extents)
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    (offset, length) = joliet_extents[0]
+    assert(out.getvalue()[offset:offset+length] == b'foo\n')

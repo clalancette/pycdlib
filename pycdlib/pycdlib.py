@@ -4516,6 +4516,14 @@ class PyCdlib:
         if num_paths != 1:
             raise pycdlibexception.PyCdlibInvalidInput("Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
 
+        # The byte offsets we are about to compute come from the extent
+        # locations, which are only assigned during a reshuffle.  On an ISO
+        # built with new() that has not been written out yet, no reshuffle has
+        # happened, so force one here rather than reporting offsets from
+        # unassigned extents.
+        if self._needs_reshuffle:
+            self._reshuffle_extents()
+
         extents = []  # type: List[Tuple[int, int]]
 
         if udf_path is not None:

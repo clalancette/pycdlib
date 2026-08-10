@@ -66,3 +66,20 @@ def test_inode_update_fp_not_initialized():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         ino.update_fp(None, 0)
     assert(str(excinfo.value) == 'Inode is not initialized')
+
+def test_inode_extent_location_not_yet_assigned():
+    # A new Inode has no original extent location, and gets a new one only
+    # once a reshuffle assigns it.  Asking before then is an error, not an
+    # AttributeError from an unset slot.
+    ino = pycdlib.inode.Inode()
+    ino.new(4, None, False, 0)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        ino.extent_location()
+    assert(str(excinfo.value) == 'Inode does not yet have an extent location assigned')
+
+def test_inode_extent_location_after_set():
+    ino = pycdlib.inode.Inode()
+    ino.new(4, None, False, 0)
+    ino.set_extent_location(42)
+    assert(ino.extent_location() == 42)
