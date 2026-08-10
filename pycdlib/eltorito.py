@@ -164,13 +164,11 @@ class EltoritoValidationEntry:
         Returns:
          The checksum of the data.
         """
-        if isinstance(data, bytes):
-            myord = int
-        else:
-            myord = ord
         csum = 0
         for i, val in enumerate(data):
-            short = (myord(val) << (8 * (i % 2))) & 0xffff
+            # Iterating over a bytes object yields integers, so no conversion
+            # is needed here.
+            short = (val << (8 * (i % 2))) & 0xffff
             # Because we are looping through bytes, and because we know the
             # above conversion can shift us up by a maximum of 8 bits, we know
             # that the sign bit is at offset 15.  If it is signed, OR with

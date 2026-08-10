@@ -324,3 +324,65 @@ def test_eltorito_boot_catalog_parse_intermediate_section_header_not_0x90():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         bc.parse(b'\x00'*32)
     assert(str(excinfo.value) == 'Intermediate El Torito section header not properly specified')
+
+def _section_entry():
+    entry = pycdlib.eltorito.EltoritoEntry()
+    entry.new(4, 0, 'noemul', 0, True)
+    return entry
+
+def test_eltorito_boot_catalog_parse_section_entry_without_header():
+    # El Torito 2.4 says a section entry must follow a section header, but
+    # ISOs exist in the wild that do not do this (Mageia 4, per the comment in
+    # the parser).  Such an entry is kept as a standalone entry instead of
+    # being dropped.
+    bc = _make_parsed_boot_catalog()
+
+    standalone = _section_entry()
+    bc.parse(standalone.record())
+    bc.parse(b'\x00'*32)
+
+    assert(len(bc.sections) == 0)
+    assert(len(bc.standalone_entries) == 1)
+
+def test_eltorito_boot_catalog_parse_section_entry_past_header_count():
+    # A section header that claims one entry, followed by two: the second one
+    # does not belong to the (now full) header, so it becomes standalone.
+    bc = _make_parsed_boot_catalog()
+
+    bc.parse(_section_header(0x91, 1))
+    bc.parse(_section_entry().record())
+    bc.parse(_section_entry().record())
+    bc.parse(b'\x00'*32)
+
+    assert(len(bc.sections) == 1)
+    assert(len(bc.sections[0].section_entries) == 1)
+    assert(len(bc.standalone_entries) == 1)
+
+def test_eltorito_boot_catalog_parse_section_entry_extension():
+    # A 0x44 record extends the selection criteria of the section entry that
+    # precedes it.
+    bc = _make_parsed_boot_catalog()
+
+    bc.parse(_section_header(0x91, 1))
+    bc.parse(_section_entry().record())
+
+    entry = bc.sections[0].section_entries[0]
+    original_length = len(entry.selection_criteria)
+
+    extension = b'crit'.ljust(30, b'\x00')
+    bc.parse(b'\x44\x00' + extension)
+
+    assert(len(entry.selection_criteria) == original_length + len(extension))
+    assert(entry.selection_criteria.endswith(extension))
+
+def test_eltorito_boot_catalog_record_includes_standalone_entries():
+    bc = _make_parsed_boot_catalog()
+
+    standalone = _section_entry()
+    bc.parse(standalone.record())
+    bc.parse(b'\x00'*32)
+
+    rec = bc.record()
+    # Validation entry + initial entry + the standalone entry, 32 bytes each.
+    assert(len(rec) == 96)
+    assert(rec.endswith(standalone.record()))
