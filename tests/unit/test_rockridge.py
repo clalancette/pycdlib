@@ -15,6 +15,7 @@ for i in range(0, 3):
 
 import pycdlib.dates
 import pycdlib.dr
+import pycdlib.headervd
 import pycdlib.rockridge
 
 # SP record
@@ -2113,3 +2114,86 @@ def test_rr_new_al_record_does_not_fit():
     assert(rr.dr_entries.ce_record is not None)
     assert(len(rr.dr_entries.al_records) == 1)
     assert(len(rr.ce_entries.al_records) == 1)
+
+def _rr_with_records_in_continuation_area():
+    # A curr_dr_len that leaves no room inline pushes the PX record (and the
+    # rest) out into the continuation area.
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {},
+           time.time())
+    assert(rr.dr_entries.px_record is None)
+    assert(rr.ce_entries.px_record is not None)
+    return rr
+
+def _dirrecord_at_extent(extent):
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    rec = pycdlib.dr.DirectoryRecord()
+    rec.new_root(pvd, 1, 2048, time.time())
+    rec.set_data_location(extent, 0)
+    return rec
+
+def test_rr_copy_file_links_from_continuation_area():
+    # Both the source and the destination keep their PX record in the
+    # continuation area rather than inline.
+    src = _rr_with_records_in_continuation_area()
+    dst = _rr_with_records_in_continuation_area()
+
+    src.ce_entries.px_record.posix_file_links = 7
+    dst.copy_file_links(src)
+
+    assert(dst.ce_entries.px_record.posix_file_links == 7)
+
+def test_rr_child_link_update_from_dirrecord_in_continuation_area():
+    curr_dr_len = (pycdlib.rockridge.ALLOWED_DR_SIZE
+                   - _RR_BYTES_BEFORE_RELOCATION_RECORDS
+                   - pycdlib.rockridge.RRCLRecord.length() + 1)
+
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', True, False, False, 0, curr_dr_len,
+           {}, time.time())
+    assert(rr.dr_entries.cl_record is None)
+    assert(rr.ce_entries.cl_record is not None)
+
+    rr.cl_to_moved_dr = _dirrecord_at_extent(1234)
+    rr.child_link_update_from_dirrecord()
+
+    assert(rr.ce_entries.cl_record.child_log_block_num == 1234)
+    assert(rr.child_link_extent() == 1234)
+
+def test_rr_parent_link_update_from_dirrecord_in_continuation_area():
+    curr_dr_len = (pycdlib.rockridge.ALLOWED_DR_SIZE
+                   - _RR_BYTES_BEFORE_RELOCATION_RECORDS
+                   - pycdlib.rockridge.RRPLRecord.length() + 1)
+
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, True, 0, curr_dr_len,
+           {}, time.time())
+    assert(rr.dr_entries.pl_record is None)
+    assert(rr.ce_entries.pl_record is not None)
+
+    rr.parent_link = _dirrecord_at_extent(1234)
+    rr.parent_link_update_from_dirrecord()
+
+    assert(rr.ce_entries.pl_record.parent_log_block_num == 1234)
+    assert(rr.parent_link_extent() == 1234)
+
+def test_rr_ce_area_lengths_no_ce_entries():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    assert(rr.ce_entries is None)
+    assert(rr.ce_area_lengths(2048) == [])
+
+def test_rr_ce_area_lengths_empty_ce_entries():
+    # A continuation entry that ended up holding no SUSP records at all needs
+    # no areas allocated for it.
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    rr.ce_entries = pycdlib.rockridge.RockRidgeEntries()
+    assert(rr.ce_area_lengths(2048) == [])
+
+def test_rr_record_ce_areas_no_areas_assigned():
+    # There are continuation entries, but no areas have been handed out for
+    # them yet, so there is nothing to record.
+    rr = _rr_with_records_in_continuation_area()
+    assert(not rr.ce_areas)
+    assert(rr.record_ce_areas() == [])
