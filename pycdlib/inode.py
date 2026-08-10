@@ -49,6 +49,11 @@ class Inode:
         self.num_udf = 0
         self.boot_info_table = None  # type: Optional[eltorito.EltoritoBootInfoTable]
         self.new_extent_loc = -1
+        # For an Inode created with new(), there is no original extent
+        # location, so we leave it at None (the same convention that
+        # dr.DirectoryRecord uses).  It stays None until a reshuffle assigns
+        # new_extent_loc.
+        self.orig_extent_loc = None  # type: Optional[int]
 
     def new(self, length, fp, manage_fp, offset):
         # type: (int, Union[IO[Any], str], bool, int) -> None
@@ -109,9 +114,14 @@ class Inode:
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
 
-        if self.new_extent_loc < 0:
-            return self.orig_extent_loc
-        return self.new_extent_loc
+        # If a new extent location has been assigned, always prefer that one.
+        if self.new_extent_loc >= 0:
+            return self.new_extent_loc
+
+        if self.orig_extent_loc is None:
+            raise pycdlibexception.PyCdlibInternalError('Inode does not yet have an extent location assigned')
+
+        return self.orig_extent_loc
 
     def set_extent_location(self, extent):
         # type: (int) -> None
