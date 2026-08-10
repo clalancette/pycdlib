@@ -2024,3 +2024,92 @@ def test_rr_record_ce_entries_no_ce_entries():
     rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
     assert(rr.ce_entries is None)
     assert(rr.record_ce_entries() == b'')
+
+# Each of the SUSP records that _assign_entries lays down has its own "this
+# will not fit in the Directory Record" path, which returns -1 so that new()
+# retries with a Continuation Entry.  The tests below drive one record type
+# each, sizing curr_dr_len so that the record under test is the one that
+# overflows.
+#
+# With a 3-byte Rock Ridge name, the records ahead of CL/RE/PL consume a fixed
+# 75 bytes: RR (5) + NM (5 + 3) + PX (36) + TF (26).
+_RR_BYTES_BEFORE_RELOCATION_RECORDS = 75
+
+def test_rr_assign_entries_sp_record_does_not_fit():
+    # The SP record is the first one laid down, so it overflows as soon as the
+    # incoming length leaves fewer bytes than the record needs.  _assign_entries
+    # is driven directly here because at these sizes new() cannot succeed even
+    # after adding a Continuation Entry -- the CE record itself no longer fits.
+    rr = pycdlib.rockridge.RockRidge()
+    rr.rr_version = '1.09'
+
+    curr_dr_len = pycdlib.rockridge.ALLOWED_DR_SIZE - pycdlib.rockridge.RRSPRecord.length() + 1
+    assert(rr._assign_entries(True, b'foo', 0, None, False, False, False, 0,
+                              curr_dr_len, {}, 1234567890.0) == -1)
+
+def test_rr_assign_entries_rr_record_does_not_fit():
+    # With is_first_dir_record_of_root False there is no SP record, so the RR
+    # record is the first one laid down.
+    rr = pycdlib.rockridge.RockRidge()
+    rr.rr_version = '1.09'
+
+    curr_dr_len = pycdlib.rockridge.ALLOWED_DR_SIZE - pycdlib.rockridge.RRRRRecord.length() + 1
+    assert(rr._assign_entries(False, b'foo', 0, None, False, False, False, 0,
+                              curr_dr_len, {}, 1234567890.0) == -1)
+
+def test_rr_new_cl_record_forced_into_continuation_area():
+    curr_dr_len = (pycdlib.rockridge.ALLOWED_DR_SIZE
+                   - _RR_BYTES_BEFORE_RELOCATION_RECORDS
+                   - pycdlib.rockridge.RRCLRecord.length() + 1)
+
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', True, False, False, 0, curr_dr_len,
+           {}, time.time())
+
+    assert(rr.dr_entries.ce_record is not None)
+    assert(rr.dr_entries.cl_record is None)
+    assert(rr.ce_entries.cl_record is not None)
+
+def test_rr_new_re_record_forced_into_continuation_area():
+    curr_dr_len = (pycdlib.rockridge.ALLOWED_DR_SIZE
+                   - _RR_BYTES_BEFORE_RELOCATION_RECORDS
+                   - pycdlib.rockridge.RRRERecord.length() + 1)
+
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, True, False, 0, curr_dr_len,
+           {}, time.time())
+
+    assert(rr.dr_entries.ce_record is not None)
+    assert(rr.dr_entries.re_record is None)
+    assert(rr.ce_entries.re_record is not None)
+
+def test_rr_new_pl_record_forced_into_continuation_area():
+    curr_dr_len = (pycdlib.rockridge.ALLOWED_DR_SIZE
+                   - _RR_BYTES_BEFORE_RELOCATION_RECORDS
+                   - pycdlib.rockridge.RRPLRecord.length() + 1)
+
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, True, 0, curr_dr_len,
+           {}, time.time())
+
+    assert(rr.dr_entries.ce_record is not None)
+    assert(rr.dr_entries.pl_record is None)
+    assert(rr.ce_entries.pl_record is not None)
+
+def test_rr_new_al_record_does_not_fit():
+    # The AL record is sized from the attribute name/value pairs, and splits
+    # across the Directory Record and the Continuation Entry when it cannot fit
+    # inline.
+    attributes = {b'k': b'v'*60}
+    attr_list = list(attributes.keys()) + list(attributes.values())
+    curr_dr_len = (pycdlib.rockridge.ALLOWED_DR_SIZE
+                   - _RR_BYTES_BEFORE_RELOCATION_RECORDS
+                   - pycdlib.rockridge.RRALRecord.length(attr_list) + 1)
+
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, curr_dr_len,
+           attributes, time.time())
+
+    assert(rr.dr_entries.ce_record is not None)
+    assert(len(rr.dr_entries.al_records) == 1)
+    assert(len(rr.ce_entries.al_records) == 1)
