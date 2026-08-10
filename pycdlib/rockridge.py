@@ -382,6 +382,21 @@ class RRCERecord:
 
         self.offset_cont_area = offset
 
+    def update_len(self, length):
+        # type: (int) -> None
+        """
+        Set the length of the continuation area this CE record points at.
+
+        Parameters:
+         length - The new length of the continuation area.
+        Returns:
+         Nothing.
+        """
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('CE record not initialized')
+
+        self.len_cont_area = length
+
     def add_record(self, length):
         # type: (int) -> None
         """
@@ -2583,10 +2598,37 @@ class RockRidgeEntries:
 # than 8.3.  Rock Ridge depends on the System Use and Sharing Protocol (SUSP),
 # which defines some standards on how to use the System Area.
 
+class RockRidgeContinuationArea:
+    """
+    A class representing one area holding Rock Ridge Continuation entries.
+    Where the entries do not all fit into a single area, each area but the last
+    ends with a CE record linking to the next one.
+    """
+    __slots__ = ('block', 'offset', 'length')
+
+    def __init__(self, block, offset, length):
+        # type: (RockRidgeContinuationBlock, int, int) -> None
+        self.block = block
+        self.offset = offset
+        self.length = length
+
+    def extent_location(self):
+        # type: () -> int
+        """
+        Get the extent location of the block this area lives in.
+
+        Parameters:
+         None.
+        Returns:
+         The extent location of the block this area lives in.
+        """
+        return self.block.extent_location()
+
+
 class RockRidge:
     """A class representing Rock Ridge entries."""
     __slots__ = ('_initialized', 'dr_entries', 'ce_entries', 'cl_to_moved_dr',
-                 'moved_to_cl_dr', 'parent_link', 'rr_version', 'ce_block',
+                 'moved_to_cl_dr', 'parent_link', 'rr_version', 'ce_areas',
                  'bytes_to_skip', '_full_name')
 
     def __init__(self):
@@ -2603,7 +2645,9 @@ class RockRidge:
         self.moved_to_cl_dr = None  # type: Optional[dr.DirectoryRecord]
         self.parent_link = None  # type: Optional[dr.DirectoryRecord]
         self.rr_version = ''
-        self.ce_block = None  # type: Optional[RockRidgeContinuationBlock]
+        # The continuation entries may be split across several areas, each
+        # linked to the next by a CE record; see add_ce_area().
+        self.ce_areas = []  # type: List[RockRidgeContinuationArea]
         self._initialized = False
 
     def _ensure_ce_entries(self):
@@ -2841,6 +2885,20 @@ class RockRidge:
         Returns:
          A string representing the Rock Ridge entry.
         """
+        return b''.join(self._record_list(entries))
+
+    def _record_list(self, entries):
+        # type: (RockRidgeEntries) -> List[bytes]
+        """
+        Return the individual SUSP records making up a Rock Ridge entry.  The
+        continuation area splitter needs the records one at a time, since an
+        area may only be cut on a record boundary.
+
+        Parameters:
+         entries - The dr_entries or ce_entries to generate records for.
+        Returns:
+         A list of strings, one per SUSP record.
+        """
 
         outlist = []
         if entries.sp_record is not None:
@@ -2891,7 +2949,7 @@ class RockRidge:
         if entries.sf_record is not None:
             outlist.append(entries.sf_record.record())
 
-        return b''.join(outlist)
+        return outlist
 
     def record_dr_entries(self):
         # type: () -> bytes
@@ -3783,20 +3841,134 @@ class RockRidge:
             return True
         return self.ce_entries is not None and self.ce_entries.re_record is not None
 
-    def update_ce_block(self, block):
-        # type: (RockRidgeContinuationBlock) -> None
+    def add_ce_area(self, block, offset, length):
+        # type: (RockRidgeContinuationBlock, int, int) -> None
         """
-        Update the Continuation Entry block object used by this Rock Ridge Record.
+        Add an area holding some of the Continuation entries for this record.
+        Where the entries need more than one area, they are added in the order
+        they are chained together on the ISO.
 
         Parameters:
-         block - The new block object.
+         block - The block object the area lives in.
+         offset - The offset within the block that the area starts at.
+         length - The length of the area, including any linking CE record.
         Returns:
          Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
 
-        self.ce_block = block
+        self.ce_areas.append(RockRidgeContinuationArea(block, offset, length))
+
+    def clear_ce_areas(self):
+        # type: () -> None
+        """
+        Forget the areas holding the Continuation entries for this record, so
+        that they can be allocated afresh.
+
+        Parameters:
+         None.
+        Returns:
+         Nothing.
+        """
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
+
+        self.ce_areas = []
+
+    def ce_area_lengths(self, max_area_size):
+        # type: (int) -> List[int]
+        """
+        Work out how to divide the Continuation entries into areas of no more
+        than max_area_size bytes.  An area may only be cut on a SUSP record
+        boundary, and every area but the last has to leave room for the CE
+        record linking it to the next one.  No SUSP record can be longer than
+        255 bytes, so a cut point always exists.
+
+        Parameters:
+         max_area_size - The largest an individual area may be.
+        Returns:
+         A list of area lengths, each including its linking CE record.
+        """
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
+
+        if self.ce_entries is None:
+            return []
+
+        lengths = [len(rec) for rec in self._record_list(self.ce_entries)]
+        if not lengths:
+            return []
+
+        total = sum(lengths)
+        if total <= max_area_size:
+            # Everything fits in a single area, so no linking is needed.
+            return [total]
+
+        budget = max_area_size - RRCERecord.length()
+        areas = []
+        used = 0
+        for length in lengths:
+            if length > budget:
+                raise pycdlibexception.PyCdlibInternalError('Rock Ridge entry is too large to fit into a Continuation Area')
+            if used + length > budget:
+                areas.append(used + RRCERecord.length())
+                used = 0
+            used += length
+        areas.append(used)
+
+        return areas
+
+    def record_ce_areas(self):
+        # type: () -> List[bytes]
+        """
+        Return the contents of each area holding this record's Continuation
+        entries, in the order the areas are chained together.  Each area but
+        the last ends with a CE record pointing at the one after it, so the
+        areas must already have been assigned locations.
+
+        Parameters:
+         None.
+        Returns:
+         A list of strings, one per continuation area.
+        """
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('Rock Ridge extension not initialized')
+
+        if self.ce_entries is None or not self.ce_areas:
+            return []
+
+        recs = self._record_list(self.ce_entries)
+        index = 0
+        outlist = []
+        for areanum, area in enumerate(self.ce_areas):
+            last = areanum == (len(self.ce_areas) - 1)
+            budget = area.length
+            if not last:
+                budget -= RRCERecord.length()
+
+            used = 0
+            chunk = []
+            while index < len(recs) and (used + len(recs[index])) <= budget:
+                used += len(recs[index])
+                chunk.append(recs[index])
+                index += 1
+
+            if not last:
+                nxt = self.ce_areas[areanum + 1]
+                ce_record = RRCERecord()
+                ce_record.new()
+                ce_record.update_extent(nxt.extent_location())
+                ce_record.update_offset(nxt.offset)
+                ce_record.add_record(nxt.length)
+                chunk.append(ce_record.record())
+
+            outlist.append(b''.join(chunk))
+
+        if index != len(recs):
+            raise pycdlibexception.PyCdlibInternalError('Rock Ridge Continuation entries do not fit into the areas allocated for them')
+
+        return outlist
 
 
 class RockRidgeContinuationEntry:

@@ -8430,11 +8430,10 @@ def test_new_rr_long_names_overflow_ce_block():
         assert(rec.get_data_length() == 6)
     iso2.close()
 
-def test_new_rr_symlink_too_long_for_ce_block():
-    # A symlink whose target needs a continuation area larger than a whole
-    # logical block cannot be represented, since we don't chain continuation
-    # areas together.  Make sure we refuse it up front rather than storing a
-    # bogus offset and failing much later during write.
+def test_new_rr_symlink_chained_ce():
+    # A symlink whose target needs more continuation area than fits in a single
+    # logical block gets split across several areas, each linking to the next
+    # with a CE record.
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge='1.09')
 
@@ -8443,11 +8442,24 @@ def test_new_rr_symlink_too_long_for_ce_block():
     # on a Unix filesystem.  Anything past roughly a 2040-byte target needs
     # more than one 2048-byte block for its continuation area.
     target = '/'.join(['c' * 200] * 20)
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.add_symlink('/SYM.;1', 'sym', target)
-    assert(str(excinfo.value) == 'Rock Ridge Continuation Entry of length 4046 is too large to fit into a Continuation Block of size 2048')
+    iso.add_symlink('/SYM.;1', 'sym', target)
 
+    rec = iso.get_record(rr_path='/sym')
+    assert(len(rec.rock_ridge.ce_areas) > 1)
+    for ce_area in rec.rock_ridge.ce_areas:
+        assert(ce_area.length <= 2048)
+
+    out = io.BytesIO()
+    iso.write_fp(out)
     iso.close()
+
+    # Now make sure it reads back as the same symlink.
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    rec2 = iso2.get_record(rr_path='/sym')
+    assert(len(rec2.rock_ridge.ce_areas) > 1)
+    assert(rec2.rock_ridge.symlink_path() == target.encode('utf-8'))
+    iso2.close()
 
 def test_new_isolevel4_deep_directory():
     iso = pycdlib.PyCdlib()

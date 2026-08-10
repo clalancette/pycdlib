@@ -10,6 +10,7 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import pycdlib
+import pycdlib.rockridge
 
 from test_common import *
 
@@ -3291,120 +3292,90 @@ def test_parse_one_extent_path_tables(tmpdir):
 
     do_a_test(tmpdir, outfile, check_onefile_one_extent_path_tables)
 
-def _swab32(x):
-    return struct.unpack('>I', struct.pack('<I', x))[0]
-
-def _make_ce(block, offset, length):
-    return b'CE' + bytes([28, 1]) + struct.pack('<IIIIII', block, _swab32(block),
-                                                offset, _swab32(offset),
-                                                length, _swab32(length))
-
-def _split_susp(blob):
-    """Split a System Use area into its individual SUSP records."""
-    recs = []
-    pos = 0
-    while pos + 4 <= len(blob):
-        su_len = blob[pos + 2]
-        if su_len == 0 or not blob[pos:pos + 2].isalpha():
-            break
-        recs.append(blob[pos:pos + su_len])
-        pos += su_len
-    return recs, blob[pos:]
-
-def _make_chained_ce_iso(tmpdir, name, loop=False):
+def _write_chained_ce_iso(path):
     """
-    Build an ISO whose Rock Ridge continuation area is chained across two CE
-    areas.  Rock Ridge allows a continuation area to end with a further CE
-    record, but no mastering tool writes them usefully (genisoimage emits a
-    dangling pointer to block 0), so assemble one by hand: write a normal ISO
-    with pycdlib, then split its single continuation area into two linked
-    pieces.  Returns (path, symlink_target).
+    Write an ISO holding a symlink whose target needs more than one Rock Ridge
+    continuation area, so that the areas have to be chained together.  Returns
+    the symlink target.
     """
-    target = b'/'.join([b'd' * 29] * 45)
+    target = '/'.join(['c' * 200] * 20)
 
-    base = str(tmpdir.join(name + '-base.iso'))
     iso = pycdlib.PyCdlib()
     iso.new(rock_ridge='1.09')
-    iso.add_symlink('/LINK.;1', 'link', target.decode())
-    iso.write(base)
-    ce = iso.get_record(rr_path='/link').rock_ridge.dr_entries.ce_record
-    area_bl, area_off, area_len = (ce.bl_cont_area, ce.offset_cont_area,
-                                   ce.len_cont_area)
+    iso.add_symlink('/LINK.;1', 'link', target)
+    iso.write(path)
     iso.close()
 
-    with open(base, 'rb') as infp:
-        data = bytearray(infp.read())
-
-    # Find the directory record's own CE record so we can retarget it.
-    dr_ce_off = data.find(_make_ce(area_bl, area_off, area_len))
-    assert dr_ce_off != -1
-
-    area_start = area_bl * 2048 + area_off
-    recs, tail = _split_susp(bytes(data[area_start:area_start + area_len]))
-
-    # Cut at a record boundary near the middle.
-    acc = 0
-    split = 0
-    while split < len(recs) and acc + len(recs[split]) <= area_len // 2:
-        acc += len(recs[split])
-        split += 1
-    part1 = b''.join(recs[:split])
-    part2 = b''.join(recs[split:]) + tail
-
-    # Park the second area in a block appended to the image.
-    new_block = len(data) // 2048
-    data.extend(b'\x00' * 2048)
-    data[new_block * 2048:new_block * 2048 + len(part2)] = part2
-
-    if loop:
-        # Point the link back at the first area to make a cycle.
-        link = _make_ce(area_bl, area_off, len(part1) + 28)
-    else:
-        link = _make_ce(new_block, 0, len(part2))
-    area1 = part1 + link
-    data[area_start:area_start + area_len] = b'\x00' * area_len
-    data[area_start:area_start + len(area1)] = area1
-    data[dr_ce_off:dr_ce_off + 28] = _make_ce(area_bl, area_off, len(area1))
-
-    # Keep the PVD's volume space size honest about the appended block.
-    pvd = 16 * 2048
-    struct.pack_into('<I', data, pvd + 80, len(data) // 2048)
-    struct.pack_into('>I', data, pvd + 84, len(data) // 2048)
-
-    out = str(tmpdir.join(name + '.iso'))
-    with open(out, 'wb') as outfp:
-        outfp.write(bytes(data))
-    return out, target
+    return target
 
 def test_parse_rr_chained_ce(tmpdir):
-    # A continuation area that ends with another CE record, chaining to a
-    # second area.  The Linux isofs driver and cdrtools both follow these, so
-    # we should too rather than rejecting the whole ISO.
-    out, target = _make_chained_ce_iso(tmpdir, 'chainedce')
+    # A symlink target too long to fit in a single continuation area is spread
+    # across several, each linking to the next with a CE record.
+    outfile = str(tmpdir.join('chainedce.iso'))
+    target = _write_chained_ce_iso(outfile)
 
     iso = pycdlib.PyCdlib()
-    iso.open(out)
-    assert(iso.get_record(rr_path='/link').rock_ridge.symlink_path() == target)
+    iso.open(outfile)
+    rec = iso.get_record(rr_path='/link')
+    assert(len(rec.rock_ridge.ce_areas) > 1)
+    for ce_area in rec.rock_ridge.ce_areas:
+        assert(ce_area.length <= 2048)
+    assert(rec.rock_ridge.symlink_path() == target.encode('utf-8'))
     iso.close()
 
-def test_parse_rr_chained_ce_write_refused(tmpdir):
-    # We can read a chained continuation area, but writing one back out would
-    # mean splitting the entries across areas again, which we don't do.
-    out, unused_target = _make_chained_ce_iso(tmpdir, 'chainedcewrite')
+def test_parse_rr_chained_ce_round_trip(tmpdir):
+    # Reading an ISO with chained continuation areas and writing it back out
+    # has to reproduce it exactly.
+    first = str(tmpdir.join('chainedce.iso'))
+    second = str(tmpdir.join('chainedce2.iso'))
+    target = _write_chained_ce_iso(first)
 
     iso = pycdlib.PyCdlib()
-    iso.open(out)
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        iso.write(str(tmpdir.join('out.iso')))
-    assert(str(excinfo.value) == 'Cannot write out an ISO with chained Rock Ridge Continuation Entries')
+    iso.open(first)
+    iso.write(second)
     iso.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.open(second)
+    assert(iso.get_record(rr_path='/link').rock_ridge.symlink_path() == target.encode('utf-8'))
+    iso.close()
+
+    with open(first, 'rb') as infp:
+        firstdata = infp.read()
+    with open(second, 'rb') as infp:
+        seconddata = infp.read()
+    assert(firstdata == seconddata)
 
 def test_parse_rr_ce_loop(tmpdir):
-    # A CE record pointing back at its own area would spin the parser forever
-    # without a loop guard.
-    out, unused_target = _make_chained_ce_iso(tmpdir, 'celoop', loop=True)
+    # A CE record pointing back at the area holding it would spin the parser
+    # forever without a loop guard.  pycdlib will not write one of these, so
+    # take a good ISO and corrupt the link.
+    outfile = str(tmpdir.join('celoop.iso'))
+    _write_chained_ce_iso(outfile)
+
+    iso = pycdlib.PyCdlib()
+    iso.open(outfile)
+    first_area = iso.get_record(rr_path='/link').rock_ridge.ce_areas[0]
+    extent = first_area.extent_location()
+    offset = first_area.offset
+    length = first_area.length
+    iso.close()
+
+    ce_record = pycdlib.rockridge.RRCERecord()
+    ce_record.new()
+    ce_record.update_extent(extent)
+    ce_record.update_offset(offset)
+    ce_record.update_len(length)
+
+    # The CE linking the first area to the second sits at the end of the first.
+    with open(outfile, 'rb') as infp:
+        data = bytearray(infp.read())
+    link = extent * 2048 + offset + length - 28
+    data[link:link + 28] = ce_record.record()
+    with open(outfile, 'wb') as outfp:
+        outfp.write(bytes(data))
 
     iso = pycdlib.PyCdlib()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
-        iso.open(out)
+        iso.open(outfile)
     assert(str(excinfo.value) == 'Rock Ridge Continuation Entries form a loop')

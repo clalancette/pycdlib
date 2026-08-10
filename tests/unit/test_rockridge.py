@@ -205,6 +205,12 @@ def test_rrcerecord_update_offset_not_initialized():
         ce.update_offset(0)
     assert(str(excinfo.value) == 'CE record not initialized')
 
+def test_rrcerecord_update_len_not_initialized():
+    ce = pycdlib.rockridge.RRCERecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        ce.update_len(0)
+    assert(str(excinfo.value) == 'CE record not initialized')
+
 def test_rrcerecord_update_add_record_not_initialized():
     ce = pycdlib.rockridge.RRCERecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
@@ -1528,10 +1534,28 @@ def test_rr_relocated_record_not_initialized():
         rr.relocated_record()
     assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
-def test_rr_update_ce_block_not_initialized():
+def test_rr_add_ce_area_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        rr.update_ce_block(None)
+        rr.add_ce_area(None, 0, 0)
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
+
+def test_rr_clear_ce_areas_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.clear_ce_areas()
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
+
+def test_rr_ce_area_lengths_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.ce_area_lengths(2048)
+    assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
+
+def test_rr_record_ce_areas_not_initialized():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.record_ce_areas()
     assert(str(excinfo.value) == 'Rock Ridge extension not initialized')
 
 def test_rr_parse_continuation_does_not_downgrade_version():
