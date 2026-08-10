@@ -4803,6 +4803,14 @@ class PyCdlib:
         padding to the end of the data block) does not fall off the
         rails on stale bytes from a previous on-disk layout.
 
+        Everything this function emits -- records, inter-extent padding,
+        and the trailing pad -- is one contiguous run of bytes starting
+        at the parent's first extent, so it is assembled in memory and
+        committed with a single seek and a single write.  Writing each
+        record individually costs a seek and a write per child, which
+        makes an in-place edit of a large directory dominated by
+        syscalls (a 4000-child directory took ~4000 of each per edit).
+
         Parameters:
          parent - The parent DirectoryRecord whose children should be
                   written out to disk.
@@ -4813,6 +4821,7 @@ class PyCdlib:
         first_extent = parent.extent_location()
         dir_extent = first_extent
         offset_in_extent = 0
+        parts = []  # type: List[bytes]
         for ch in parent.children:
             recstr = ch.record()
             if offset_in_extent + len(recstr) > lbs:
@@ -4820,12 +4829,10 @@ class PyCdlib:
                 # Zero-pad the rest of this extent before advancing,
                 # so any stale bytes from a prior on-disk layout are
                 # cleared.
-                self._cdfp.seek(dir_extent * lbs + offset_in_extent)
-                self._cdfp.write(b'\x00' * (lbs - offset_in_extent))
+                parts.append(b'\x00' * (lbs - offset_in_extent))
                 dir_extent += 1
                 offset_in_extent = 0
-            self._cdfp.seek(dir_extent * lbs + offset_in_extent)
-            self._cdfp.write(recstr)
+            parts.append(recstr)
             offset_in_extent += len(recstr)
 
         # Zero-pad from the end of the last record through the end of
@@ -4837,8 +4844,10 @@ class PyCdlib:
         last_byte = dir_extent * lbs + offset_in_extent
         end_byte = first_extent * lbs + parent.data_length
         if last_byte < end_byte:
-            self._cdfp.seek(last_byte)
-            self._cdfp.write(b'\x00' * (end_byte - last_byte))
+            parts.append(b'\x00' * (end_byte - last_byte))
+
+        self._cdfp.seek(first_extent * lbs)
+        self._cdfp.write(b''.join(parts))
 
     def _rewrite_subdir_dotdots(self, parent):
         # type: (dr.DirectoryRecord) -> None
