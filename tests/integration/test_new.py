@@ -9020,3 +9020,104 @@ def test_new_write_progress_cb_wrong_arg_count():
     assert(str(excinfo.value) == 'The progress callback must take 2 or 3 arguments')
 
     iso.close()
+
+def test_new_in_place_modify_eltorito_boot_catalog(tmpdir):
+    # The El Torito boot catalog's directory record deliberately has no
+    # Inode (the catalog is managed in memory), so an in-place modify of it
+    # is rejected rather than dereferencing None.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'boot\n'), 5, '/BOOT.;1')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+            ed.modify_file(io.BytesIO(b'x'*2048), 2048, '/BOOT.CAT;1')
+        assert(str(excinfo.value) == 'Child file found without inode')
+
+def test_new_in_place_add_fp_enhanced_vd(tmpdir):
+    # An interchange level 4 ISO carries an enhanced VD, whose sizes have to
+    # be copied from the PVD and written back out after an in-place add.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4)
+    iso.add_fp(io.BytesIO(b'aaa\n'), 4, '/A.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.add_fp(io.BytesIO(b'bbb\n'), 4, '/B.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    assert(iso2.enhanced_vd is not None)
+    assert(iso2.enhanced_vd.space_size == iso2.pvd.space_size)
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/B.;1')
+    assert(buf.getvalue() == b'bbb\n')
+    iso2.close()
+
+def test_new_in_place_rm_file_enhanced_vd(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4)
+    iso.add_fp(io.BytesIO(b'aaa\n'), 4, '/A.;1')
+    iso.add_fp(io.BytesIO(b'bbb\n'), 4, '/B.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.rm_file('/A.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    assert(iso2.enhanced_vd is not None)
+    assert(iso2.enhanced_vd.space_size == iso2.pvd.space_size)
+    names = [c.file_identifier() for c in iso2.pvd.root_directory_record().children]
+    assert(b'A.;1' not in names)
+    assert(b'B.;1' in names)
+    iso2.close()
+
+def test_new_in_place_add_fp_joliet_overflow_rolls_back(tmpdir):
+    # Joliet names are UTF-16BE, so the Joliet root directory extent fills up
+    # well before the ISO9660 one.  Twelve files with long Joliet names leaves
+    # the Joliet root with no room for a thirteenth, while the ISO9660 root
+    # still has plenty -- so the add succeeds on the ISO9660 side and then has
+    # to be rolled back when the Joliet side overflows.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    for index in range(12):
+        iso.add_fp(io.BytesIO(b'x\n'), 2, '/FILE%04d.;1' % index,
+                   joliet_path='/' + ('j%03d' % index) + 'x'*58)
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    ed = pycdlib.InPlaceEditor(iso_path)
+    iso_root = ed._iso.pvd.root_directory_record()
+    joliet_root = ed._iso.joliet_vd.root_directory_record()
+    iso_children_before = len(iso_root.children)
+    joliet_children_before = len(joliet_root.children)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        ed.add_fp(io.BytesIO(b'y\n'), 2, '/NEW.;1', joliet_path='/' + 'jnew' + 'y'*58)
+    assert(str(excinfo.value) == "Adding this file would overflow the Joliet parent directory's extent; use PyCdlib.add_fp + write_fp() to produce a new ISO instead")
+
+    # The ISO9660 side must have been rolled back, so the failure is atomic.
+    assert(len(iso_root.children) == iso_children_before)
+    assert(len(joliet_root.children) == joliet_children_before)
+    assert(not any(c.file_identifier() == b'NEW.;1' for c in iso_root.children))
+    ed._iso.close()
+
+    # And the on-disk ISO must still be intact.
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    assert(len(iso2.pvd.root_directory_record().children) == iso_children_before)
+    iso2.close()
