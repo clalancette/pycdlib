@@ -2827,3 +2827,114 @@ def test_descriptor_sequence_append_to_list():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         seq.append_to_list('pvds', pvd2)
     assert(str(excinfo.value) == 'Descriptors with same sequence number do not have the same contents')
+
+def _udf_descriptor_with_tag(tag_ident, body_len=496):
+    # Build a syntactically valid UDF descriptor (correct tag checksum and
+    # CRC) carrying an arbitrary tag identifier, so that the tag identifier
+    # checks in the module-level parse_* helpers can be exercised.
+    body = b'\x00'*body_len
+    tag = pycdlib.udf.UDFTag()
+    tag.new(tag_ident)
+    return tag.record(body) + body
+
+def test_parse_udf_vol_descs_unknown_tag_ident():
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pycdlib.udf.parse_udf_vol_descs(_udf_descriptor_with_tag(99) + b'\x00'*2048, 0, 512)
+    assert(str(excinfo.value) == 'UDF Tag identifier not 99')
+
+def test_parse_udf_vol_descs_no_pvd():
+    # A terminating descriptor with no preceding Primary Volume Descriptor.
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pycdlib.udf.parse_udf_vol_descs(_udf_descriptor_with_tag(8) + b'\x00'*2048, 0, 512)
+    assert(str(excinfo.value) == 'At least one UDF Primary Volume Descriptor required')
+
+def test_parse_udf_vol_descs_two_pvds_with_desc_num_zero():
+    pvd1 = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    pvd1.new('ident')
+
+    # A different sequence number keeps the duplicate-contents check from
+    # firing, so that the descriptor number check is reached instead.
+    pvd2 = pycdlib.udf.UDFPrimaryVolumeDescriptor()
+    pvd2.new('ident')
+    pvd2.vol_desc_seqnum = 1
+
+    data = pvd1.record().ljust(512, b'\x00') + pvd2.record().ljust(512, b'\x00') + \
+        _udf_descriptor_with_tag(8) + b'\x00'*2048
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pycdlib.udf.parse_udf_vol_descs(data, 0, 512)
+    assert(str(excinfo.value) == 'Only one UDF Primary Volume Descriptor can have a descriptor number 0')
+
+def test_parse_logical_volume_integrity_bad_tag_ident():
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pycdlib.udf.parse_logical_volume_integrity(_udf_descriptor_with_tag(1), 0, 512)
+    assert(str(excinfo.value) == 'UDF Volume Integrity Tag identifier not 9')
+
+def test_parse_logical_volume_integrity_bad_terminator_tag_ident():
+    lvid = pycdlib.udf.UDFLogicalVolumeIntegrityDescriptor()
+    lvid.new()
+
+    data = lvid.record().ljust(512, b'\x00') + _udf_descriptor_with_tag(9)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pycdlib.udf.parse_logical_volume_integrity(data, 0, 512)
+    assert(str(excinfo.value) == 'UDF Logical Volume Integrity Terminator Tag identifier not 8')
+
+def test_parse_file_set_bad_tag_ident():
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pycdlib.udf.parse_file_set(_udf_descriptor_with_tag(1), 0, 512)
+    assert(str(excinfo.value) == 'UDF File Set Tag identifier not 256')
+
+def test_parse_file_ident_bad_tag_ident():
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        pycdlib.udf.parse_file_ident(_udf_descriptor_with_tag(1), 0, 0, None)
+    assert(str(excinfo.value) == 'UDF File Identifier Tag identifier not 257')
+
+def test_udffileentry_find_file_ident_desc_by_name_not_a_dir():
+    fe = pycdlib.udf.UDFFileEntry()
+    fe.new(0, 'file', None, 2048)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        fe.find_file_ident_desc_by_name('/foo')
+    assert(str(excinfo.value) == 'Could not find path')
+
+def test_udffileentry_set_data_length_too_large():
+    fe = pycdlib.udf.UDFFileEntry()
+    fe.new(2048, 'file', None, 2048)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        fe.set_data_length(0x3ffff800 + 2048 + 1)
+    assert(str(excinfo.value) == 'Cannot increase the size of a UDF file beyond the current descriptor')
+
+def test_udffileentry_remove_file_ident_desc_by_name_no_file_entry():
+    parent = pycdlib.udf.UDFFileEntry()
+    parent.new(0, 'dir', None, 2048)
+
+    sub = pycdlib.udf.UDFFileIdentifierDescriptor()
+    sub.new(True, False, b'SUB', parent)
+    parent.fi_descs[b'SUB'] = sub
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        parent.remove_file_ident_desc_by_name(b'SUB', 2048)
+    assert(str(excinfo.value) == 'No UDF File Entry for UDF File Descriptor')
+
+def test_udffileentry_remove_file_ident_desc_by_name_dir_not_empty():
+    parent = pycdlib.udf.UDFFileEntry()
+    parent.new(0, 'dir', None, 2048)
+
+    sub = pycdlib.udf.UDFFileIdentifierDescriptor()
+    sub.new(True, False, b'SUB', parent)
+
+    subfe = pycdlib.udf.UDFFileEntry()
+    subfe.new(0, 'dir', parent, 2048)
+    for name in (b'A', b'B'):
+        child = pycdlib.udf.UDFFileIdentifierDescriptor()
+        child.new(False, False, name, subfe)
+        subfe.fi_descs[name] = child
+
+    sub.file_entry = subfe
+    parent.fi_descs[b'SUB'] = sub
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        parent.remove_file_ident_desc_by_name(b'SUB', 2048)
+    assert(str(excinfo.value) == 'Directory must be empty to use rm_directory')

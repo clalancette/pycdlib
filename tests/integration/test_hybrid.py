@@ -3040,3 +3040,59 @@ def test_hybrid_boot_record_retain_system_use(tmpdir):
     iso.close()
 
 # FIXME: write tests for 'empty' UDF File Entries (like on the Win2k8 ISO).
+
+def _make_zeroed_udf_file_entry_iso(tmpdir, name):
+    # Build a UDF ISO with a single file and then zero out that file's UDF
+    # File Entry, which is how an 'empty' UDF File Entry is reached.
+    indir = tmpdir.mkdir(name)
+    outfile = str(indir)+'.iso'
+
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+
+    subprocess.call(['genisoimage', '-v', '-v', '-no-pad', '-iso-level', '3',
+                     '-udf', '-o', str(outfile), str(indir)])
+
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(261*2048)
+        fp.write(b'\x00'*2048)
+
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+    return iso
+
+def test_hybrid_udf_get_file_byte_extents_zero_udf_file_entry(tmpdir):
+    iso = _make_zeroed_udf_file_entry_iso(tmpdir, 'udfextentszero')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_file_byte_extents(udf_path='/foo')
+    assert(str(excinfo.value) == 'Cannot get extents for an empty UDF File Entry')
+
+    iso.close()
+
+def test_hybrid_udf_walk_zero_udf_file_entry(tmpdir):
+    iso = _make_zeroed_udf_file_entry_iso(tmpdir, 'udfwalkzero')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        list(iso.walk(udf_path='/foo'))
+    assert(str(excinfo.value) == 'Cannot get entry for empty UDF File Entry')
+
+    iso.close()
+
+def test_hybrid_udf_open_file_from_iso_zero_udf_file_entry(tmpdir):
+    iso = _make_zeroed_udf_file_entry_iso(tmpdir, 'udfopenzero')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.open_file_from_iso(udf_path='/foo')
+    assert(str(excinfo.value) == 'Cannot get entry for empty UDF File Entry')
+
+    iso.close()
+
+def test_hybrid_udf_add_hard_link_zero_udf_file_entry(tmpdir):
+    iso = _make_zeroed_udf_file_entry_iso(tmpdir, 'udfhardlinkzero')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_hard_link(udf_old_path='/foo', iso_new_path='/BAR.;1')
+    assert(str(excinfo.value) == 'Cannot make hard link to a UDF file with an empty UDF File Entry')
+
+    iso.close()

@@ -13,6 +13,7 @@ for i in range(0, 3):
     else:
         prefix = '../' + prefix
 
+import pycdlib.dr
 import pycdlib.rockridge
 
 # SP record
@@ -1792,3 +1793,59 @@ def test_rrcontblock_remove_entry_no_entry():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         rr.remove_entry(0, 0)
     assert(str(excinfo.value) == 'Could not find an entry for the RR CE entry in the CE block!')
+
+def test_rr_get_file_mode_no_px_anywhere():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    rr.dr_entries.px_record = None
+    rr.ce_entries = None
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        rr.get_file_mode()
+    assert(str(excinfo.value) == 'No Rock Ridge file mode')
+
+def test_rr_child_link_update_from_dirrecord_no_cl_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    rr.cl_to_moved_dr = pycdlib.dr.DirectoryRecord()
+    rr.dr_entries.cl_record = None
+    rr.ce_entries = None
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        rr.child_link_update_from_dirrecord()
+    assert(str(excinfo.value) == 'Could not find child link record!')
+
+def test_rr_parent_link_update_from_dirrecord_no_pl_record():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 0, {}, time.time())
+    rr.parent_link = pycdlib.dr.DirectoryRecord()
+    rr.dr_entries.pl_record = None
+    rr.ce_entries = None
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        rr.parent_link_update_from_dirrecord()
+    assert(str(excinfo.value) == 'Could not find parent link record!')
+
+def test_rr_ce_area_lengths_entry_too_large_for_area():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {}, time.time())
+    assert(rr.ce_entries is not None)
+
+    # An area with room for the linking CE record and almost nothing else
+    # cannot hold any real entry.
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.ce_area_lengths(pycdlib.rockridge.RRCERecord.length() + 2)
+    assert(str(excinfo.value) == 'Rock Ridge entry is too large to fit into a Continuation Area')
+
+def test_rr_record_ce_areas_entries_do_not_fit():
+    rr = pycdlib.rockridge.RockRidge()
+    rr.new(False, b'foo', 0, None, '1.09', False, False, False, 0, 254-28, {}, time.time())
+    assert(rr.ce_entries is not None)
+
+    # Deliberately allocate an area far smaller than ce_area_lengths asked for.
+    block = pycdlib.rockridge.RockRidgeContinuationBlock(0, 2048)
+    rr.add_ce_area(block, 0, 4)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        rr.record_ce_areas()
+    assert(str(excinfo.value) == 'Rock Ridge Continuation entries do not fit into the areas allocated for them')

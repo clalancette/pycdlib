@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import io
 import subprocess
 import os
 import sys
@@ -11,6 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 
 import pycdlib
 import pycdlib.rockridge
+import pycdlib.udf
 
 from test_common import *
 
@@ -3379,3 +3381,164 @@ def test_parse_rr_ce_loop(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(outfile)
     assert(str(excinfo.value) == 'Rock Ridge Continuation Entries form a loop')
+
+def _iso_bytes(iso):
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+    return out.getvalue()
+
+def _get_extent(data, extent):
+    return data[extent*2048:(extent+1)*2048]
+
+def _replace_extent(data, extent, block):
+    buf = bytearray(data)
+    buf[extent*2048:(extent+1)*2048] = block
+    return bytes(buf)
+
+def _open_bytes(data):
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(io.BytesIO(data))
+    return iso
+
+def test_parse_two_joliet_svds():
+    # A Joliet + ISO level 4 ISO lays out PVD, Joliet SVD, enhanced SVD,
+    # terminator.  Overwriting the enhanced SVD with a copy of the Joliet
+    # one leaves the ISO with two Joliet SVDs.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, interchange_level=4)
+    data = _iso_bytes(iso)
+
+    data = _replace_extent(data, 17, _get_extent(data, 18))
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        _open_bytes(data)
+    assert(str(excinfo.value) == 'Only a single Joliet SVD is supported')
+
+def test_parse_two_enhanced_vds():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, interchange_level=4)
+    data = _iso_bytes(iso)
+
+    # The mirror of the above: two enhanced VDs and no Joliet SVD.
+    data = _replace_extent(data, 18, _get_extent(data, 17))
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        _open_bytes(data)
+    assert(str(excinfo.value) == 'Only a single enhanced VD is supported')
+
+def test_parse_two_eltorito_boot_records():
+    # Joliet + El Torito lays out PVD, boot record, Joliet SVD, terminator.
+    # Overwriting the SVD with a copy of the boot record gives two boot
+    # records while leaving the terminator in place.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    bootstr = b'boot\n'
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+    data = _iso_bytes(iso)
+
+    data = _replace_extent(data, 18, _get_extent(data, 17))
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        _open_bytes(data)
+    assert(str(excinfo.value) == 'Only one El Torito boot record is allowed')
+
+def test_parse_eltorito_boot_record_not_at_extent_17():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    bootstr = b'boot\n'
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+    data = _iso_bytes(iso)
+
+    # Swap the boot record and the Joliet SVD so the boot record lands at 18.
+    br = _get_extent(data, 17)
+    svd = _get_extent(data, 18)
+    data = _replace_extent(_replace_extent(data, 17, svd), 18, br)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        _open_bytes(data)
+    assert(str(excinfo.value) == 'El Torito Boot Record must be at extent 17')
+
+def test_parse_udf_too_few_anchors():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    data = _iso_bytes(iso)
+
+    # Zero the anchor at extent 256, leaving only the trailing one.
+    data = _replace_extent(data, 256, b'\x00'*2048)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        _open_bytes(data)
+    assert(str(excinfo.value) == 'Expected at least 2 UDF Anchors')
+
+def test_parse_udf_mismatched_anchors():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    data = _iso_bytes(iso)
+
+    # Point the anchor at extent 256 at a different main volume descriptor
+    # sequence than the trailing anchor does.
+    anchor = pycdlib.udf.parse_anchor(_get_extent(data, 256), 256)
+    anchor.main_vd.extent_location += 1
+    data = _replace_extent(data, 256, anchor.record().ljust(2048, b'\x00'))
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        _open_bytes(data)
+    assert(str(excinfo.value) == 'Anchor points do not match')
+
+def test_parse_udf_empty_file_entry_for_directory():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_directory('/DIR1', udf_path='/dir1')
+    data = _iso_bytes(iso)
+
+    # Find where the directory's UDF File Entry lives, then zero it out.
+    probe = _open_bytes(data)
+    ident_unused, file_entry = probe._find_udf_record(b'/dir1')
+    entry_extent = file_entry.extent_location()
+    probe.close()
+
+    data = _replace_extent(data, entry_extent, b'\x00'*2048)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        _open_bytes(data)
+    assert(str(excinfo.value) == 'Empty UDF File Entry for directories are not allowed')
+
+def test_parse_duplicate_directory_records():
+    # Two directory records with the same name in one parent is only tolerated
+    # for the multi-extent (very large file) case; duplicated directories are
+    # rejected.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_directory('/DIR1')
+    iso.add_directory('/DIR2')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    root_extent = iso.pvd.root_directory_record().extent_location()
+    iso.close()
+
+    data = bytearray(out.getvalue())
+    base = root_extent*2048
+
+    # Walk the root directory extent to find the DIR1 and DIR2 records.
+    offsets = []
+    offset = 0
+    while offset < 2048:
+        length = data[base+offset]
+        if length == 0:
+            break
+        offsets.append((offset, length))
+        offset += length
+
+    (dir1_offset, dir1_len) = offsets[2]
+    (dir2_offset, dir2_len) = offsets[3]
+    assert(dir1_len == dir2_len)
+
+    # Overwrite the DIR2 record with a copy of the DIR1 record.
+    data[base+dir2_offset:base+dir2_offset+dir2_len] = data[base+dir1_offset:base+dir1_offset+dir1_len]
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        _open_bytes(bytes(data))
+    assert(str(excinfo.value) == 'Failed adding duplicate name to parent')
