@@ -60,6 +60,14 @@ if TYPE_CHECKING:
 # left, the input contained a disallowed character.
 _ALLOWED_D1_BYTES = bytes(range(65, 91)) + bytes(range(48, 58)) + b'_'
 
+# Ecma-119 distinguishes the Logical Sector (6.1.2; 2048 bytes on all media
+# pycdlib deals with) from the Logical Block (6.2.2; 512, 1024, or 2048 bytes,
+# recorded in the PVD).  Extent locations count Logical Blocks, but volume
+# descriptors are placed in Logical Sectors, starting at sector 16 (6.2.1)
+# with one descriptor per sector.
+_LOGICAL_SECTOR_SIZE = 2048
+_VOLUME_DESCRIPTOR_SET_START_SECTOR = 16
+
 
 def _check_d1_characters(name):
     # type: (bytes) -> None
@@ -259,25 +267,42 @@ def _interchange_level_from_directory(name):
     return interchange_level
 
 
-def _reassign_vd_dirrecord_extents(vd, current_extent):
-    # type: (headervd.PrimaryOrSupplementaryVD, int) -> Tuple[int, List[inode.Inode]]
+def _reassign_vd_dirrecord_extents(vd, current_extent, blocks_per_sector):
+    # type: (headervd.PrimaryOrSupplementaryVD, int, int) -> Tuple[int, List[inode.Inode], int]
     """
     An internal helper method for reassign_extents that assigns extents to
     directory records for the passed in Volume Descriptor.  The current
     extent is passed in, and this function returns the extent after the
     last one it assigned.
 
+    Ecma-119 6.8.1 requires every directory extent to start on a Logical
+    Sector boundary, so directories are aligned up when a block is smaller
+    than a sector; the padding blocks this adds are returned to the caller.
+
     Parameters:
      vd - The volume descriptor on which to operate.
      current_extent - The current extent before assigning extents to the
                       volume descriptor directory records.
+     blocks_per_sector - The number of Logical Blocks in a Logical Sector.
     Returns:
-     The current extent after assigning extents to the volume descriptor
-     directory records.
+     A tuple of the current extent after assigning extents to the volume
+     descriptor directory records, the list of file inodes found, and the
+     number of padding blocks inserted for directory alignment.
     """
     log_block_size = vd.logical_block_size()
+    padding = 0
+
+    def _align_to_sector(extent):
+        # type: (int) -> int
+        remainder = extent % blocks_per_sector
+        if remainder == 0:
+            return extent
+        return extent + (blocks_per_sector - remainder)
 
     root_dir_record = vd.root_directory_record()
+    aligned = _align_to_sector(current_extent)
+    padding += aligned - current_extent
+    current_extent = aligned
     root_dir_record.set_data_location(current_extent, 0)
     current_extent += utils.ceiling_div(root_dir_record.data_length,
                                         log_block_size)
@@ -344,6 +369,9 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
             continue
 
         if dir_record.is_dir():
+            aligned = _align_to_sector(current_extent)
+            padding += aligned - current_extent
+            current_extent = aligned
             dir_record.set_data_location(current_extent, current_extent)
             for child in dir_record.children:
                 if child.ptr is not None:
@@ -381,7 +409,7 @@ def _reassign_vd_dirrecord_extents(vd, current_extent):
         if p.rock_ridge is not None:
             p.rock_ridge.parent_link_update_from_dirrecord()
 
-    return current_extent, file_list
+    return current_extent, file_list, padding
 
 
 def _check_path_depth(iso_path):
@@ -543,7 +571,7 @@ class PyCdlib:
                  'udf_reserve_descs', 'udf_logical_volume_integrity',
                  'udf_boots', 'udf_logical_volume_integrity_terminator',
                  'udf_root', 'udf_file_set', 'udf_file_set_terminator',
-                 'logical_block_size')
+                 'logical_block_size', '_dir_alignment_blocks')
 
     def _initialize(self):
         # type: () -> None
@@ -596,6 +624,8 @@ class PyCdlib:
         # Default to a logical block size of 2048; this will be overridden by
         # the block size from the PVD or the detected block size during an open.
         self.logical_block_size = 2048
+        # Padding blocks the last reshuffle added for directory alignment.
+        self._dir_alignment_blocks = 0
         self.interchange_level = 1  # type: int
 
     def _parse_volume_descriptors(self):
@@ -608,26 +638,42 @@ class PyCdlib:
         Returns:
          Nothing.
         """
-        # Ecma-119, 6.2.1 says that the Volume Space is divided into a System
-        # Area and a Data Area, where the System Area is in logical sectors 0
-        # to 15, and whose contents is not specified by the standard.  Logical
-        # sectors are 2048 bytes in length, so we start at offset 16 * 2048.
-        self._cdfp.seek(16 * 2048)
+        # Ecma-119 6.2.1: the System Area is Logical Sectors 0 to 15, so the
+        # Volume Descriptor Set starts at sector 16.  Each descriptor is one
+        # sector.  Read the whole set first, up to the first sector that is
+        # not a descriptor, leaving the file positioned at that sector.
+        self._cdfp.seek(_VOLUME_DESCRIPTOR_SET_START_SECTOR * _LOGICAL_SECTOR_SIZE)
+        descriptors = []  # type: List[bytes]
         while True:
-            # All volume descriptors are exactly 2048 bytes long
-            curr_extent = self._cdfp.tell() // 2048
-            vd = self._cdfp.read(2048)
-            if len(vd) != 2048:
+            vd = self._cdfp.read(_LOGICAL_SECTOR_SIZE)
+            if len(vd) != _LOGICAL_SECTOR_SIZE:
                 raise pycdlibexception.PyCdlibInvalidISO('Failed to read entire volume descriptor')
             (desc_type, ident) = struct.unpack_from('=B5s', vd, 0)
             if desc_type not in (headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY,
                                  headervd.VOLUME_DESCRIPTOR_TYPE_SET_TERMINATOR,
                                  headervd.VOLUME_DESCRIPTOR_TYPE_BOOT_RECORD,
                                  headervd.VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY) or ident not in (b'CD001', b'CDW02', b'BEA01', b'NSR02', b'NSR03', b'TEA01', b'BOOT2'):
-                # We read the next extent, and it wasn't a descriptor.  Abort
-                # the loop, remembering to back up the input file descriptor.
-                self._cdfp.seek(-2048, os.SEEK_CUR)
+                self._cdfp.seek(-_LOGICAL_SECTOR_SIZE, os.SEEK_CUR)
                 break
+            descriptors.append(vd)
+
+        # Descriptor extent locations are counted in Logical Blocks, so the
+        # block size has to be known before any descriptor is parsed.  It is
+        # carried in the PVD (Ecma-119 8.4.12: both-byte order 16-bit field at
+        # BP 129); if there is no PVD the check below reports that.
+        log_block_size = _LOGICAL_SECTOR_SIZE
+        for vd in descriptors:
+            (desc_type, ident) = struct.unpack_from('=B5s', vd, 0)
+            if desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY and ident == b'CD001':
+                log_block_size, = struct.unpack_from('<H', vd, 128)
+                if log_block_size not in (512, 1024, 2048):
+                    raise pycdlibexception.PyCdlibInvalidISO('Invalid logical block size %d; must be 512, 1024, or 2048' % (log_block_size))
+                break
+        blocks_per_sector = _LOGICAL_SECTOR_SIZE // log_block_size
+
+        for (index, vd) in enumerate(descriptors):
+            curr_extent = (_VOLUME_DESCRIPTOR_SET_START_SECTOR + index) * blocks_per_sector
+            (desc_type, ident) = struct.unpack_from('=B5s', vd, 0)
             if desc_type == headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY:
                 pvd = headervd.PrimaryOrSupplementaryVD(headervd.VOLUME_DESCRIPTOR_TYPE_PRIMARY)
                 pvd.parse(vd, curr_extent)
@@ -1368,6 +1414,12 @@ class PyCdlib:
         if self.eltorito_boot_catalog is not None:
             raise pycdlibexception.PyCdlibInvalidISO('Only one El Torito boot record is allowed')
 
+        # El Torito counts the boot catalog pointer and load RBA in 2048-byte
+        # sectors, which only matches pycdlib's block-based extents when a
+        # block is a sector.
+        if self.logical_block_size != _LOGICAL_SECTOR_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('El Torito requires a logical block size of 2048')
+
         # According to the El Torito specification, section 2.0, the El
         # Torito boot record must be at extent 17.
         if br.extent_location() != 17:
@@ -1625,42 +1677,46 @@ class PyCdlib:
         Returns:
          Nothing.
         """
-        current_extent = 16
+        # Volume descriptors occupy whole Logical Sectors starting at sector
+        # 16, so convert the start and stride into logical blocks.
+        blocks_per_sector = _LOGICAL_SECTOR_SIZE // self.logical_block_size
+        current_extent = _VOLUME_DESCRIPTOR_SET_START_SECTOR * blocks_per_sector
+
         for pvd in self.pvds:
             pvd.set_extent_location(current_extent)
-            current_extent += 1
+            current_extent += blocks_per_sector
 
         for br in self.brs:
             br.set_extent_location(current_extent)
-            current_extent += 1
+            current_extent += blocks_per_sector
 
         for svd in self.svds:
             svd.set_extent_location(current_extent)
-            current_extent += 1
+            current_extent += blocks_per_sector
 
         for vdst in self.vdsts:
             vdst.set_extent_location(current_extent)
-            current_extent += 1
+            current_extent += blocks_per_sector
 
         if self._has_udf:
             for bea in self.udf_beas:
                 bea.set_extent_location(current_extent)
-                current_extent += 1
+                current_extent += blocks_per_sector
 
             for boot in self.udf_boots:
                 boot.set_extent_location(current_extent)
-                current_extent += 1
+                current_extent += blocks_per_sector
 
             self.udf_nsr.set_extent_location(current_extent)
-            current_extent += 1
+            current_extent += blocks_per_sector
 
             for tea in self.udf_teas:
                 tea.set_extent_location(current_extent)
-                current_extent += 1
+                current_extent += blocks_per_sector
 
         if self.version_vd is not None:
             self.version_vd.set_extent_location(current_extent)
-            current_extent += 1
+            current_extent += blocks_per_sector
 
         part_start = 0
 
@@ -1688,13 +1744,28 @@ class PyCdlib:
             current_extent += self.joliet_vd.path_table_num_extents
 
         self.pvd.clear_rr_ce_entries()
-        current_extent, pvd_files = _reassign_vd_dirrecord_extents(self.pvd,
-                                                                   current_extent)
+        current_extent, pvd_files, padding = _reassign_vd_dirrecord_extents(self.pvd,
+                                                                            current_extent,
+                                                                            blocks_per_sector)
 
         joliet_files = []  # type: List[inode.Inode]
         if self.joliet_vd is not None:
-            current_extent, joliet_files = _reassign_vd_dirrecord_extents(self.joliet_vd,
-                                                                          current_extent)
+            current_extent, joliet_files, joliet_padding = _reassign_vd_dirrecord_extents(self.joliet_vd,
+                                                                                          current_extent,
+                                                                                          blocks_per_sector)
+            padding += joliet_padding
+
+        # Directory alignment padding depends on the layout, so it is only
+        # known here; replace the previous layout's padding in the space size.
+        padding_delta = padding - self._dir_alignment_blocks
+        if padding_delta != 0:
+            for pvd in self.pvds:
+                pvd.space_size += padding_delta
+            if self.joliet_vd is not None:
+                self.joliet_vd.space_size += padding_delta
+            if self.enhanced_vd is not None:
+                self.enhanced_vd.space_size += padding_delta
+        self._dir_alignment_blocks = padding
 
         # The rock ridge 'ER' sector must be after all of the directory
         # entries but before the file contents.
@@ -2511,13 +2582,15 @@ class PyCdlib:
         # the VDST, or directly after the UDF recognition sequence (if this is
         # a UDF ISO).  Thus, we go looking for it at those places, and add it
         # if we find it there.
-        version_vd_extent = self.vdsts[0].extent_location() + 1
+        # It sits one Logical Sector (not one block) after that descriptor.
+        blocks_per_sector = _LOGICAL_SECTOR_SIZE // self.logical_block_size
+        version_vd_extent = self.vdsts[0].extent_location() + blocks_per_sector
         if self._has_udf:
-            version_vd_extent = self.udf_teas[0].extent_location() + 1
+            version_vd_extent = self.udf_teas[0].extent_location() + blocks_per_sector
 
         version_vd = headervd.VersionVolumeDescriptor()
         self._cdfp.seek(version_vd_extent * self.logical_block_size)
-        if version_vd.parse(self._cdfp.read(self.logical_block_size), version_vd_extent):
+        if version_vd.parse(self._cdfp.read(_LOGICAL_SECTOR_SIZE), version_vd_extent):
             self.version_vd = version_vd
 
         self._initialized = True
@@ -4026,9 +4099,15 @@ class PyCdlib:
          vol_ident - The volume identification string to use on the new ISO.
          set_size - The size of the set of ISOs this ISO is a part of.
          seqnum - The sequence number of the set of this ISO.
-         log_block_size - The logical block size to use for the ISO.  While ISO9660
-                          technically supports sizes other than 2048 (the default),
-                          this almost certainly doesn't work.
+         log_block_size - The logical block size to use for the ISO.  Ecma-119
+                          allows 512, 1024, or 2048 (the default).  Sizes other
+                          than 2048 cannot be combined with UDF or El Torito,
+                          and most other ISO tools (though not the Linux
+                          kernel) only understand 2048.  Note that the Linux
+                          isofs driver refuses blocks smaller than its own
+                          'block=' mount option, which defaults to 1024, so a
+                          512-byte-block ISO must be mounted with
+                          '-o block=512'.
          vol_set_ident - The volume set identification string to use on the new ISO.
          pub_ident_str - The publisher identification string to use on the new ISO.
          preparer_ident_str - The preparer identification string to use on the new ISO.
@@ -4065,6 +4144,15 @@ class PyCdlib:
 
         if interchange_level < 1 or interchange_level > 4:
             raise pycdlibexception.PyCdlibInvalidInput('Invalid interchange level (must be between 1 and 4)')
+
+        # Ecma-119 6.2.2: a power of two from 512 up to the sector size.
+        if log_block_size not in (512, 1024, 2048):
+            raise pycdlibexception.PyCdlibInvalidInput('Invalid logical block size (must be 512, 1024, or 2048)')
+
+        # UDF anchors live at fixed sector numbers (256 and the last sector),
+        # which only matches block-based extents when a block is a sector.
+        if udf and log_block_size != _LOGICAL_SECTOR_SIZE:
+            raise pycdlibexception.PyCdlibInvalidInput('UDF requires a logical block size of 2048')
 
         if rock_ridge and rock_ridge not in ('1.09', '1.10', '1.12'):
             raise pycdlibexception.PyCdlibInvalidInput('Rock Ridge value must be None (no Rock Ridge), 1.09, 1.10, or 1.12')
@@ -4133,7 +4221,8 @@ class PyCdlib:
                                                             app_use_bytes, xa)
             self.svds.append(self.enhanced_vd)
 
-            num_bytes_to_add += self.enhanced_vd.logical_block_size()
+            # Volume descriptors occupy a whole Logical Sector.
+            num_bytes_to_add += _LOGICAL_SECTOR_SIZE
 
         if joliet is not None:
             self.joliet_vd = headervd.joliet_vd_factory(joliet, sys_ident_bytes,
@@ -4152,10 +4241,10 @@ class PyCdlib:
 
             # Now that we have added joliet, we need to add the new space to the
             # PVD for the VD itself.
-            num_bytes_to_add += self.joliet_vd.logical_block_size()
+            num_bytes_to_add += _LOGICAL_SECTOR_SIZE
 
         self.vdsts.append(headervd.vdst_factory())
-        num_bytes_to_add += self.logical_block_size
+        num_bytes_to_add += _LOGICAL_SECTOR_SIZE
 
         if udf:
             self._has_udf = True
@@ -4176,8 +4265,8 @@ class PyCdlib:
             num_bytes_to_add += 3 * self.logical_block_size
 
         # We always create an empty version volume descriptor.
-        self.version_vd = headervd.version_vd_factory(self.logical_block_size)
-        num_bytes_to_add += self.logical_block_size
+        self.version_vd = headervd.version_vd_factory(_LOGICAL_SECTOR_SIZE)
+        num_bytes_to_add += _LOGICAL_SECTOR_SIZE
 
         if udf:
             # We need to pad out to extent 32.  The padding should be the
@@ -5676,6 +5765,10 @@ class PyCdlib:
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
 
+        # See _check_and_parse_eltorito for why this is 2048-only.
+        if self.logical_block_size != _LOGICAL_SECTOR_SIZE:
+            raise pycdlibexception.PyCdlibInvalidInput('El Torito requires a logical block size of 2048')
+
         # In order to add an El Torito boot, we need to do the following:
         # 1.  Find the boot file record (which must already exist).
         # 2.  Construct a BootRecord.
@@ -5761,7 +5854,7 @@ class PyCdlib:
             # On a UDF ISO, adding a new Boot Record doesn't actually increase
             # the size, since there are a bunch of gaps at the beginning.
             if not self._has_udf:
-                num_bytes_to_add += self.logical_block_size
+                num_bytes_to_add += _LOGICAL_SECTOR_SIZE
 
             # Step 3.
             self.eltorito_boot_catalog = eltorito.EltoritoBootCatalog(br)
