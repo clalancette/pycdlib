@@ -39,43 +39,43 @@ def test_pvd_parse_invalid_identifier():
 
 def test_pvd_new_initialized_twice():
     pvd = pycdlib.headervd.PrimaryOrSupplementaryVD(1)
-    pvd.new(0, b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 1, b'')
+    pvd.new(0, b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 1, b'')
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
-        pvd.new(0, b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 1, b'')
+        pvd.new(0, b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 1, b'')
     assert(str(excinfo.value) == 'This Primary Volume Descriptor is already initialized')
 
 def test_pvd_new_pvd_invalid_flags():
     pvd = pycdlib.headervd.PrimaryOrSupplementaryVD(1)
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        pvd.new(1, b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 1, b'')
+        pvd.new(1, b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 1, b'')
     assert(str(excinfo.value) == 'Non-zero flags not allowed for a PVD')
 
 def test_pvd_new_pvd_invalid_escape_sequence():
     pvd = pycdlib.headervd.PrimaryOrSupplementaryVD(1)
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        pvd.new(0, b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 1, b'\x00')
+        pvd.new(0, b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 1, b'\x00')
     assert(str(excinfo.value) == 'Non-empty escape sequence not allowed for a PVD')
 
 def test_pvd_new_pvd_invalid_version():
     pvd = pycdlib.headervd.PrimaryOrSupplementaryVD(1)
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        pvd.new(0, b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 2, b'')
+        pvd.new(0, b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 2, b'')
     assert(str(excinfo.value) == 'Only version 1 supported for a PVD')
 
 def test_pvd_new_svd_invalid_version():
     svd = pycdlib.headervd.PrimaryOrSupplementaryVD(2)
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
-        svd.new(0, b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 3, b'')
+        svd.new(0, b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 3, b'')
     assert(str(excinfo.value) == 'Only version 1 and version 2 supported for a Supplementary Volume Descriptor')
 
 def test_pvd_copy_initialized_twice():
     svd = pycdlib.headervd.PrimaryOrSupplementaryVD(2)
-    svd.new(0, b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 2, b'')
+    svd.new(0, b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False, 2, b'')
 
     svd2 = pycdlib.headervd.PrimaryOrSupplementaryVD(2)
     svd2.copy(svd)
@@ -389,7 +389,9 @@ def test_version_set_extent_location_not_initialized():
 
 def test_pvd_remove_from_ptr_size_never_happen():
     pvd = pycdlib.headervd.PrimaryOrSupplementaryVD(1)
-    pvd.parse(b'\x01CD001\x01' + b'\x00'*2041, 16)
+    # Zero everything except the logical block size (both-byte order 2048 at
+    # offset 128), which the path table sizing divides by.
+    pvd.parse(b'\x01CD001\x01' + b'\x00'*121 + b'\x00\x08\x08\x00' + b'\x00'*1916, 16)
 
     pvd.path_tbl_size = 4097
     pvd.path_table_num_extents = 2
@@ -405,7 +407,7 @@ def test_file_or_text_ident_compare_other_object():
     assert(file_or_text_ident != 'foo')
 
 def test_pvd_add_rr_ce_entry_larger_than_block():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     pvd.log_block_size = 2048
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:

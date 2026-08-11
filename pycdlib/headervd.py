@@ -224,9 +224,8 @@ class PrimaryOrSupplementaryVD:
          vol_ident - The volume identification string to use on the new ISO.
          set_size - The size of the set of ISOs this ISO is a part of.
          seqnum - The sequence number of the set of this ISO.
-         log_block_size - The logical block size to use for the ISO.  While
-                          ISO9660 technically supports sizes other than 2048
-                          (the default), this almost certainly doesn't work.
+         log_block_size - The logical block size to use for the ISO.  Ecma-119
+                          allows 512, 1024, or 2048 (the default).
          vol_set_ident - The volume set identification string to use on the
                          new ISO.
          pub_ident_str - The publisher identification string to use on the new ISO.
@@ -282,10 +281,14 @@ class PrimaryOrSupplementaryVD:
             raise pycdlibexception.PyCdlibInvalidInput('The volume identifier has a maximum length of 32')
         self.volume_identifier = utils.encode_space_pad(vol_ident, 32, self.encoding)
 
-        # The space_size is the number of extents (2048-byte blocks) in the
-        # ISO.  We know we will at least have the system area (16 extents),
-        # and this VD (1 extent) to start with; the rest will be added later.
-        self.space_size = 17
+        # Ecma-119 6.2.2: a power of two from 512 up to the sector size.
+        if log_block_size not in (512, 1024, 2048):
+            raise pycdlibexception.PyCdlibInvalidInput('Invalid logical block size (must be 512, 1024, or 2048)')
+
+        # The space_size is the number of Logical Blocks in the ISO.  We start
+        # with the system area (16 sectors) and this VD (1 sector), converted
+        # into blocks; the rest will be added later.
+        self.space_size = (17 * 2048) // log_block_size
         self.set_size = set_size
         if seqnum > set_size:
             raise pycdlibexception.PyCdlibInvalidInput('Sequence number must be less than or equal to set size')
@@ -294,7 +297,7 @@ class PrimaryOrSupplementaryVD:
         # The path table size is in bytes, and is always at least 10 bytes
         # (for the root directory record).
         self.path_tbl_size = 10
-        self.path_table_num_extents = utils.ceiling_div(self.path_tbl_size, 4096) * 2
+        self.path_table_num_extents = self._path_table_extents()
         # By default the Little Endian Path Table record starts at extent 19
         # (right after the Volume Terminator).
         self.path_table_location_le = 19
@@ -629,6 +632,19 @@ class PrimaryOrSupplementaryVD:
 
         return self.log_block_size
 
+    def _path_table_extents(self):
+        # type: () -> int
+        """
+        An internal method to compute how many Logical Blocks the path table
+        occupies.  pycdlib allocates path tables in pairs of blocks.
+
+        Parameters:
+         None.
+        Returns:
+         The number of Logical Blocks the path table occupies.
+        """
+        return utils.ceiling_div(utils.ceiling_div(self.path_tbl_size, self.log_block_size), 2) * 2
+
     def add_to_ptr_size(self, ptr_size):
         # type: (int) -> bool
         """
@@ -644,7 +660,7 @@ class PrimaryOrSupplementaryVD:
 
         # First add to the path table size.
         self.path_tbl_size += ptr_size
-        if (utils.ceiling_div(self.path_tbl_size, 4096) * 2) > self.path_table_num_extents:
+        if self._path_table_extents() > self.path_table_num_extents:
             # If we overflowed the path table size, then we need to update the
             # space size.  Since we always add two extents for the little and
             # two for the big, add four total extents.  The locations will be
@@ -668,7 +684,7 @@ class PrimaryOrSupplementaryVD:
 
         # Next remove from the Path Table Record size.
         self.path_tbl_size -= ptr_size
-        new_extents = utils.ceiling_div(self.path_tbl_size, 4096) * 2
+        new_extents = self._path_table_extents()
 
         need_remove_extents = False
         if new_extents > self.path_table_num_extents:
@@ -800,9 +816,8 @@ def pvd_factory(sys_ident, vol_ident, set_size, seqnum, log_block_size,
      vol_ident - The volume identification string to use on the new ISO.
      set_size - The size of the set of ISOs this ISO is a part of.
      seqnum - The sequence number of the set of this ISO.
-     log_block_size - The logical block size to use for the ISO.  While ISO9660
-                      technically supports sizes other than 2048 (the default),
-                      this almost certainly doesn't work.
+     log_block_size - The logical block size to use for the ISO.  Ecma-119
+                      allows 512, 1024, or 2048 (the default).
      vol_set_ident - The volume set identification string to use on the new ISO.
      pub_ident_str - The publisher identification string to use on the new ISO.
      preparer_ident_str - The preparer identification string to use on the new ISO.
@@ -843,9 +858,8 @@ def enhanced_vd_factory(sys_ident, vol_ident, set_size, seqnum,
      vol_ident - The volume identification string to use on the new ISO.
      set_size - The size of the set of ISOs this ISO is a part of.
      seqnum - The sequence number of the set of this ISO.
-     log_block_size - The logical block size to use for the ISO.  While ISO9660
-                      technically supports sizes other than 2048 (the default),
-                      this almost certainly doesn't work.
+     log_block_size - The logical block size to use for the ISO.  Ecma-119
+                      allows 512, 1024, or 2048 (the default).
      vol_set_ident - The volume set identification string to use on the new ISO.
      pub_ident_str - The publisher identification string to use on the new ISO.
      preparer_ident_str - The preparer identification string to use on the new ISO.
@@ -886,9 +900,8 @@ def joliet_vd_factory(joliet, sys_ident, vol_ident, set_size, seqnum,
      vol_ident - The volume identification string to use on the new ISO.
      set_size - The size of the set of ISOs this ISO is a part of.
      seqnum - The sequence number of the set of this ISO.
-     log_block_size - The logical block size to use for the ISO.  While ISO9660
-                      technically supports sizes other than 2048 (the default),
-                      this almost certainly doesn't work.
+     log_block_size - The logical block size to use for the ISO.  Ecma-119
+                      allows 512, 1024, or 2048 (the default).
      vol_set_ident - The volume set identification string to use on the new ISO.
      pub_ident_str - The publisher identification string to use on the new ISO.
      preparer_ident_str - The preparer identification string to use on the new ISO.

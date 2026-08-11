@@ -514,9 +514,15 @@ Parameters:<br>
 &nbsp;vol_ident&nbsp;-&nbsp;The&nbsp;volume&nbsp;identification&nbsp;string&nbsp;to&nbsp;use&nbsp;on&nbsp;the&nbsp;new&nbsp;ISO.<br>
 &nbsp;set_size&nbsp;-&nbsp;The&nbsp;size&nbsp;of&nbsp;the&nbsp;set&nbsp;of&nbsp;ISOs&nbsp;this&nbsp;ISO&nbsp;is&nbsp;a&nbsp;part&nbsp;of.<br>
 &nbsp;seqnum&nbsp;-&nbsp;The&nbsp;sequence&nbsp;number&nbsp;of&nbsp;the&nbsp;set&nbsp;of&nbsp;this&nbsp;ISO.<br>
-&nbsp;log_block_size&nbsp;-&nbsp;The&nbsp;logical&nbsp;block&nbsp;size&nbsp;to&nbsp;use&nbsp;for&nbsp;the&nbsp;ISO.&nbsp;&nbsp;While&nbsp;ISO9660<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;technically&nbsp;supports&nbsp;sizes&nbsp;other&nbsp;than&nbsp;2048&nbsp;(the&nbsp;default),<br>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;this&nbsp;almost&nbsp;certainly&nbsp;doesn't&nbsp;work.<br>
+&nbsp;log_block_size&nbsp;-&nbsp;The&nbsp;logical&nbsp;block&nbsp;size&nbsp;to&nbsp;use&nbsp;for&nbsp;the&nbsp;ISO.&nbsp;&nbsp;Ecma-119<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allows&nbsp;512,&nbsp;1024,&nbsp;or&nbsp;2048&nbsp;(the&nbsp;default).&nbsp;&nbsp;Sizes&nbsp;other<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;than&nbsp;2048&nbsp;cannot&nbsp;be&nbsp;combined&nbsp;with&nbsp;UDF&nbsp;or&nbsp;El&nbsp;Torito,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and&nbsp;most&nbsp;other&nbsp;ISO&nbsp;tools&nbsp;(though&nbsp;not&nbsp;the&nbsp;Linux<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;kernel)&nbsp;only&nbsp;understand&nbsp;2048.&nbsp;&nbsp;Note&nbsp;that&nbsp;the&nbsp;Linux<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;isofs&nbsp;driver&nbsp;refuses&nbsp;blocks&nbsp;smaller&nbsp;than&nbsp;its&nbsp;own<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'block='&nbsp;mount&nbsp;option,&nbsp;which&nbsp;defaults&nbsp;to&nbsp;1024,&nbsp;so&nbsp;a<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;512-byte-block&nbsp;ISO&nbsp;must&nbsp;be&nbsp;mounted&nbsp;with<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'-o&nbsp;block=512'.<br>
 &nbsp;vol_set_ident&nbsp;-&nbsp;The&nbsp;volume&nbsp;set&nbsp;identification&nbsp;string&nbsp;to&nbsp;use&nbsp;on&nbsp;the&nbsp;new&nbsp;ISO.<br>
 &nbsp;pub_ident_str&nbsp;-&nbsp;The&nbsp;publisher&nbsp;identification&nbsp;string&nbsp;to&nbsp;use&nbsp;on&nbsp;the&nbsp;new&nbsp;ISO.<br>
 &nbsp;preparer_ident_str&nbsp;-&nbsp;The&nbsp;preparer&nbsp;identification&nbsp;string&nbsp;to&nbsp;use&nbsp;on&nbsp;the&nbsp;new&nbsp;ISO.<br>
@@ -820,9 +826,9 @@ Data descriptors defined here:<br>
 </dl>
 <hr>
 Data and other attributes defined here:<br>
-<dl><dt><strong>__firstlineno__</strong> = 533</dl>
+<dl><dt><strong>__firstlineno__</strong> = 562</dl>
 
-<dl><dt><strong>__static_attributes__</strong> = ('_always_consistent', '_cdfp', '_has_udf', '_initialized', '_managing_fp', '_needs_reshuffle', '_rr_moved_name', '_rr_moved_record', '_rr_moved_rr_name', '_track_writes', '_write_check_list', 'brs', 'eltorito_boot_catalog', 'enhanced_vd', 'inodes', 'interchange_level', 'isohybrid_mbr', 'joliet_vd', 'logical_block_size', 'pvd', ...)</dl>
+<dl><dt><strong>__static_attributes__</strong> = ('_always_consistent', '_cdfp', '_dir_alignment_blocks', '_has_udf', '_initialized', '_managing_fp', '_needs_reshuffle', '_rr_moved_name', '_rr_moved_record', '_rr_moved_rr_name', '_track_writes', '_write_check_list', 'brs', 'eltorito_boot_catalog', 'enhanced_vd', 'inodes', 'interchange_level', 'isohybrid_mbr', 'joliet_vd', 'logical_block_size', ...)</dl>
 
 </td></tr></table></td></tr></table><p>
 <table class="section">

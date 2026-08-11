@@ -2126,7 +2126,7 @@ def _rr_with_records_in_continuation_area():
     return rr
 
 def _dirrecord_at_extent(extent):
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     rec = pycdlib.dr.DirectoryRecord()
     rec.new_root(pvd, 1, 2048, time.time())
     rec.set_data_location(extent, 0)

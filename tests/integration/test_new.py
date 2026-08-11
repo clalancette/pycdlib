@@ -1360,6 +1360,231 @@ def test_new_invalid_interchange():
         iso.new(interchange_level=0)
     assert(str(excinfo.value) == 'Invalid interchange level (must be between 1 and 4)')
 
+def test_new_invalid_log_block_size():
+    # Ecma-119 6.2.2 only allows 512, 1024, or 2048.
+    for bad in (999, 4096, 0, -1):
+        iso = pycdlib.PyCdlib()
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            iso.new(log_block_size=bad)
+        assert(str(excinfo.value) == 'Invalid logical block size (must be 512, 1024, or 2048)')
+
+def _decode_pvd(data):
+    # Read the on-disk PVD (always at byte 16 * 2048) directly rather than
+    # through pycdlib, so a consistent-but-wrong layout is caught.
+    pvd = 16 * 2048
+    assert(data[pvd:pvd + 6] == b'\x01CD001')
+    log_block_size, = struct.unpack_from('<H', data, pvd + 128)
+    space_size, = struct.unpack_from('<I', data, pvd + 80)
+    root_extent, = struct.unpack_from('<I', data, pvd + 156 + 2)
+    root_len, = struct.unpack_from('<I', data, pvd + 156 + 10)
+    return log_block_size, space_size, root_extent, root_len
+
+def _raw_dir_names(data, log_block_size, extent, length):
+    # Walk a directory's records by hand and return (name, extent, size).
+    out = []
+    off = extent * log_block_size
+    end = off + length
+    while off < end:
+        rec_len = data[off]
+        if rec_len == 0:
+            off = (off // log_block_size + 1) * log_block_size
+            continue
+        ext, = struct.unpack_from('<I', data, off + 2)
+        size, = struct.unpack_from('<I', data, off + 10)
+        name_len = data[off + 32]
+        out.append((data[off + 33:off + 33 + name_len], ext, size))
+        off += rec_len
+    return out
+
+def _assert_dirs_sector_aligned(data, log_block_size):
+    # Ecma-119 6.8.1: every directory extent must start on a Logical Sector
+    # boundary.  Check the PVD tree, and the Joliet tree if present.
+    blocks_per_sector = 2048 // log_block_size
+
+    def walk(extent, length):
+        assert(extent % blocks_per_sector == 0)
+        off = extent * log_block_size
+        end = off + length
+        while off < end:
+            rec_len = data[off]
+            if rec_len == 0:
+                off = (off // log_block_size + 1) * log_block_size
+                continue
+            ext, = struct.unpack_from('<I', data, off + 2)
+            size, = struct.unpack_from('<I', data, off + 10)
+            flags = data[off + 25]
+            name_len = data[off + 32]
+            name = data[off + 33:off + 33 + name_len]
+            if flags & 2 and name not in (b'\x00', b'\x01'):
+                walk(ext, size)
+            off += rec_len
+
+    (disk_lbs, space_size, root_extent, root_len) = _decode_pvd(data)
+    walk(root_extent, root_len)
+    for sector in range(17, 24):
+        off = sector * 2048
+        if data[off] == 2 and data[off + 1:off + 6] == b'CD001':
+            joliet_root, = struct.unpack_from('<I', data, off + 156 + 2)
+            joliet_len, = struct.unpack_from('<I', data, off + 156 + 10)
+            walk(joliet_root, joliet_len)
+
+def test_new_log_block_size_round_trips():
+    for log_block_size in (512, 1024, 2048):
+        iso = pycdlib.PyCdlib()
+        iso.new(log_block_size=log_block_size, rock_ridge='1.09', joliet=3)
+        assert(iso.logical_block_size == log_block_size)
+        iso.add_fp(io.BytesIO(b'hello\n'), 6, '/FOO.;1', rr_name='foo', joliet_path='/foo')
+        iso.add_directory('/DIR1', rr_name='dir1', joliet_path='/dir1')
+        # Larger than any block size, so it spans multiple blocks.
+        iso.add_fp(io.BytesIO(b'x' * 5000), 5000, '/DIR1/BIG.;1', rr_name='big', joliet_path='/dir1/big')
+
+        out = io.BytesIO()
+        iso.write_fp(out)
+        iso.close()
+        data = out.getvalue()
+
+        # The Volume Space Size (in blocks) must cover exactly the image.
+        (disk_lbs, space_size, root_extent, root_len) = _decode_pvd(data)
+        assert(disk_lbs == log_block_size)
+        assert(space_size * log_block_size == len(data))
+
+        # Following extent locations by hand must land on the right data.
+        root = _raw_dir_names(data, log_block_size, root_extent, root_len)
+        assert([n for (n, e, s) in root] == [b'\x00', b'\x01', b'DIR1', b'FOO.;1'])
+        foo = [(e, s) for (n, e, s) in root if n == b'FOO.;1'][0]
+        assert(data[foo[0] * log_block_size:foo[0] * log_block_size + foo[1]] == b'hello\n')
+        dir1 = [(e, s) for (n, e, s) in root if n == b'DIR1'][0]
+        big = [(e, s) for (n, e, s) in _raw_dir_names(data, log_block_size, dir1[0], dir1[1]) if n == b'BIG.;1'][0]
+        assert(data[big[0] * log_block_size:big[0] * log_block_size + big[1]] == b'x' * 5000)
+        _assert_dirs_sector_aligned(data, log_block_size)
+
+        iso2 = pycdlib.PyCdlib()
+        iso2.open_fp(io.BytesIO(data))
+        assert(iso2.logical_block_size == log_block_size)
+        # The Version Volume Descriptor must still be found at other sizes.
+        assert(iso2.version_vd is not None)
+        for (path_kw, path) in (('iso_path', '/DIR1/BIG.;1'), ('rr_path', '/dir1/big'), ('joliet_path', '/dir1/big')):
+            got = io.BytesIO()
+            iso2.get_file_from_iso_fp(got, **{path_kw: path})
+            assert(got.getvalue() == b'x' * 5000)
+        got = io.BytesIO()
+        iso2.get_file_from_iso_fp(got, iso_path='/FOO.;1')
+        assert(got.getvalue() == b'hello\n')
+        assert(sorted(c.file_identifier() for c in iso2.list_children(iso_path='/')) == [b'.', b'..', b'DIR1', b'FOO.;1'])
+        iso2.close()
+
+def test_new_log_block_size_path_table_growth():
+    # Grow the path table past several block boundaries, then shrink it.
+    for log_block_size in (512, 1024, 2048):
+        iso = pycdlib.PyCdlib()
+        iso.new(log_block_size=log_block_size)
+        for i in range(150):
+            iso.add_directory('/DIRNM%03d' % (i))
+        iso.add_fp(io.BytesIO(b'z' * 3000), 3000, '/DIRNM077/F.;1')
+        for i in range(80, 150):
+            iso.rm_directory('/DIRNM%03d' % (i))
+
+        out = io.BytesIO()
+        iso.write_fp(out)
+        iso.close()
+        data = out.getvalue()
+
+        (disk_lbs, space_size, root_extent, root_len) = _decode_pvd(data)
+        assert(disk_lbs == log_block_size)
+        assert(space_size * log_block_size == len(data))
+
+        # Every entry must point at a directory ('dot' record first), and
+        # the M table must mirror the L one.
+        pvd = 16 * 2048
+        ptsize, = struct.unpack_from('<I', data, pvd + 132)
+        lpt, = struct.unpack_from('<I', data, pvd + 140)
+        mpt, = struct.unpack_from('>I', data, pvd + 148)
+        off = 0
+        count = 0
+        while off < ptsize:
+            name_len = data[lpt * log_block_size + off]
+            ext, = struct.unpack_from('<I', data, lpt * log_block_size + off + 2)
+            mext, = struct.unpack_from('>I', data, mpt * log_block_size + off + 2)
+            assert(ext == mext)
+            assert(data[ext * log_block_size + 33] == 0)
+            count += 1
+            off += 8 + name_len + (name_len & 1)
+        assert(count == 81)
+        _assert_dirs_sector_aligned(data, log_block_size)
+
+        iso2 = pycdlib.PyCdlib()
+        iso2.open_fp(io.BytesIO(data))
+        got = io.BytesIO()
+        iso2.get_file_from_iso_fp(got, iso_path='/DIRNM077/F.;1')
+        assert(got.getvalue() == b'z' * 3000)
+        iso2.close()
+
+def test_new_log_block_size_dir_alignment_with_ce_areas():
+    # Rock Ridge continuation areas are single blocks allocated between
+    # directories, so at small block sizes they push the next directory off
+    # a sector boundary.  Also cover removals, re-adds, and a reopen, which
+    # all make the alignment padding be recomputed.
+    longname = 'n' * 200
+    for log_block_size in (512, 1024, 2048):
+        iso = pycdlib.PyCdlib()
+        iso.new(log_block_size=log_block_size, rock_ridge='1.09', joliet=3)
+        for i in range(12):
+            iso.add_directory('/D%d' % (i), rr_name=longname + str(i), joliet_path='/d%d' % (i))
+            iso.add_fp(io.BytesIO(b'f'), 1, '/D%d/F.;1' % (i), rr_name=longname + 'f', joliet_path='/d%d/f' % (i))
+            iso.add_directory('/D%d/SUB' % (i), rr_name='sub' + longname, joliet_path='/d%d/sub' % (i))
+
+        out = io.BytesIO()
+        iso.write_fp(out)
+        data = out.getvalue()
+        (disk_lbs, space_size, root_extent, root_len) = _decode_pvd(data)
+        assert(space_size * log_block_size == len(data))
+        _assert_dirs_sector_aligned(data, log_block_size)
+
+        for i in range(6):
+            iso.rm_file('/D%d/F.;1' % (i), rr_name=longname + 'f', joliet_path='/d%d/f' % (i))
+            iso.rm_directory('/D%d/SUB' % (i), rr_name='sub' + longname, joliet_path='/d%d/sub' % (i))
+            iso.rm_directory('/D%d' % (i), rr_name=longname + str(i), joliet_path='/d%d' % (i))
+        iso.add_directory('/NEW', rr_name='new', joliet_path='/new')
+
+        out = io.BytesIO()
+        iso.write_fp(out)
+        iso.close()
+        data = out.getvalue()
+        (disk_lbs, space_size, root_extent, root_len) = _decode_pvd(data)
+        assert(space_size * log_block_size == len(data))
+        _assert_dirs_sector_aligned(data, log_block_size)
+
+        iso2 = pycdlib.PyCdlib()
+        iso2.open_fp(io.BytesIO(data))
+        iso2.add_directory('/X', rr_name='x', joliet_path='/x')
+        out = io.BytesIO()
+        iso2.write_fp(out)
+        data = out.getvalue()
+        (disk_lbs, space_size, root_extent, root_len) = _decode_pvd(data)
+        assert(space_size * log_block_size == len(data))
+        _assert_dirs_sector_aligned(data, log_block_size)
+        got = io.BytesIO()
+        iso2.get_file_from_iso_fp(got, rr_path='/' + longname + '7/' + longname + 'f')
+        assert(got.getvalue() == b'f')
+        iso2.close()
+
+def test_new_log_block_size_udf_rejected():
+    for log_block_size in (512, 1024):
+        iso = pycdlib.PyCdlib()
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            iso.new(log_block_size=log_block_size, udf='2.60')
+        assert(str(excinfo.value) == 'UDF requires a logical block size of 2048')
+
+def test_new_log_block_size_eltorito_rejected():
+    for log_block_size in (512, 1024):
+        iso = pycdlib.PyCdlib()
+        iso.new(log_block_size=log_block_size)
+        iso.add_fp(io.BytesIO(b'boot\n'), 5, '/BOOT.;1')
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            iso.add_eltorito('/BOOT.;1')
+        assert(str(excinfo.value) == 'El Torito requires a logical block size of 2048')
+        iso.close()
+
 def test_new_open_twice():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()

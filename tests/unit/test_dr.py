@@ -66,7 +66,7 @@ def test_xa_record_not_initialized():
 
 # DR
 def test_dr_parse_initialized_twice():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
     dr.parse(pvd, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00' + b'\x00'*7 + b'\x00\x00\x00\x00\x00\x00\x00\x00\x00', None)
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
@@ -125,7 +125,7 @@ def test_dr_xa_skipped_when_no_marker():
     # non-XA system-use payload that happens to contain 'XA' at the XA
     # signature offset (byte 6 of the candidate slice) is misread as a
     # malformed XA record and aborts the parse.
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root = _root_dr(pvd)
 
     record = _DR_HEADER_TEMPLATE + _FAKE_XA_SYSUSE
@@ -141,7 +141,7 @@ def test_dr_xa_marker_set_with_false_positive():
     # whose trailing reserved bytes are not all zero must be treated as
     # not-XA (per the Yellow Book spec, real XA records always have the
     # reserved bytes zero), not as a malformed XA that aborts the parse.
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root = _root_dr(pvd)
 
     record = _DR_HEADER_TEMPLATE + _FAKE_XA_SYSUSE
@@ -152,7 +152,7 @@ def test_dr_xa_marker_set_with_false_positive():
     assert(rec.rock_ridge is None)
 
 def test_dr_bad_rr_parent():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
     root_dr.parse(pvd, b'\x22\x00\x17\x00\x00\x00\x00\x00\x00\x17\x00\x08\x00\x00\x00\x00\x08\x00\x78\x09\x0d\x0d\x07\x15\xf0\x02\x00\x00\x01\x00\x00\x01\x01\x00', None)
 
@@ -162,7 +162,7 @@ def test_dr_bad_rr_parent():
     assert(str(excinfo.value) == 'Parent has no dot child')
 
 def test_dr_rr_dot_no_rr():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
     root_dr.parse(pvd, b'\x22\x00\x17\x00\x00\x00\x00\x00\x00\x17\x00\x08\x00\x00\x00\x00\x08\x00\x78\x09\x0d\x0d\x07\x15\xf0\x02\x00\x00\x01\x00\x00\x01\x01\x00', None)
 
@@ -176,7 +176,7 @@ def test_dr_rr_dot_no_rr():
     assert(str(excinfo.value) == 'Dot child does not have Rock Ridge; ISO is corrupt')
 
 def test_dr_rr_dir_no_rr():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
     root_dr.parse(pvd, b'\x22\x00\x17\x00\x00\x00\x00\x00\x00\x17\x00\x08\x00\x00\x00\x00\x08\x00\x78\x09\x0d\x0d\x07\x15\xf0\x02\x00\x00\x01\x00\x00\x01\x01\x00', None)
 
@@ -189,7 +189,7 @@ def test_dr_rr_dir_no_rr():
     assert(str(excinfo.value) == 'Parent does not have Rock Ridge; ISO is corrupt')
 
 def test_dr_rr_new_on_root():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
     root_dr.new_root(pvd, 1, 2048, time.time())
 
@@ -198,7 +198,7 @@ def test_dr_rr_new_on_root():
     assert(str(excinfo.value) == 'Invalid call to create new Rock Ridge on root directory')
 
 def test_dr_new_dir_no_parent_rr():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
     root_dr.new_root(pvd, 1, 2048, time.time())
 
@@ -213,7 +213,7 @@ def test_dr_new_dir_no_parent_rr():
     assert(str(excinfo.value) == 'Parent of the entry did not have Rock Ridge, ISO is corrupt')
 
 def test_dr_new_dir_root_no_children():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
     root_dr.new_root(pvd, 1, 2048, time.time())
 
@@ -224,7 +224,7 @@ def test_dr_new_dir_root_no_children():
     assert(str(excinfo.value) == 'Expected at least 2 children of the root directory record, saw 0')
 
 def test_dr_new_symlink_already_initialized():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
     dr.new_root(pvd, 1, 2048, time.time())
 
@@ -233,7 +233,7 @@ def test_dr_new_symlink_already_initialized():
     assert(str(excinfo.value) == 'Directory Record already initialized')
 
 def test_dr_new_file_already_initialized():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
     dr.new_root(pvd, 1, 2048, time.time())
 
@@ -242,7 +242,7 @@ def test_dr_new_file_already_initialized():
     assert(str(excinfo.value) == 'Directory Record already initialized')
 
 def test_dr_new_root_already_initialized():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
     dr.new_root(pvd, 1, 2048, time.time())
 
@@ -251,7 +251,7 @@ def test_dr_new_root_already_initialized():
     assert(str(excinfo.value) == 'Directory Record already initialized')
 
 def test_dr_new_dot_already_initialized():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
     dr.new_root(pvd, 1, 2048, time.time())
 
@@ -260,7 +260,7 @@ def test_dr_new_dot_already_initialized():
     assert(str(excinfo.value) == 'Directory Record already initialized')
 
 def test_dr_new_dotdot_already_initialized():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
     dr.new_root(pvd, 1, 2048, time.time())
 
@@ -269,7 +269,7 @@ def test_dr_new_dotdot_already_initialized():
     assert(str(excinfo.value) == 'Directory Record already initialized')
 
 def test_dr_new_dir_already_initialized():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
     dr.new_root(pvd, 1, 2048, time.time())
 
@@ -286,7 +286,7 @@ def test_dr_change_existence_not_initialized():
     assert(str(excinfo.value) == 'Directory Record not initialized')
 
 def test_dr_add_child_not_dir():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
     dr.new_file(pvd, 0, b'', None, 1, '', b'', False, 0, time.time())
 
@@ -316,7 +316,7 @@ def test_dr_remove_child_not_initialized():
     assert(str(excinfo.value) == 'Directory Record not initialized')
 
 def test_dr_remove_child_negative_index():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
     dr.new_file(pvd, 0, b'', None, 1, '', b'', False, 0, time.time())
 
@@ -367,7 +367,7 @@ def test_dr_directory_record_length_not_initialized():
     assert(str(excinfo.value) == 'Directory Record not initialized')
 
 def test_dr_directory_record_length():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
     dr.new_file(pvd, 0, b'', None, 1, '', b'', False, 0, time.time())
     assert(dr.directory_record_length() == 34)
@@ -429,7 +429,7 @@ def test_dr_set_data_length_not_initialized():
     assert(str(excinfo.value) == 'Directory Record not initialized')
 
 def test_dr_xattr_with_record_bit():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
@@ -437,7 +437,7 @@ def test_dr_xattr_with_record_bit():
     assert(str(excinfo.value) == 'Record Bit not allowed with Extended Attributes')
 
 def test_dr_xattr_with_protection_bit():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
@@ -445,7 +445,7 @@ def test_dr_xattr_with_protection_bit():
     assert(str(excinfo.value) == 'Protection Bit not allowed with Extended Attributes')
 
 def test_dr_file_too_big():
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     dr = pycdlib.dr.DirectoryRecord()
 
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
@@ -462,7 +462,7 @@ def test_dr_add_child_multi_extent_chain():
     # there were 3+ chunks and (b) inserted new chunks between the head and
     # earlier chunks, scrambling the on-disk order.  The fix walks forward
     # to the last existing duplicate before linking.
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
     root_dr.new_root(pvd, 1, 2048, time.time())
 
@@ -521,7 +521,7 @@ def test_dr_compat_data_location_constants():
 def _rr_root_with_dot_dotdot(rock_ridge='1.09'):
     # Build a Rock Ridge root directory record with its dot and dotdot
     # children, which is the minimum shape most of the _rr_new paths expect.
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
     root_dr.new_root(pvd, 1, 2048, time.time())
 
@@ -740,7 +740,7 @@ def test_xa_parse_false_positive_at_both_offsets():
 def test_dr_compat_properties_with_inode():
     # The backwards-compatibility properties delegate to the Inode when there
     # is one (the no-Inode case returns None and is covered elsewhere).
-    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 0, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
+    pvd = pycdlib.headervd.pvd_factory(b'', b'', 0, 0, 2048, b'', b'', b'', b'', b'', b'', b'', 0.0, b'', False)
     root_dr = pycdlib.dr.DirectoryRecord()
     root_dr.new_root(pvd, 1, 2048, time.time())
 
