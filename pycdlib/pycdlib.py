@@ -1025,6 +1025,31 @@ class PyCdlib:
         self._cdfp.seek(old)
         return extent * 2048
 
+    def _read_clamped(self, length, iso_file_length):
+        # type: (int, int) -> bytes
+        """
+        An internal method to read data out of the ISO, clamping the length of
+        the read to the number of bytes that are actually left in the ISO.
+
+        Almost all of the lengths in ISO metadata are 32-bit values that come
+        straight off of the disk, so a corrupt or malicious ISO can claim that
+        a structure is up to 4 GB long.  Handing such a length to read() makes
+        Python allocate a buffer of that size up front, which means a tiny ISO
+        can force a multi-gigabyte allocation.  Clamping the length to what is
+        left in the ISO means the allocation can never be larger than the ISO
+        itself; callers are responsible for dealing with the short data that
+        comes back, since that means the ISO is corrupt.
+
+        Parameters:
+         length - The length that the ISO metadata claims the structure is.
+         iso_file_length - The total length of the ISO, as returned by
+                           _get_iso_size().
+        Returns:
+         The data read, which may be shorter than length if the ISO is corrupt.
+        """
+        remaining = max(0, iso_file_length - self._cdfp.tell())
+        return self._cdfp.read(min(length, remaining))
+
     def _walk_directories(self, vd, extent_to_ptr, extent_to_inode,
                           path_table_records):
         # type: (headervd.PrimaryOrSupplementaryVD, Dict[int, path_table_record.PathTableRecord], Dict[int, inode.Inode], List[path_table_record.PathTableRecord]) -> Tuple[int, int]
@@ -1067,7 +1092,7 @@ class PyCdlib:
             length = dir_record.get_data_length()
             offset = 0
             last_record = None  # type: Optional[dr.DirectoryRecord]
-            data = cdfp.read(length)
+            data = self._read_clamped(length, iso_file_length)
             while offset < length:
                 if offset > (len(data) - 1):
                     # The data we read off of the ISO was shorter than what we
@@ -1187,7 +1212,8 @@ class PyCdlib:
 
                         self._seek_to_extent(ce_record.bl_cont_area)
                         cdfp.seek(ce_record.offset_cont_area, os.SEEK_CUR)
-                        con_block = cdfp.read(ce_record.len_cont_area)
+                        con_block = self._read_clamped(ce_record.len_cont_area,
+                                                       iso_file_length)
                         new_record.rock_ridge.parse(con_block, False,
                                                     new_record.rock_ridge.bytes_to_skip,
                                                     True, new_record.file_identifier())
@@ -1305,7 +1331,9 @@ class PyCdlib:
         """
         self._seek_to_extent(extent)
         old = self._cdfp.tell()
-        data = self._cdfp.read(ptr_size)
+        data = self._read_clamped(ptr_size, self._get_iso_size())
+        if len(data) < ptr_size:
+            raise pycdlibexception.PyCdlibInvalidISO('Path table size exceeds the size of the ISO')
         offset = 0
         out = []
         extent_to_ptr = {}
@@ -2332,8 +2360,16 @@ class PyCdlib:
                 self._cdfp.seek(tmp_isohybrid.primary_gpt.header.backup_lba * 512)
                 tmp_isohybrid.parse_secondary_gpt_header(self._cdfp.read(512))
 
-                self._cdfp.seek((tmp_isohybrid.secondary_gpt.header.current_lba * 512) - (tmp_isohybrid.secondary_gpt.header.num_parts * 128))
-                tmp_isohybrid.parse_secondary_gpt_partitions(self._cdfp.read(tmp_isohybrid.secondary_gpt.header.num_parts * 128))
+                num_parts_bytes = tmp_isohybrid.secondary_gpt.header.num_parts * 128
+                gpt_parts_offset = (tmp_isohybrid.secondary_gpt.header.current_lba * 512) - num_parts_bytes
+                if gpt_parts_offset < 0:
+                    # Both of the values this is computed from come off of the
+                    # ISO, so an ISO can claim that the partition entries start
+                    # before the beginning of the ISO.
+                    raise pycdlibexception.PyCdlibInvalidISO('Secondary GPT partition entries start before the start of the ISO')
+                self._cdfp.seek(gpt_parts_offset)
+                tmp_isohybrid.parse_secondary_gpt_partitions(self._read_clamped(num_parts_bytes,
+                                                                                self._get_iso_size()))
 
             # We only save the object if it turns out to be a valid IsoHybrid.
             self.isohybrid_mbr = tmp_isohybrid

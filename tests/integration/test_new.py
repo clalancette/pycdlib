@@ -9295,3 +9295,73 @@ def test_new_get_file_byte_extents_zero_length_file():
     assert(iso.get_file_byte_extents(iso_path='/EMPTY.;1') == [])
 
     iso.close()
+
+
+def _make_isohybrid_uefi_iso(tmpdir, name):
+    # Build a UEFI isohybrid ISO with pycdlib and write it out to a real file,
+    # returning its path.  These tests have to work on a file rather than a
+    # BytesIO: reading from a BytesIO does not allocate the read buffer up
+    # front, so the allocation peak would not reflect what a caller passing a
+    # filename would see.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    isolinuxstr = b'\x00'*0x40 + b'\xfb\xc0\x78\x70'
+    iso.add_fp(io.BytesIO(isolinuxstr), len(isolinuxstr), '/ISOLINUX.BIN;1')
+    efibootstr = b'a'
+    iso.add_fp(io.BytesIO(efibootstr), len(efibootstr), '/EFIBOOT.IMG;1')
+    iso.add_eltorito('/ISOLINUX.BIN;1', '/BOOT.CAT;1', boot_load_size=4,
+                     boot_info_table=True)
+    iso.add_eltorito('/EFIBOOT.IMG;1', efi=True)
+    iso.add_isohybrid(efi=True)
+
+    outfile = os.path.join(str(tmpdir), name)
+    with open(outfile, 'wb') as outfp:
+        iso.write_fp(outfp)
+    iso.close()
+
+    return outfile
+
+def _secondary_gpt_offset(path):
+    # The secondary GPT header lives at the backup LBA that the primary GPT
+    # header (at LBA 1) points to, which is at offset 32 of that header.
+    with open(path, 'rb') as fp:
+        fp.seek(512 + 32)
+        backup_lba, = struct.unpack('<Q', fp.read(8))
+    return backup_lba * 512
+
+# The two tests below are the isohybrid half of the unbounded-allocation tests;
+# the ones for the path table, directory records, and Rock Ridge continuation
+# areas live in test_parse.py, since those ISOs are built with genisoimage.
+def test_new_isohybrid_gpt_num_parts_larger_than_iso(tmpdir):
+    outfile = _make_isohybrid_uefi_iso(tmpdir, 'gptnumpartstoobig.iso')
+
+    # The number of GPT partition entries is at offset 80 of the GPT header,
+    # and the ISO is read backwards from current_lba (offset 24) for
+    # num_parts*128 bytes, so raise current_lba to keep that offset positive.
+    num_parts = 0x2000000
+    gpt_offset = _secondary_gpt_offset(outfile)
+    with open(outfile, 'r+b') as fp:
+        fp.seek(gpt_offset + 24)
+        fp.write(struct.pack('<Q', num_parts // 4))
+        fp.seek(gpt_offset + 80)
+        fp.write(struct.pack('<I', num_parts))
+
+    err, peak = open_measuring_peak(outfile)
+
+    assert(isinstance(err, pycdlib.pycdlibexception.PyCdlibInvalidISO))
+    assert(peak < MAX_ALLOWED_PEAK)
+
+def test_new_isohybrid_gpt_parts_before_start_of_iso(tmpdir):
+    # num_parts and current_lba both come off of the ISO, so an ISO can claim
+    # that the GPT partition entries start before the beginning of the ISO.
+    outfile = _make_isohybrid_uefi_iso(tmpdir, 'gptpartsnegative.iso')
+
+    gpt_offset = _secondary_gpt_offset(outfile)
+    with open(outfile, 'r+b') as fp:
+        fp.seek(gpt_offset + 80)
+        fp.write(struct.pack('<I', BOGUS_LENGTH))
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso.open(outfile)
+    assert(str(excinfo.value) == 'Secondary GPT partition entries start before the start of the ISO')

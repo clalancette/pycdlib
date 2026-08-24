@@ -3665,3 +3665,84 @@ def test_parse_standalone_eltorito_entry_blocks_rm_file():
     assert(str(excinfo.value) == "Cannot remove a file that is referenced by El Torito; use 'rm_eltorito' to remove El Torito, or use 'rm_hard_link' to hide the entry")
 
     iso.close()
+
+# The unbounded-allocation tests below use BOGUS_LENGTH, MAX_ALLOWED_PEAK, and
+# open_measuring_peak() out of test_common.py.  The two matching tests for the
+# isohybrid GPT live in test_new.py, since their ISOs are built with pycdlib
+# rather than with genisoimage.
+def test_parse_path_table_size_larger_than_iso(tmpdir):
+    indir = tmpdir.mkdir('pathtabletoobig')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    # The PVD path table size is at PVD offset 132 (little-endian) and 136
+    # (big-endian); the two have to agree for the PVD to parse at all.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048 + 132)
+        fp.write(struct.pack('<I', BOGUS_LENGTH))
+        fp.seek(16*2048 + 136)
+        fp.write(struct.pack('>I', BOGUS_LENGTH))
+
+    err, peak = open_measuring_peak(str(outfile))
+
+    assert(isinstance(err, pycdlib.pycdlibexception.PyCdlibInvalidISO))
+    assert(str(err) == 'Path table size exceeds the size of the ISO')
+    assert(peak < MAX_ALLOWED_PEAK)
+
+def test_parse_directory_record_length_larger_than_iso(tmpdir):
+    indir = tmpdir.mkdir('dirrecordtoobig')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    # The root directory record starts at PVD offset 156, and its data length
+    # is at offset 10 (little-endian) and 14 (big-endian) within the record.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048 + 156 + 10)
+        fp.write(struct.pack('<I', BOGUS_LENGTH))
+        fp.seek(16*2048 + 156 + 14)
+        fp.write(struct.pack('>I', BOGUS_LENGTH))
+
+    err, peak = open_measuring_peak(str(outfile))
+
+    # Exactly which error comes out depends on what the data past the end of
+    # the real directory extent happens to look like, so just check that the
+    # ISO is rejected rather than pinning the message.
+    assert(isinstance(err, pycdlib.pycdlibexception.PyCdlibInvalidISO))
+    assert(peak < MAX_ALLOWED_PEAK)
+
+def test_parse_rr_ce_length_larger_than_iso(tmpdir):
+    indir = tmpdir.mkdir('celentoobig')
+    outfile = str(indir)+'.iso'
+    # A name this long does not fit in a single directory record, which forces
+    # genisoimage to spill the Rock Ridge entries into a continuation area.
+    with open(os.path.join(str(indir), 'a'*200), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-rock', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    # Find the Rock Ridge CE entries and claim their continuation areas are
+    # enormous.  A CE entry is 28 bytes, with the length of the continuation
+    # area at offset 20 (little-endian) and 24 (big-endian).
+    with open(str(outfile), 'rb') as fp:
+        data = fp.read()
+    ce_offsets = [i for i in range(len(data) - 28)
+                  if data[i:i+2] == b'CE' and data[i+2] == 28 and data[i+3] == 1]
+    assert(len(ce_offsets) > 0)
+
+    with open(str(outfile), 'r+b') as fp:
+        for off in ce_offsets:
+            fp.seek(off + 20)
+            fp.write(struct.pack('<I', BOGUS_LENGTH))
+            fp.seek(off + 24)
+            fp.write(struct.pack('>I', BOGUS_LENGTH))
+
+    err, peak = open_measuring_peak(str(outfile))
+
+    assert(isinstance(err, pycdlib.pycdlibexception.PyCdlibInvalidISO))
+    assert(peak < MAX_ALLOWED_PEAK)
