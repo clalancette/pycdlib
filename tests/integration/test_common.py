@@ -4,6 +4,7 @@ import io
 import os
 import sys
 import struct
+import tracemalloc
 
 import pytest
 
@@ -33,6 +34,36 @@ def find_executable(executable):
             if os.path.isfile(f):
                 return f
     return None
+
+# The lengths in ISO metadata are 32-bit values that come straight off of the
+# disk, so a corrupt or malicious ISO can claim that a structure is up to 4 GB
+# long.  Handing one of those lengths to read() makes Python allocate a buffer
+# of that size before it discovers that the data isn't there, so a tiny ISO can
+# force a multi-gigabyte allocation.  The tests that use these claim a 4 GB
+# structure inside a small ISO, and check both that the ISO is rejected and
+# that parsing it never allocates anything close to that.
+BOGUS_LENGTH = 0xFFFFFFFF
+MAX_ALLOWED_PEAK = 64*1024*1024
+
+def open_measuring_peak(path):
+    # Open an ISO, returning the exception it raised (or None) along with the
+    # peak number of bytes allocated while doing so.  Note that the ISO has to
+    # be a real file on disk; reading from a BytesIO does not allocate the
+    # buffer up front, so the peak would not reflect what a caller passing a
+    # filename would see.
+    tracemalloc.start()
+    try:
+        iso = pycdlib.PyCdlib()
+        err = None
+        try:
+            iso.open(path)
+            iso.close()
+        except Exception as e:
+            err = e
+        peak = tracemalloc.get_traced_memory()[1]
+    finally:
+        tracemalloc.stop()
+    return err, peak
 
 ################################ INTERNAL HELPERS #############################
 
