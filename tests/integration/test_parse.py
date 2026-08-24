@@ -941,6 +941,53 @@ def test_parse_eltorito_multi_boot(tmpdir):
 
     do_a_test(tmpdir, outfile, check_eltorito_multi_boot)
 
+def test_parse_eltorito_multi_boot_nonbootable(tmpdir):
+    # El Torito uses a boot indicator of 0x00 both for a non-bootable section
+    # entry and for the empty entry that terminates the boot catalog, so a
+    # non-bootable section entry has to be told apart from the terminator by
+    # context.  genisoimage produces exactly this with -no-boot.
+    indir = tmpdir.mkdir('multibootnonbootable')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'boot'), 'wb') as outfp:
+        outfp.write(b'boot\n')
+    with open(os.path.join(str(indir), 'boot2'), 'wb') as outfp:
+        outfp.write(b'boot2\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '4', '-no-pad',
+                     '-b', 'boot', '-c', 'boot.cat', '-no-emul-boot',
+                     '-eltorito-alt-boot', '-b', 'boot2', '-no-emul-boot',
+                     '-no-boot', '-o', str(outfile), str(indir)])
+
+    do_a_test(tmpdir, outfile, check_eltorito_multi_boot_nonbootable)
+
+def test_parse_eltorito_multi_boot_unterminated_catalog(tmpdir):
+    # Some ISOs do not terminate the El Torito Boot Catalog with an empty
+    # entry, and instead pad the rest of the extent with garbage.  The OpenBSD
+    # install ISOs pad with 0xdf (see
+    # https://github.com/clalancette/pycdlib/issues/180).  Since the last
+    # section header is marked as the final one (0x91) and has all of the
+    # entries it promised, the padding means the end of the catalog.
+    indir = tmpdir.mkdir('multibootunterminated')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'boot'), 'wb') as outfp:
+        outfp.write(b'boot\n')
+    with open(os.path.join(str(indir), 'boot2'), 'wb') as outfp:
+        outfp.write(b'boot2\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '4', '-no-pad',
+                     '-b', 'boot', '-c', 'boot.cat', '-no-emul-boot',
+                     '-eltorito-alt-boot', '-b', 'boot2', '-no-emul-boot',
+                     '-o', str(outfile), str(indir)])
+
+    # genisoimage lays the catalog out as a validation entry, an initial entry,
+    # a final (0x91) section header, and one section entry, which is 128 bytes;
+    # overwrite everything after that with 0xdf so the catalog is unterminated.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(17*2048 + 71)
+        catalog_extent, = struct.unpack('<L', fp.read(4))
+        fp.seek(catalog_extent*2048 + 128)
+        fp.write(b'\xdf'*(2048 - 128))
+
+    do_a_test(tmpdir, outfile, check_eltorito_multi_boot)
+
 def test_parse_eltorito_boot_table(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('boottable')

@@ -2828,6 +2828,45 @@ def check_eltorito_multi_boot(iso, filesize):
     internal_check_file(iso.pvd.root_dir_record.children[4], name=b'boot2', dr_len=38, loc=28, datalen=6, hidden=False, multi_extent=False)
     internal_check_file_contents(iso, path='/boot2', contents=b'boot2\n', which='iso_path')
 
+def check_eltorito_multi_boot_nonbootable(iso, filesize):
+    assert(filesize == 59392)
+
+    internal_check_pvd(iso.pvd, extent=16, size=29, ptbl_size=10, ptbl_location_le=21, ptbl_location_be=23)
+
+    internal_check_eltorito(iso, boot_catalog_extent=26, load_rba=27, media_type=0, system_type=0, bootable=True, platform_id=0)
+
+    assert(len(iso.eltorito_boot_catalog.sections) == 1)
+    sec = iso.eltorito_boot_catalog.sections[0]
+    assert(sec.header_indicator == 0x91)
+    assert(sec.platform_id == 0)
+    assert(sec.num_section_entries == 1)
+    assert(sec.id_string == b'\x00'*28)
+    assert(len(sec.section_entries) == 1)
+    entry = sec.section_entries[0]
+    # The section entry is marked non-bootable, which uses the same boot
+    # indicator (0x00) as the entry that terminates the boot catalog.
+    assert(entry.boot_indicator == 0x00)
+    assert(entry.boot_media_type == 0x0)
+    assert(entry.load_segment == 0x0)
+    assert(entry.system_type == 0)
+    assert(entry.sector_count == 4)
+    assert(entry.load_rba == 28)
+    assert(len(iso.eltorito_boot_catalog.standalone_entries) == 0)
+
+    internal_check_terminator(iso.vdsts, extent=19)
+
+    internal_check_ptr(iso.pvd.root_dir_record.ptr, name=b'\x00', len_di=1, loc=25, parent=1)
+
+    internal_check_root_dir_record(iso.pvd.root_dir_record, num_children=5, data_length=2048, extent_location=25, rr=False, rr_nlinks=0, xa=False, rr_onetwelve=False)
+
+    internal_check_file(iso.pvd.root_dir_record.children[3], name=b'boot.cat', dr_len=42, loc=26, datalen=2048, hidden=False, multi_extent=False)
+
+    internal_check_file(iso.pvd.root_dir_record.children[2], name=b'boot', dr_len=38, loc=27, datalen=5, hidden=False, multi_extent=False)
+    internal_check_file_contents(iso, path='/boot', contents=b'boot\n', which='iso_path')
+
+    internal_check_file(iso.pvd.root_dir_record.children[4], name=b'boot2', dr_len=38, loc=28, datalen=6, hidden=False, multi_extent=False)
+    internal_check_file_contents(iso, path='/boot2', contents=b'boot2\n', which='iso_path')
+
 def check_eltorito_multi_boot_hard_link(iso, filesize):
     assert(filesize == 59392)
 
