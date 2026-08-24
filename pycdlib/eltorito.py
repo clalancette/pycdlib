@@ -646,6 +646,57 @@ class EltoritoBootCatalog:
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog already initialized')
 
+        def _finish():
+            # type: () -> None
+            """
+            An internal method to run the end-of-catalog sanity checks and mark
+            this El Torito Boot Catalog as fully parsed.
+            """
+            last_section_index = len(self.sections) - 1
+            for index, sec in enumerate(self.sections):
+                if sec.num_section_entries != len(sec.section_entries):
+                    raise pycdlibexception.PyCdlibInvalidISO('El Torito section header specified %d entries, only saw %d' % (sec.num_section_entries, len(sec.section_entries)))
+                if index != last_section_index:
+                    if sec.header_indicator != 0x90:
+                        raise pycdlibexception.PyCdlibInvalidISO('Intermediate El Torito section header not properly specified')
+                # In theory, we should also make sure that the very last
+                # section has a header_indicator of 0x91.  However, we
+                # have seen ISOs in the wild (FreeBSD 11.0 amd64) in which
+                # this is not the case, so we skip that check.
+            self._initialized = True
+
+        def _last_section_header_is_final():
+            # type: () -> bool
+            """
+            An internal method to determine whether the last section header seen
+            is marked as the final one (header indicator 0x91).  If it is, the
+            catalog has told us that it expects nothing further, so whatever
+            follows is past the end of the catalog.  Note that this says nothing
+            about whether what we read was well-formed; that is left to
+            _finish(), so that a malformed catalog gets a specific error message
+            regardless of how the end of the catalog was signalled.
+            """
+            return bool(self.sections) and self.sections[-1].header_indicator == 0x91
+
+        def _is_non_bootable_section_entry():
+            # type: () -> bool
+            """
+            An internal method to determine whether a record whose first byte is
+            0x00 is a non-bootable Section Entry rather than the empty entry
+            that terminates the catalog.  El Torito uses a boot indicator of
+            0x00 for both, so the only way to tell them apart is context: treat
+            the record as a Section Entry when the last Section Header is still
+            owed an entry and the record has some content of its own.  An
+            all-zero record is always taken as the terminator, since that is
+            what the specification says the terminator looks like.
+            """
+            if not self.sections:
+                return False
+            last = self.sections[-1]
+            if len(last.section_entries) >= last.num_section_entries:
+                return False
+            return any(valstr)
+
         if self.state == self.EXPECTING_VALIDATION_ENTRY:
             # The first entry in an El Torito boot catalog is the Validation
             # Entry.  A Validation entry consists of 32 bytes (described in
@@ -660,30 +711,20 @@ class EltoritoBootCatalog:
             self.state = self.EXPECTING_SECTION_HEADER_OR_DONE
         else:
             val = valstr[0]
-            if val == 0x00:
+            if val == 0x00 and not _is_non_bootable_section_entry():
                 # An empty entry tells us we are done parsing El Torito.  Do
                 # some sanity checks.
-                last_section_index = len(self.sections) - 1
-                for index, sec in enumerate(self.sections):
-                    if sec.num_section_entries != len(sec.section_entries):
-                        raise pycdlibexception.PyCdlibInvalidISO('El Torito section header specified %d entries, only saw %d' % (sec.num_section_entries, len(sec.section_entries)))
-                    if index != last_section_index:
-                        if sec.header_indicator != 0x90:
-                            raise pycdlibexception.PyCdlibInvalidISO('Intermediate El Torito section header not properly specified')
-                    # In theory, we should also make sure that the very last
-                    # section has a header_indicator of 0x91.  However, we
-                    # have seen ISOs in the wild (FreeBSD 11.0 amd64) in which
-                    # this is not the case, so we skip that check.
-                self._initialized = True
+                _finish()
             elif val in (0x90, 0x91):
                 # A Section Header Entry
                 section_header = EltoritoSectionHeader()
                 section_header.parse(valstr)
                 self.sections.append(section_header)
             elif val in (0x88, 0x00):
-                # A Section Entry. According to El Torito 2.4, a Section Entry
-                # must follow a Section Header, but we have seen ISOs in the
-                # wild that do not follow this (Mageia 4 ISOs, for instance).
+                # A Section Entry, either bootable (0x88) or non-bootable
+                # (0x00).  According to El Torito 2.4, a Section Entry must
+                # follow a Section Header, but we have seen ISOs in the wild
+                # that do not follow this (Mageia 4 ISOs, for instance).
                 # To deal with this, we get a little complicated here.  If there
                 # is a previous section header, and the length of the entries
                 # attached to it is less than the number of entries it should
@@ -699,6 +740,14 @@ class EltoritoBootCatalog:
             elif val == 0x44:
                 # A Section Entry Extension
                 self.sections[-1].section_entries[-1].selection_criteria += valstr[2:]
+            elif _last_section_header_is_final():
+                # This isn't anything we recognize, but the catalog already told
+                # us that the section header we just saw was the last one, so
+                # this is padding past the end of the catalog rather than a
+                # broken entry.  Not every ISO bothers to terminate the catalog
+                # with an empty entry; some OpenBSD install ISOs, for instance,
+                # pad the rest of the extent with 0xdf bytes.
+                _finish()
             else:
                 raise pycdlibexception.PyCdlibInvalidISO('Invalid El Torito Boot Catalog entry')
 

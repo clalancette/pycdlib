@@ -386,3 +386,114 @@ def test_eltorito_boot_catalog_record_includes_standalone_entries():
     # Validation entry + initial entry + the standalone entry, 32 bytes each.
     assert(len(rec) == 96)
     assert(rec.endswith(standalone.record()))
+
+def test_eltorito_boot_catalog_parse_unterminated_catalog_with_padding():
+    # Some ISOs do not terminate the boot catalog with an empty entry, and
+    # instead pad the rest of the extent with garbage.  The OpenBSD install
+    # ISOs pad with 0xdf (https://github.com/clalancette/pycdlib/issues/180).
+    # Since the final section header is marked 0x91 and has all of the entries
+    # it promised, the padding means the end of the catalog, not corruption.
+    bc = _make_parsed_boot_catalog()
+
+    bc.parse(_section_header(0x91, 1))
+    assert(not bc.parse(_section_entry().record()))
+
+    assert(bc.parse(b'\xdf'*32))
+    assert(len(bc.sections) == 1)
+    assert(len(bc.sections[0].section_entries) == 1)
+    assert(len(bc.standalone_entries) == 0)
+
+def test_eltorito_boot_catalog_parse_padding_with_unfinished_section():
+    # A final section header that is still missing entries is corrupt, and the
+    # error says so specifically, whether the end of the catalog was signalled
+    # by an empty entry or by padding.
+    bc = _make_parsed_boot_catalog()
+
+    bc.parse(_section_header(0x91, 2))
+    bc.parse(_section_entry().record())
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        bc.parse(b'\xdf'*32)
+    assert(str(excinfo.value) == 'El Torito section header specified 2 entries, only saw 1')
+
+def test_eltorito_boot_catalog_parse_padding_with_non_final_section_header():
+    # A section header that is not marked as the final one (0x91) means more of
+    # the catalog is expected, so garbage is not padding, it is an error.
+    bc = _make_parsed_boot_catalog()
+
+    bc.parse(_section_header(0x90, 1))
+    bc.parse(_section_entry().record())
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        bc.parse(b'\xdf'*32)
+    assert(str(excinfo.value) == 'Invalid El Torito Boot Catalog entry')
+
+def test_eltorito_boot_catalog_parse_non_bootable_section_entry():
+    # A non-bootable section entry has a boot indicator of 0x00, the same as
+    # the empty entry that terminates the catalog.  When the last section
+    # header is still owed an entry and the record has content, it is an entry,
+    # not the terminator.
+    bc = _make_parsed_boot_catalog()
+
+    bc.parse(_section_header(0x91, 1))
+
+    entry = pycdlib.eltorito.EltoritoEntry()
+    entry.new(4, 0, 'noemul', 0, False)
+    assert(not bc.parse(entry.record()))
+
+    assert(len(bc.sections[0].section_entries) == 1)
+    assert(bc.sections[0].section_entries[0].boot_indicator == 0x00)
+    assert(len(bc.standalone_entries) == 0)
+
+    assert(bc.parse(b'\x00'*32))
+
+def test_eltorito_boot_catalog_parse_all_zero_record_is_terminator():
+    # An all-zero record is always the terminator, even when the last section
+    # header is still owed an entry; that shortfall is a corrupt catalog.
+    bc = _make_parsed_boot_catalog()
+
+    bc.parse(_section_header(0x91, 1))
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        bc.parse(b'\x00'*32)
+    assert(str(excinfo.value) == 'El Torito section header specified 1 entries, only saw 0')
+
+def test_eltorito_boot_catalog_parse_zero_record_after_full_section_terminates():
+    # Once the last section header has all of the entries it promised, a record
+    # starting with 0x00 is the terminator rather than another section entry,
+    # even if it has content after the boot indicator.
+    bc = _make_parsed_boot_catalog()
+
+    bc.parse(_section_header(0x91, 1))
+    bc.parse(_section_entry().record())
+
+    assert(bc.parse(b'\x00' + b'\xff'*31))
+    assert(len(bc.sections[0].section_entries) == 1)
+    assert(len(bc.standalone_entries) == 0)
+
+def test_eltorito_boot_catalog_parse_openbsd_style_catalog():
+    # The exact boot catalog layout from the OpenBSD 7.9 amd64 install ISO of
+    # issue #180: validation entry, initial entry, a final (0x91) EFI section
+    # header with one entry, and 0xdf padding out to the end of the extent.
+    validation = struct.pack('<BBH24sHBB', 0x01, 0, 0,
+                             b'Copyright (c) 2026 Theo', 0, 0x55, 0xaa)
+    csum = pycdlib.eltorito.EltoritoValidationEntry._checksum(validation)
+    catalog = validation[:28] + struct.pack('<HBB', csum, 0x55, 0xaa)
+    catalog += struct.pack('<BBHBBHL20s', 0x88, 0, 0, 0, 0, 4, 0x484b0, b'')
+    catalog += _section_header(0x91, 1)
+    catalog += struct.pack('<BBHBBHL20s', 0x88, 0, 0, 0xef, 0, 0x2bc, 0x5324d, b'')
+    catalog += b'\xdf' * (2048 - len(catalog))
+
+    bc = pycdlib.eltorito.EltoritoBootCatalog(None)
+    offset = 0
+    while not bc.parse(catalog[offset:offset + 32]):
+        offset += 32
+
+    # Parsing stops at the first byte of padding, not at the end of the extent.
+    assert(offset == 128)
+    assert(bc.initial_entry.load_rba == 0x484b0)
+    assert(len(bc.sections) == 1)
+    assert(bc.sections[0].header_indicator == 0x91)
+    assert(len(bc.sections[0].section_entries) == 1)
+    assert(bc.sections[0].section_entries[0].load_rba == 0x5324d)
+    assert(len(bc.standalone_entries) == 0)
