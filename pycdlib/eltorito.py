@@ -616,11 +616,15 @@ class EltoritoBootCatalog:
     an initial entry, and zero or more section entries.
     """
     __slots__ = ('_initialized', 'dirrecords', 'br', 'initial_entry',
-                 'validation_entry', 'sections', 'standalone_entries', 'state')
+                 'validation_entry', 'sections', 'standalone_entries',
+                 '_num_records_parsed')
 
-    EXPECTING_VALIDATION_ENTRY = 1
-    EXPECTING_INITIAL_ENTRY = 2
-    EXPECTING_SECTION_HEADER_OR_DONE = 3
+    # The El Torito specification, section 2.0, says that the Boot Catalog is
+    # 'a collection of 20 byte entries ... packed 40 entries to the sector'.
+    # Those numbers are hexadecimal, so an entry is 32 bytes and 64 of them
+    # fit in a 2048-byte sector exactly; an entry never straddles a sector
+    # boundary.
+    ENTRY_SIZE = 32
 
     def __init__(self, br):
         # type: (headervd.BootRecord) -> None
@@ -631,15 +635,22 @@ class EltoritoBootCatalog:
         self.validation_entry = EltoritoValidationEntry()
         self.sections = []  # type: List[EltoritoSectionHeader]
         self.standalone_entries = []  # type: List[EltoritoEntry]
-        self.state = self.EXPECTING_VALIDATION_ENTRY
+        self._num_records_parsed = 0
 
     def parse(self, valstr):
-        # type: (bytes) -> bool
+        # type: (bytes) -> None
         """
-        Parse an El Torito Boot Catalog out of a string.
+        Parse one sector of an El Torito Boot Catalog out of a string.  The
+        El Torito specification, section 2.0, says that there is no limit to
+        the number of sectors the Boot Catalog uses, and the Boot Record only
+        points at the first one, so the end of the catalog can only be found
+        by parsing it.  If the catalog does not end in this sector, complete()
+        returns False and the caller should call this method again with the
+        next sector of the ISO.
 
         Parameters:
-         valstr - The string to parse the El Torito Boot Catalog out of.
+         valstr - The string containing the next sector of the El Torito Boot
+                  Catalog.
         Returns:
          Nothing.
         """
@@ -678,8 +689,8 @@ class EltoritoBootCatalog:
             """
             return bool(self.sections) and self.sections[-1].header_indicator == 0x91
 
-        def _is_non_bootable_section_entry():
-            # type: () -> bool
+        def _is_non_bootable_section_entry(rec):
+            # type: (bytes) -> bool
             """
             An internal method to determine whether a record whose first byte is
             0x00 is a non-bootable Section Entry rather than the empty entry
@@ -689,68 +700,92 @@ class EltoritoBootCatalog:
             owed an entry and the record has some content of its own.  An
             all-zero record is always taken as the terminator, since that is
             what the specification says the terminator looks like.
+
+            Parameters:
+             rec - The record to examine.
+            Returns:
+             True if this record is a non-bootable Section Entry, False if it is
+             the entry that terminates the catalog.
             """
             if not self.sections:
                 return False
             last = self.sections[-1]
             if len(last.section_entries) >= last.num_section_entries:
                 return False
-            return any(valstr)
+            return any(rec)
 
-        if self.state == self.EXPECTING_VALIDATION_ENTRY:
-            # The first entry in an El Torito boot catalog is the Validation
-            # Entry.  A Validation entry consists of 32 bytes (described in
-            # detail in the parse_eltorito_validation_entry() method).
-            self.validation_entry.parse(valstr)
-            self.state = self.EXPECTING_INITIAL_ENTRY
-        elif self.state == self.EXPECTING_INITIAL_ENTRY:
-            # The next entry is the Initial/Default entry.  An Initial/Default
-            # entry consists of 32 bytes (described in detail in the
-            # parse_eltorito_initial_entry() method).
-            self.initial_entry.parse(valstr)
-            self.state = self.EXPECTING_SECTION_HEADER_OR_DONE
-        else:
-            val = valstr[0]
-            if val == 0x00 and not _is_non_bootable_section_entry():
-                # An empty entry tells us we are done parsing El Torito.  Do
-                # some sanity checks.
-                _finish()
-            elif val in (0x90, 0x91):
-                # A Section Header Entry
-                section_header = EltoritoSectionHeader()
-                section_header.parse(valstr)
-                self.sections.append(section_header)
-            elif val in (0x88, 0x00):
-                # A Section Entry, either bootable (0x88) or non-bootable
-                # (0x00).  According to El Torito 2.4, a Section Entry must
-                # follow a Section Header, but we have seen ISOs in the wild
-                # that do not follow this (Mageia 4 ISOs, for instance).
-                # To deal with this, we get a little complicated here.  If there
-                # is a previous section header, and the length of the entries
-                # attached to it is less than the number of entries it should
-                # have, then we attach this entry to that header.  If there is
-                # no previous section header, or if the previous section header
-                # is already 'full', then we make this a standalone entry.
-                secentry = EltoritoEntry()
-                secentry.parse(valstr)
-                if self.sections and len(self.sections[-1].section_entries) < self.sections[-1].num_section_entries:
-                    self.sections[-1].add_parsed_entry(secentry)
-                else:
-                    self.standalone_entries.append(secentry)
-            elif val == 0x44:
-                # A Section Entry Extension
-                self.sections[-1].section_entries[-1].selection_criteria += valstr[2:]
-            elif _last_section_header_is_final():
-                # This isn't anything we recognize, but the catalog already told
-                # us that the section header we just saw was the last one, so
-                # this is padding past the end of the catalog rather than a
-                # broken entry.  Not every ISO bothers to terminate the catalog
-                # with an empty entry; some OpenBSD install ISOs, for instance,
-                # pad the rest of the extent with 0xdf bytes.
-                _finish()
+        offset = 0
+        while offset < len(valstr) and not self._initialized:
+            rec = valstr[offset:offset + self.ENTRY_SIZE]
+            if len(rec) < self.ENTRY_SIZE:
+                raise pycdlibexception.PyCdlibInvalidISO('Partial El Torito Boot Catalog entry at the end of the ISO')
+            offset += self.ENTRY_SIZE
+
+            if self._num_records_parsed == 0:
+                # The first entry in an El Torito boot catalog is the Validation
+                # Entry.  A Validation entry consists of 32 bytes (described in
+                # detail in the parse_eltorito_validation_entry() method).
+                self.validation_entry.parse(rec)
+            elif self._num_records_parsed == 1:
+                # The next entry is the Initial/Default entry.  An Initial/Default
+                # entry consists of 32 bytes (described in detail in the
+                # parse_eltorito_initial_entry() method).
+                self.initial_entry.parse(rec)
             else:
-                raise pycdlibexception.PyCdlibInvalidISO('Invalid El Torito Boot Catalog entry')
+                val = rec[0]
+                if val == 0x00 and not _is_non_bootable_section_entry(rec):
+                    # An empty entry tells us we are done parsing El Torito.  Do
+                    # some sanity checks.
+                    _finish()
+                elif val in (0x90, 0x91):
+                    # A Section Header Entry
+                    section_header = EltoritoSectionHeader()
+                    section_header.parse(rec)
+                    self.sections.append(section_header)
+                elif val in (0x88, 0x00):
+                    # A Section Entry, either bootable (0x88) or non-bootable
+                    # (0x00).  According to El Torito 2.4, a Section Entry must
+                    # follow a Section Header, but we have seen ISOs in the wild
+                    # that do not follow this (Mageia 4 ISOs, for instance).
+                    # To deal with this, we get a little complicated here.  If there
+                    # is a previous section header, and the length of the entries
+                    # attached to it is less than the number of entries it should
+                    # have, then we attach this entry to that header.  If there is
+                    # no previous section header, or if the previous section header
+                    # is already 'full', then we make this a standalone entry.
+                    secentry = EltoritoEntry()
+                    secentry.parse(rec)
+                    if self.sections and len(self.sections[-1].section_entries) < self.sections[-1].num_section_entries:
+                        self.sections[-1].add_parsed_entry(secentry)
+                    else:
+                        self.standalone_entries.append(secentry)
+                elif val == 0x44:
+                    # A Section Entry Extension
+                    self.sections[-1].section_entries[-1].selection_criteria += rec[2:]
+                elif _last_section_header_is_final():
+                    # This isn't anything we recognize, but the catalog already told
+                    # us that the section header we just saw was the last one, so
+                    # this is padding past the end of the catalog rather than a
+                    # broken entry.  Not every ISO bothers to terminate the catalog
+                    # with an empty entry; some OpenBSD install ISOs, for instance,
+                    # pad the rest of the extent with 0xdf bytes.
+                    _finish()
+                else:
+                    raise pycdlibexception.PyCdlibInvalidISO('Invalid El Torito Boot Catalog entry')
 
+            self._num_records_parsed += 1
+
+    def complete(self):
+        # type: () -> bool
+        """
+        Determine whether the whole El Torito Boot Catalog has been parsed.
+
+        Parameters:
+         None.
+        Returns:
+         True if the entire Boot Catalog has been parsed, False if the caller
+         needs to feed the next sector of the ISO to parse().
+        """
         return self._initialized
 
     def new(self, br, ino, sector_count, load_seg, media_name, system_type,
@@ -806,15 +841,11 @@ class EltoritoBootCatalog:
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
 
-        # The Eltorito Boot Catalog can only be 2048 bytes (1 extent).  By
-        # default, the first 64 bytes are used by the Validation Entry and the
-        # Initial Entry, which leaves 1984 bytes.  Each section takes up 32
-        # bytes for the Section Header and 32 bytes for the Section Entry, for
-        # a total of 64 bytes, so we can have a maximum of 1984/64 = 31
-        # sections.
-        if len(self.sections) == 31:
-            raise pycdlibexception.PyCdlibInvalidInput('Too many El Torito sections')
-
+        # The El Torito specification, section 2.0, says that there is no limit
+        # to the number of sectors the Boot Catalog uses, so there is no limit
+        # to the number of sections either.  The caller is responsible for
+        # making room for however much space record_length() says the catalog
+        # now needs.
         sec = EltoritoSectionHeader()
         platform_id = self.validation_entry.platform_id
         if efi:
@@ -832,6 +863,31 @@ class EltoritoBootCatalog:
             self.sections[-1].set_record_not_last()
 
         self.sections.append(sec)
+
+    def record_length(self):
+        # type: () -> int
+        """
+        Get the number of bytes that this El Torito Boot Catalog occupies.
+        Note that this does not include the empty entry that terminates the
+        catalog; a caller allocating space for the catalog should leave room
+        for one more entry so that the end of the catalog is unambiguous.
+
+        Parameters:
+         None.
+        Returns:
+         The number of bytes that this El Torito Boot Catalog occupies.
+        """
+        if not self._initialized:
+            raise pycdlibexception.PyCdlibInternalError('El Torito Boot Catalog not initialized')
+
+        # The Validation Entry, the Initial/Default Entry, a Section Header for
+        # each section along with each of the entries attached to it, and any
+        # standalone entries; every one of those is a single 32-byte record.
+        num_records = 2 + len(self.standalone_entries)
+        for sec in self.sections:
+            num_records += 1 + len(sec.section_entries)
+
+        return num_records * self.ENTRY_SIZE
 
     def record(self):
         # type: () -> bytes

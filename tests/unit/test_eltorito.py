@@ -243,19 +243,47 @@ def test_eltorito_boot_catalog_add_section_not_initialized():
         bc.add_section(None, 0, 0, 'noemul', 0, False, False)
     assert(str(excinfo.value) == 'El Torito Boot Catalog not initialized')
 
-def test_eltorito_boot_catalog_add_section_too_many():
+def test_eltorito_boot_catalog_add_section_past_one_sector():
+    # El Torito puts no limit on the number of sectors the Boot Catalog uses,
+    # so there is no limit on the number of sections either; the catalog just
+    # reports that it needs more room.
     ino = pycdlib.inode.Inode()
     ino.new(0, None, False, 0)
 
     bc = pycdlib.eltorito.EltoritoBootCatalog(None)
     bc.new(None, ino, 1, 0, 'noemul', 0, 0, False)
 
+    # The Validation Entry and the Initial Entry leave room for 31 sections in
+    # a 2048-byte sector, so the 31st section is the one that fills it.
     for i in range(0, 31):
         bc.add_section(ino, 0, 0, 'noemul', 0, False, False)
+    assert(bc.record_length() == 2048)
 
-    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+    bc.add_section(ino, 0, 0, 'noemul', 0, False, False)
+
+    assert(len(bc.sections) == 32)
+    assert(bc.record_length() == 2112)
+    assert(bc.record_length() == len(bc.record()))
+
+def test_eltorito_boot_catalog_record_length_matches_record():
+    ino = pycdlib.inode.Inode()
+    ino.new(0, None, False, 0)
+
+    bc = pycdlib.eltorito.EltoritoBootCatalog(None)
+    bc.new(None, ino, 1, 0, 'noemul', 0, 0, False)
+    assert(bc.record_length() == 64)
+    assert(bc.record_length() == len(bc.record()))
+
+    for i in range(0, 5):
         bc.add_section(ino, 0, 0, 'noemul', 0, False, False)
-    assert(str(excinfo.value) == 'Too many El Torito sections')
+        assert(bc.record_length() == len(bc.record()))
+
+def test_eltorito_boot_catalog_record_length_not_initialized():
+    bc = pycdlib.eltorito.EltoritoBootCatalog(None)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        bc.record_length()
+    assert(str(excinfo.value) == 'El Torito Boot Catalog not initialized')
 
 def test_eltorito_boot_catalog_record_not_initialized():
     bc = pycdlib.eltorito.EltoritoBootCatalog(None)
@@ -396,9 +424,11 @@ def test_eltorito_boot_catalog_parse_unterminated_catalog_with_padding():
     bc = _make_parsed_boot_catalog()
 
     bc.parse(_section_header(0x91, 1))
-    assert(not bc.parse(_section_entry().record()))
+    bc.parse(_section_entry().record())
+    assert(not bc.complete())
 
-    assert(bc.parse(b'\xdf'*32))
+    bc.parse(b'\xdf'*32)
+    assert(bc.complete())
     assert(len(bc.sections) == 1)
     assert(len(bc.sections[0].section_entries) == 1)
     assert(len(bc.standalone_entries) == 0)
@@ -439,13 +469,15 @@ def test_eltorito_boot_catalog_parse_non_bootable_section_entry():
 
     entry = pycdlib.eltorito.EltoritoEntry()
     entry.new(4, 0, 'noemul', 0, False)
-    assert(not bc.parse(entry.record()))
+    bc.parse(entry.record())
+    assert(not bc.complete())
 
     assert(len(bc.sections[0].section_entries) == 1)
     assert(bc.sections[0].section_entries[0].boot_indicator == 0x00)
     assert(len(bc.standalone_entries) == 0)
 
-    assert(bc.parse(b'\x00'*32))
+    bc.parse(b'\x00'*32)
+    assert(bc.complete())
 
 def test_eltorito_boot_catalog_parse_all_zero_record_is_terminator():
     # An all-zero record is always the terminator, even when the last section
@@ -467,9 +499,99 @@ def test_eltorito_boot_catalog_parse_zero_record_after_full_section_terminates()
     bc.parse(_section_header(0x91, 1))
     bc.parse(_section_entry().record())
 
-    assert(bc.parse(b'\x00' + b'\xff'*31))
+    bc.parse(b'\x00' + b'\xff'*31)
+    assert(bc.complete())
     assert(len(bc.sections[0].section_entries) == 1)
     assert(len(bc.standalone_entries) == 0)
+
+def test_eltorito_boot_catalog_parse_spanning_two_sectors():
+    # El Torito puts no limit on the number of sectors the Boot Catalog uses,
+    # and an entry never straddles a sector boundary (64 of them fit in a
+    # 2048-byte sector exactly).  A catalog that fills the first sector without
+    # ending is not complete, and picks up where it left off in the next one.
+    val = pycdlib.eltorito.EltoritoValidationEntry()
+    val.new(0)
+    entry = pycdlib.eltorito.EltoritoEntry()
+    entry.new(4, 0, 'noemul', 0, True)
+
+    # Validation entry, initial entry, then 31 full sections fills the sector
+    # exactly (2 + 31*2 == 64 entries) with no terminator in sight.
+    sector = val.record() + entry.record()
+    for i in range(0, 31):
+        sector += _section_header(0x90 if i < 30 else 0x91, 1)
+        sector += _section_entry().record()
+    assert(len(sector) == 2048)
+
+    bc = pycdlib.eltorito.EltoritoBootCatalog(None)
+    bc.parse(sector)
+
+    assert(not bc.complete())
+    assert(len(bc.sections) == 31)
+
+    # The terminator is the first entry of the second sector.
+    bc.parse(b'\x00'*2048)
+
+    assert(bc.complete())
+    assert(len(bc.sections) == 31)
+    assert(len(bc.standalone_entries) == 0)
+
+def test_eltorito_boot_catalog_parse_section_entries_across_sector_boundary():
+    # A section header at the end of one sector is still owed its entries when
+    # the next sector starts; that carries over without any special handling.
+    val = pycdlib.eltorito.EltoritoValidationEntry()
+    val.new(0)
+    entry = pycdlib.eltorito.EltoritoEntry()
+    entry.new(4, 0, 'noemul', 0, True)
+
+    sector = val.record() + entry.record()
+    for i in range(0, 30):
+        sector += _section_header(0x90, 1)
+        sector += _section_entry().record()
+    # The last header in the sector promises two entries, neither of which has
+    # arrived yet.
+    sector += _section_header(0x91, 2)
+    sector += _section_entry().record()
+    assert(len(sector) == 2048)
+
+    bc = pycdlib.eltorito.EltoritoBootCatalog(None)
+    bc.parse(sector)
+
+    assert(not bc.complete())
+    assert(len(bc.sections[-1].section_entries) == 1)
+
+    bc.parse(_section_entry().record() + b'\x00'*32)
+
+    assert(bc.complete())
+    assert(len(bc.sections[-1].section_entries) == 2)
+    assert(len(bc.standalone_entries) == 0)
+
+def test_eltorito_boot_catalog_parse_partial_entry():
+    # A truncated ISO can leave less than a whole entry at the end of the data.
+    bc = _make_parsed_boot_catalog()
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        bc.parse(b'\x00'*16)
+    assert(str(excinfo.value) == 'Partial El Torito Boot Catalog entry at the end of the ISO')
+
+def test_eltorito_boot_catalog_parse_after_complete():
+    # Once the catalog is complete, it should not be fed any more sectors.
+    bc = _make_parsed_boot_catalog()
+    bc.parse(b'\x00'*32)
+    assert(bc.complete())
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        bc.parse(b'\x00'*32)
+    assert(str(excinfo.value) == 'El Torito Boot Catalog already initialized')
+
+def test_eltorito_boot_catalog_complete_after_new():
+    ino = pycdlib.inode.Inode()
+    ino.new(0, None, False, 0)
+
+    bc = pycdlib.eltorito.EltoritoBootCatalog(None)
+    assert(not bc.complete())
+
+    bc.new(None, ino, 1, 0, 'noemul', 0, 0, False)
+    assert(bc.complete())
 
 def test_eltorito_boot_catalog_parse_openbsd_style_catalog():
     # The exact boot catalog layout from the OpenBSD 7.9 amd64 install ISO of
@@ -484,13 +606,11 @@ def test_eltorito_boot_catalog_parse_openbsd_style_catalog():
     catalog += struct.pack('<BBHBBHL20s', 0x88, 0, 0, 0xef, 0, 0x2bc, 0x5324d, b'')
     catalog += b'\xdf' * (2048 - len(catalog))
 
+    # The whole sector goes in at once, and the catalog finishes inside it.
     bc = pycdlib.eltorito.EltoritoBootCatalog(None)
-    offset = 0
-    while not bc.parse(catalog[offset:offset + 32]):
-        offset += 32
+    bc.parse(catalog)
 
-    # Parsing stops at the first byte of padding, not at the end of the extent.
-    assert(offset == 128)
+    assert(bc.complete())
     assert(bc.initial_entry.load_rba == 0x484b0)
     assert(len(bc.sections) == 1)
     assert(bc.sections[0].header_indicator == 0x91)

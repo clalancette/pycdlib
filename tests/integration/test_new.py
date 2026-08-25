@@ -9297,6 +9297,92 @@ def test_new_get_file_byte_extents_zero_length_file():
     iso.close()
 
 
+def _build_multi_section_iso(num_sections, **kwargs):
+    # Build an ISO whose El Torito Boot Catalog holds num_sections sections,
+    # and return the bytes of the written ISO along with the catalog.
+    iso = pycdlib.PyCdlib()
+    iso.new(**kwargs)
+
+    rr_name = 'boot' if kwargs.get('rock_ridge') else None
+    joliet_path = '/boot' if kwargs.get('joliet') else None
+    udf_path = '/boot' if kwargs.get('udf') else None
+    iso.add_fp(io.BytesIO(b'boot\n'), 5, '/BOOT.;1', rr_name=rr_name,
+               joliet_path=joliet_path, udf_path=udf_path)
+
+    catalog_kwargs = {}
+    if kwargs.get('rock_ridge'):
+        catalog_kwargs['rr_bootcatname'] = 'boot.cat'
+    if kwargs.get('joliet'):
+        catalog_kwargs['joliet_bootcatfile'] = '/boot.cat'
+    if kwargs.get('udf'):
+        catalog_kwargs['udf_bootcatfile'] = '/boot.cat'
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1', **catalog_kwargs)
+
+    for i_unused in range(0, num_sections):
+        iso.add_eltorito('/BOOT.;1')
+
+    catalog = iso.eltorito_boot_catalog
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    return out.getvalue(), catalog
+
+def test_new_eltorito_sections_past_one_sector():
+    # El Torito puts no limit on the number of sectors the Boot Catalog uses,
+    # so a catalog with more sections than fit in one sector grows to two and
+    # can be read back.
+    data, catalog = _build_multi_section_iso(40)
+
+    assert(catalog.record_length() == 2624)
+    for rec in catalog.dirrecords:
+        assert(rec.get_data_length() == 4096)
+
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(io.BytesIO(data))
+
+    assert(len(iso.eltorito_boot_catalog.sections) == 40)
+    assert(len(iso.eltorito_boot_catalog.standalone_entries) == 0)
+    assert(iso.pvd.space_size * 2048 == len(data))
+
+    iso.close()
+
+def test_new_eltorito_sections_exactly_fill_a_sector():
+    # A catalog whose entries exactly fill a sector still needs room for the
+    # empty entry that terminates it, or the parser would run into whatever
+    # follows the catalog on the ISO.
+    data, catalog = _build_multi_section_iso(31)
+
+    assert(catalog.record_length() == 2048)
+    for rec in catalog.dirrecords:
+        assert(rec.get_data_length() == 4096)
+
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(io.BytesIO(data))
+
+    assert(len(iso.eltorito_boot_catalog.sections) == 31)
+    assert(len(iso.eltorito_boot_catalog.standalone_entries) == 0)
+
+    iso.close()
+
+def test_new_eltorito_sections_past_one_sector_joliet_rr_udf():
+    # Every name the boot catalog is known by has to grow, not just the
+    # ISO9660 one.
+    data, catalog = _build_multi_section_iso(40, joliet=3, rock_ridge='1.09',
+                                             udf='2.60')
+
+    assert(len(catalog.dirrecords) == 3)
+    for rec in catalog.dirrecords:
+        assert(rec.get_data_length() == 4096)
+
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(io.BytesIO(data))
+
+    assert(len(iso.eltorito_boot_catalog.sections) == 40)
+    assert(iso.pvd.space_size * 2048 == len(data))
+
+    iso.close()
+
 def _make_isohybrid_uefi_iso(tmpdir, name):
     # Build a UEFI isohybrid ISO with pycdlib and write it out to a real file,
     # returning its path.  These tests have to work on a file rather than a
