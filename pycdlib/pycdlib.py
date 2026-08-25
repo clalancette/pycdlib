@@ -1384,11 +1384,22 @@ class PyCdlib:
                                                            br.boot_system_use[:4],
                                                            0)
 
+        # The El Torito specification, section 2.0, says that there is no limit
+        # to the number of sectors the Boot Catalog uses, and the Boot Record
+        # only points at the first one, so we hand the catalog a sector at a
+        # time until it tells us it has seen the end of itself.  Since the
+        # reads are clamped to the size of the ISO, a catalog that never ends
+        # runs out of ISO rather than running away.
         old = self._cdfp.tell()
-        self._seek_to_extent(eltorito_boot_catalog_extent)
-        data = self._cdfp.read(32)
-        while not self.eltorito_boot_catalog.parse(data):
-            data = self._cdfp.read(32)
+        iso_file_length = self._get_iso_size()
+        extent = eltorito_boot_catalog_extent
+        while not self.eltorito_boot_catalog.complete():
+            self._seek_to_extent(extent)
+            data = self._read_clamped(self.logical_block_size, iso_file_length)
+            if not data:
+                raise pycdlibexception.PyCdlibInvalidISO('El Torito Boot Catalog extends past the end of the ISO')
+            self.eltorito_boot_catalog.parse(data)
+            extent += 1
         self._cdfp.seek(old)
 
     def _udf_assign_extents(self, udf_files, current_extent):
@@ -5727,6 +5738,21 @@ class PyCdlib:
                                                    sector_count, boot_load_seg,
                                                    media_name, system_type, efi,
                                                    bootable)
+
+            # El Torito puts no limit on the number of sectors the Boot Catalog
+            # uses, so the new section may have pushed the catalog past the
+            # space that was allocated for it.  Leave room for the empty entry
+            # that terminates the catalog as well; without it a catalog that
+            # exactly fills its last sector would run into whatever happens to
+            # follow it on the ISO.
+            catalog_length = self.eltorito_boot_catalog.record_length() + self.eltorito_boot_catalog.ENTRY_SIZE
+            new_length = utils.ceiling_div(catalog_length,
+                                           self.logical_block_size) * self.logical_block_size
+            old_length = self.eltorito_boot_catalog.dirrecords[0].get_data_length()
+            if new_length > old_length:
+                for rec in self.eltorito_boot_catalog.dirrecords:
+                    rec.set_data_length(new_length)
+                num_bytes_to_add += new_length - old_length
         else:
             # Step 2.
             br = headervd.BootRecord()

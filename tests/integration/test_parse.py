@@ -3666,6 +3666,62 @@ def test_parse_standalone_eltorito_entry_blocks_rm_file():
 
     iso.close()
 
+def _make_eltorito_iso(tmpdir, name):
+    # Generate a small ISO with an El Torito boot record, and return its path.
+    indir = tmpdir.mkdir(name)
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'boot'), 'wb') as outfp:
+        outfp.write(b'boot\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-c', 'boot.cat', '-b', 'boot', '-no-emul-boot',
+                     '-o', str(outfile), str(indir)])
+    return outfile
+
+def test_parse_eltorito_boot_catalog_past_end_of_iso(tmpdir):
+    # The Boot Record points at the first sector of the Boot Catalog and there
+    # is no length anywhere, so an ISO can point it past its own end.
+    outfile = _make_eltorito_iso(tmpdir, 'bootcatpastend')
+
+    past_the_end = (os.stat(outfile).st_size // 2048) + 100
+    with open(outfile, 'r+b') as fp:
+        fp.seek(17*2048 + 0x47)
+        fp.write(struct.pack('<L', past_the_end))
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso.open(outfile)
+    assert(str(excinfo.value) == 'El Torito Boot Catalog extends past the end of the ISO')
+
+def test_parse_eltorito_boot_catalog_unterminated_runs_out_of_iso(tmpdir):
+    # A Boot Catalog that fills its sector without ending asks for the next
+    # sector.  When there isn't one, the ISO is truncated rather than the
+    # parser running away.
+    outfile = _make_eltorito_iso(tmpdir, 'bootcatunterminated')
+
+    val = pycdlib.eltorito.EltoritoValidationEntry()
+    val.new(0)
+    entry = pycdlib.eltorito.EltoritoEntry()
+    entry.new(4, 0, 'noemul', 0, True)
+
+    # Fill the last sector of the ISO with a catalog that never terminates:
+    # a validation entry, an initial entry, and then nothing but section
+    # entries with no section header marked as the final one.
+    sector = val.record() + entry.record()
+    sector += entry.record() * ((2048 - len(sector)) // 32)
+    assert(len(sector) == 2048)
+
+    last_extent = (os.stat(outfile).st_size // 2048) - 1
+    with open(outfile, 'r+b') as fp:
+        fp.seek(17*2048 + 0x47)
+        fp.write(struct.pack('<L', last_extent))
+        fp.seek(last_extent*2048)
+        fp.write(sector)
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso.open(outfile)
+    assert(str(excinfo.value) == 'El Torito Boot Catalog extends past the end of the ISO')
+
 # The unbounded-allocation tests below use BOGUS_LENGTH, MAX_ALLOWED_PEAK, and
 # open_measuring_peak() out of test_common.py.  The two matching tests for the
 # isohybrid GPT live in test_new.py, since their ISOs are built with pycdlib
