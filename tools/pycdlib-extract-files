@@ -29,6 +29,27 @@ import sys
 import pycdlib
 
 
+def safe_output_path(extract_root, relative_name):
+    """Return an output path that stays below the canonical extract root."""
+    output_path = os.path.abspath(os.path.join(extract_root, relative_name))
+
+    try:
+        lexical_root = os.path.commonpath([extract_root, output_path])
+        resolved_root = os.path.commonpath([extract_root,
+                                            os.path.realpath(output_path)])
+    except ValueError:
+        # On Windows, commonpath raises ValueError when paths use different
+        # drives.  Such a path is necessarily outside extract_root.
+        raise pycdlib.pycdlibexception.PyCdlibInvalidISO(
+            'ISO entry would be extracted outside the target directory')
+
+    if lexical_root != extract_root or resolved_root != extract_root:
+        raise pycdlib.pycdlibexception.PyCdlibInvalidISO(
+            'ISO entry would be extracted outside the target directory')
+
+    return output_path
+
+
 def parse_arguments():
     """
     A function to parse all of the arguments passed to the executable.
@@ -87,6 +108,7 @@ def main():
     print("Using path type of '%s'" % (pathname))
 
     root_entry = iso.get_record(**{pathname: args.start_path})
+    extract_root = os.path.realpath(os.path.abspath(args.extract_to))
 
     dirs = collections.deque([root_entry])
     while dirs:
@@ -99,7 +121,7 @@ def main():
         print(relname)
         if dir_record.is_dir():
             if relname != '':
-                os.makedirs(os.path.join(args.extract_to, relname))
+                os.makedirs(safe_output_path(extract_root, relname))
             child_lister = iso.list_children(**{pathname: ident_to_here})
 
             for child in child_lister:
@@ -108,7 +130,7 @@ def main():
                 dirs.append(child)
         else:
             if dir_record.is_symlink():
-                fullpath = os.path.join(args.extract_to, relname)
+                fullpath = safe_output_path(extract_root, relname)
                 local_dir = os.path.dirname(fullpath)
                 local_link_name = os.path.basename(fullpath)
                 old_dir = os.getcwd()
@@ -116,7 +138,8 @@ def main():
                 os.symlink(dir_record.rock_ridge.symlink_path(), local_link_name)
                 os.chdir(old_dir)
             else:
-                iso.get_file_from_iso(os.path.join(args.extract_to, relname), **{pathname: ident_to_here})
+                iso.get_file_from_iso(safe_output_path(extract_root, relname),
+                                      **{pathname: ident_to_here})
 
     iso.close()
     return 0
