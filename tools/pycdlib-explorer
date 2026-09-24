@@ -153,29 +153,25 @@ class PyCdlibCmdLoop(cmd.Cmd):
         diriter = self.iso.list_children(**{self.pathname: self.cwds[self.print_mode]})
 
         for child in diriter:
-            if child is None:
+            prefix = 'F'
+            if child.is_dir():
                 prefix = 'D'
-                name = '..'
-            else:
-                prefix = 'F'
-                if child.is_dir():
-                    prefix = 'D'
-                name = child.file_identifier().decode(self.encoding)
-                if self.print_mode == 'rr':
-                    name = ''
-                    if child.is_dot():
-                        name = '.'
-                    elif child.is_dotdot():
-                        name = '..'
-                    else:
-                        if child.rock_ridge is not None and child.rock_ridge.name() != '':
-                            name = child.rock_ridge.name().decode('utf-8')
-                            if child.rock_ridge.is_symlink():
-                                name += ' -> %s' % (child.rock_ridge.symlink_path())
-                                prefix += 'S'
+            name = child.file_identifier().decode(self.encoding)
+            if self.print_mode == 'rr':
+                name = ''
+                if child.is_dot():
+                    name = '.'
+                elif child.is_dotdot():
+                    name = '..'
+                else:
+                    if child.rock_ridge is not None and child.rock_ridge.name() != '':
+                        name = child.rock_ridge.name().decode('utf-8')
+                        if child.rock_ridge.is_symlink():
+                            name += ' -> %s' % (child.rock_ridge.symlink_path())
+                            prefix += 'S'
 
             size = ''
-            if child is not None and child.is_file():
+            if child.is_file():
                 if isinstance(child, pycdlib.udf.UDFFileEntry):
                     size = child.info_len
                 else:
@@ -303,10 +299,10 @@ class PyCdlibCmdLoop(cmd.Cmd):
             tmp = collections.deque()
             new_lasts = lasts + [False]
             if self.print_mode == 'udf':
-                for d in dir_record.fi_descs:
-                    child = d.file_entry
-                    if child is None:
+                for d in dir_record.fi_descs.values():
+                    if d.is_parent():
                         continue
+                    child = d.file_entry
                     tmp.appendleft((child, new_lasts))
             else:
                 for child in dir_record.children:

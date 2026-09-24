@@ -6211,7 +6211,10 @@ class PyCdlib:
          joliet_path - The absolute Joliet path on the ISO to list the children for.
          udf_path - The absolute UDF path on the ISO to list the children for.
         Yields:
-         Children of this path.
+         Children of this path.  For iso_path, rr_path, and joliet_path these
+         are dr.DirectoryRecord objects, including the 'dot' and 'dotdot'
+         entries; for udf_path these are udf.UDFFileEntry objects, and the
+         UDF 'parent' entry (which has no File Entry) is omitted.
         Returns:
          Nothing.
         """
@@ -6236,6 +6239,11 @@ class PyCdlib:
                 raise pycdlibexception.PyCdlibInvalidInput('UDF File Entry is not a directory!')
 
             for fi_desc in udf_rec.fi_descs.values():
+                # The 'parent' File Identifier Descriptor (the UDF equivalent
+                # of '..') has no File Entry attached to it, so skip it rather
+                # than yielding None.
+                if fi_desc.is_parent():
+                    continue
                 yield fi_desc.file_entry
         else:
             use_rr = False

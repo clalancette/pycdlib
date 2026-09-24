@@ -6517,9 +6517,9 @@ def test_new_list_children_udf():
 
     full_path = None
     for child in iso.list_children(udf_path='/dir1'):
-        if child is not None:
-            if child.file_identifier() == b'boot':
-                break
+        assert(child is not None)
+        if child.file_identifier() == b'boot':
+            break
     else:
         assert(False)
 
@@ -7395,7 +7395,8 @@ def test_new_unicode_name_two_byte_udf_list_children():
 
     full_path = None
     for child in iso.list_children(udf_path='/'):
-        if child is not None and child.file_identifier() == b'\x00f\x1d\x14\x00o':
+        assert(child is not None)
+        if child.file_identifier() == b'\x00f\x1d\x14\x00o':
             full_path = iso.full_path_from_dirrecord(child)
             assert(full_path == '/fᴔo')
             break
