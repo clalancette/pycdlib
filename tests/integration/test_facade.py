@@ -867,9 +867,9 @@ def test_facade_udf_list_children():
 
     full_path = None
     for child in facade.list_children('/dir1'):
-        if child is not None:
-            if child.file_identifier() == b'boot':
-                break
+        assert(child is not None)
+        if child.file_identifier() == b'boot':
+            break
     else:
         assert(False)
 
