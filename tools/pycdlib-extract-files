@@ -29,6 +29,10 @@ import sys
 import pycdlib
 
 
+class UnsafeOutputPath(Exception):
+    """Raised when an ISO entry would be extracted outside the target directory."""
+
+
 def safe_output_path(extract_root, relative_name):
     """Return an output path that stays below the canonical extract root."""
     output_path = os.path.abspath(os.path.join(extract_root, relative_name))
@@ -40,11 +44,11 @@ def safe_output_path(extract_root, relative_name):
     except ValueError:
         # On Windows, commonpath raises ValueError when paths use different
         # drives.  Such a path is necessarily outside extract_root.
-        raise pycdlib.pycdlibexception.PyCdlibInvalidISO(
-            'ISO entry would be extracted outside the target directory')
+        raise UnsafeOutputPath(
+            'ISO entry would be extracted outside the target directory') from None
 
     if lexical_root != extract_root or resolved_root != extract_root:
-        raise pycdlib.pycdlibexception.PyCdlibInvalidISO(
+        raise UnsafeOutputPath(
             'ISO entry would be extracted outside the target directory')
 
     return output_path
@@ -67,12 +71,15 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def main():
+def extract(args):
     """
-    The main function for this executable that does the work of extracting
-    files from an ISO given the parameters specified by the user.
+    Extract files from an ISO given the parameters specified by the user.
+
+    Parameters:
+     args - The parsed command-line arguments.
+    Returns:
+     The exit code for the process.
     """
-    args = parse_arguments()
 
     iso = pycdlib.PyCdlib()
     print('Opening %s' % (args.iso))
@@ -143,6 +150,20 @@ def main():
 
     iso.close()
     return 0
+
+
+def main():
+    """
+    The main function for this executable that does the work of extracting
+    files from an ISO given the parameters specified by the user.
+    """
+    args = parse_arguments()
+
+    try:
+        return extract(args)
+    except UnsafeOutputPath as exc:
+        print('Error: %s' % (exc), file=sys.stderr)
+        return 4
 
 
 if __name__ == '__main__':
