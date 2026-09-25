@@ -466,7 +466,10 @@ Parameters:<br>
 &nbsp;joliet_path&nbsp;-&nbsp;The&nbsp;absolute&nbsp;Joliet&nbsp;path&nbsp;on&nbsp;the&nbsp;ISO&nbsp;to&nbsp;list&nbsp;the&nbsp;children&nbsp;for.<br>
 &nbsp;udf_path&nbsp;-&nbsp;The&nbsp;absolute&nbsp;UDF&nbsp;path&nbsp;on&nbsp;the&nbsp;ISO&nbsp;to&nbsp;list&nbsp;the&nbsp;children&nbsp;for.<br>
 Yields:<br>
-&nbsp;Children&nbsp;of&nbsp;this&nbsp;path.<br>
+&nbsp;Children&nbsp;of&nbsp;this&nbsp;path.&nbsp;&nbsp;For&nbsp;iso_path,&nbsp;rr_path,&nbsp;and&nbsp;joliet_path&nbsp;these<br>
+&nbsp;are&nbsp;dr.DirectoryRecord&nbsp;objects,&nbsp;including&nbsp;the&nbsp;'dot'&nbsp;and&nbsp;'dotdot'<br>
+&nbsp;entries;&nbsp;for&nbsp;udf_path&nbsp;these&nbsp;are&nbsp;udf.UDFFileEntry&nbsp;objects,&nbsp;and&nbsp;the<br>
+&nbsp;UDF&nbsp;'parent'&nbsp;entry&nbsp;(which&nbsp;has&nbsp;no&nbsp;File&nbsp;Entry)&nbsp;is&nbsp;omitted.<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
@@ -482,7 +485,7 @@ Yields:<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 
-<dl><dt><a name="PyCdlib-modify_file_in_place"><strong>modify_file_in_place</strong></a>(self, fp, length, iso_path, rr_name=None, joliet_path=None, udf_path=None)</dt><dd><span class="code">Modify&nbsp;a&nbsp;file&nbsp;in&nbsp;place&nbsp;on&nbsp;the&nbsp;ISO.<br>
+<dl><dt><a name="PyCdlib-modify_file_in_place"><strong>modify_file_in_place</strong></a>(self, fp, length, iso_path=None, rr_name=None, joliet_path=None, udf_path=None, rr_path=None)</dt><dd><span class="code">Modify&nbsp;a&nbsp;file&nbsp;in&nbsp;place&nbsp;on&nbsp;the&nbsp;ISO.<br>
 &nbsp;<br>
 ..&nbsp;deprecated::<br>
 &nbsp;&nbsp;&nbsp;Use&nbsp;:class:`pycdlib.InPlaceEditor`&nbsp;(a&nbsp;context&nbsp;manager)<br>
@@ -496,9 +499,17 @@ Parameters:<br>
 &nbsp;fp&nbsp;-&nbsp;The&nbsp;file&nbsp;<a href="builtins.html#object">object</a>&nbsp;to&nbsp;use&nbsp;for&nbsp;the&nbsp;contents&nbsp;of&nbsp;the&nbsp;new&nbsp;file.<br>
 &nbsp;length&nbsp;-&nbsp;The&nbsp;length&nbsp;of&nbsp;the&nbsp;new&nbsp;data&nbsp;for&nbsp;the&nbsp;file.<br>
 &nbsp;iso_path&nbsp;-&nbsp;The&nbsp;ISO9660&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination&nbsp;on&nbsp;the&nbsp;ISO.<br>
-&nbsp;rr_name&nbsp;-&nbsp;The&nbsp;Rock&nbsp;Ridge&nbsp;name&nbsp;of&nbsp;the&nbsp;file&nbsp;destination&nbsp;on&nbsp;the&nbsp;ISO.<br>
-&nbsp;joliet_path&nbsp;-&nbsp;The&nbsp;Joliet&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination&nbsp;on&nbsp;the&nbsp;ISO.<br>
-&nbsp;udf_path&nbsp;-&nbsp;The&nbsp;UDF&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination&nbsp;on&nbsp;the&nbsp;ISO.<br>
+&nbsp;rr_name&nbsp;-&nbsp;Ignored.&nbsp;&nbsp;Earlier&nbsp;versions&nbsp;accepted&nbsp;this&nbsp;parameter&nbsp;but<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;never&nbsp;used&nbsp;it;&nbsp;pass&nbsp;rr_path&nbsp;to&nbsp;address&nbsp;a&nbsp;file&nbsp;via&nbsp;its<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Rock&nbsp;Ridge&nbsp;path.<br>
+&nbsp;joliet_path&nbsp;-&nbsp;The&nbsp;Joliet&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination&nbsp;on<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;ISO.&nbsp;&nbsp;Ignored&nbsp;when&nbsp;iso_path&nbsp;is&nbsp;given,&nbsp;for<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;backwards&nbsp;compatibility.<br>
+&nbsp;udf_path&nbsp;-&nbsp;The&nbsp;UDF&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination&nbsp;on&nbsp;the<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ISO.&nbsp;&nbsp;Ignored&nbsp;when&nbsp;iso_path&nbsp;is&nbsp;given,&nbsp;for&nbsp;backwards<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;compatibility.<br>
+&nbsp;rr_path&nbsp;-&nbsp;The&nbsp;Rock&nbsp;Ridge&nbsp;absolute&nbsp;path&nbsp;to&nbsp;the&nbsp;file&nbsp;destination&nbsp;on<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;the&nbsp;ISO.&nbsp;&nbsp;Only&nbsp;valid&nbsp;when&nbsp;iso_path&nbsp;is&nbsp;not&nbsp;given.<br>
 Returns:<br>
 &nbsp;Nothing.</span></dd></dl>
 

@@ -1,5 +1,17 @@
 Changelog for PyCdlib
 
+1.20.0 (2026-09-25)
+-------------------
+* Fix a couple of issues when adding in Rock Ridge Continuation Entries
+* Improve test coverage up to 98%
+* Make sure to reshuffle_extents() in get_file_byte_extents() if necessary so users get the actual ISO offset
+* Minor performance improvements when writing ISOs out
+* Big cleanup of the El Torito handling to be easier to read, more performant, and handle more cases gracefully
+* Clamp reads so that they can't be larger than the remaining size of the ISO and make huge virtual memory allocations
+* Support 512 and 1024 byte logical block sizes
+* Allow in-place modification by Rock Ridge, Joliet, or UDF path
+* In pycdlib-extract-files, ensure that a Rock Ridge ISO with symlinks can't write outside of the current directory
+
 1.20.0 (2026-08-05)
 -------------------
 * Deprecate the following methods: get_and_write(), get_and_write_fp(), add_joliet_directory(), rm_joliet_directory(), list_dir(), get_entry(), modify_file_in_place()
