@@ -399,10 +399,12 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         The help method for the 'modify_file_in_place' command.
         '''
-        print('> modify_file_in_place <iso_path> <src_filename>')
-        print('Replace the contents of the file within the ISO specified in <iso_path> with that of <src_filename>.')
+        print('> modify_file_in_place <iso_path> <src_filename> [rr_path=<rr_path>] [joliet_path=<joliet_path>] [udf_path=<udf_path>]')
+        print('Replace the contents of the file within the ISO with that of <src_filename>.')
         print('Warning: This command modifies the opened ISO file in-place.')
-        print('<src_filename> must occupy the same number of extents as the original file.')
+        print('<src_filename> must not occupy more extents than the original file.')
+        print('Pass "None" as <iso_path> to address the file via rr_path, joliet_path, or udf_path instead.')
+        print('Exactly one of <iso_path>, <rr_path>, <joliet_path>, and <udf_path> must be given.')
 
     def do_modify_file_in_place(self, line):
         '''
@@ -410,19 +412,52 @@ class PyCdlibCmdLoop(cmd.Cmd):
         '''
         split = shlex.split(line)
 
-        if len(split) != 2:
+        if len(split) < 2 or len(split) > 3:
             self.help_modify_file_in_place()
             return False
 
         iso_path = split[0]
         src_path = split[1]
+        rr_path = None
+        joliet_path = None
+        udf_path = None
 
-        if iso_path[0] != '/':
+        if iso_path == 'None':
+            iso_path = None
+
+        for arg in split[2:]:
+            keyval = arg.split('=', 1)
+            if len(keyval) != 2:
+                print('Invalid key/val pair, must be rr_path=<rr_path>, joliet_path=<joliet_path>, or udf_path=<udf_path>')
+                return False
+
+            key = keyval[0]
+            val = keyval[1]
+
+            if key == 'rr_path':
+                rr_path = val
+            elif key == 'joliet_path':
+                joliet_path = val
+            elif key == 'udf_path':
+                udf_path = val
+            else:
+                print('Unknown key, must be rr_path=<rr_path>, joliet_path=<joliet_path>, or udf_path=<udf_path>')
+                return False
+
+        num_paths = sum(1 for path in (iso_path, rr_path, joliet_path, udf_path)
+                        if path is not None)
+        if num_paths != 1:
+            print('Must supply exactly one of iso_path, rr_path, joliet_path, or udf_path')
+            return False
+
+        if iso_path is not None and iso_path[0] != '/':
             tmp = self.cwds['iso9660'] + '/' + iso_path
             iso_path = pycdlib.utils.normpath(tmp).decode('ascii')
 
         with open(src_path, 'rb') as src_fp:
-            self.iso.modify_file_in_place(src_fp, os.stat(src_path).st_size, iso_path)
+            self.iso.modify_file_in_place(src_fp, os.stat(src_path).st_size,
+                                          iso_path=iso_path, rr_path=rr_path,
+                                          joliet_path=joliet_path, udf_path=udf_path)
 
         return False
 

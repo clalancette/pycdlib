@@ -1849,7 +1849,7 @@ def test_hybrid_joliet_modify_in_place_onefile(tmpdir):
     # Now modify it in place via the editor context manager.
     foostr = b'foo\n'
     with pycdlib.InPlaceEditor(str(outfile)) as ed:
-        ed.modify_file(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+        ed.modify_file(io.BytesIO(foostr), len(foostr), joliet_path='/foo')
 
     # Now re-open it and check things out.
     open_and_check(outfile, check_joliet_onefile)
@@ -1901,6 +1901,124 @@ def test_hybrid_modify_in_place_udf_shrink(tmpdir):
         ed.modify_file(io.BytesIO(foostr), len(foostr), '/FOO.;1')
 
     open_and_check(outfile, check_udf_onefile)
+
+def test_hybrid_modify_in_place_rr_path(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('modifyinplacerrpath')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'f\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-rational-rock', '-o', str(outfile), str(indir)])
+
+    # Address the file via its Rock Ridge path only.
+    foostr = b'foo\n'
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        ed.modify_file(io.BytesIO(foostr), len(foostr), rr_path='/foo')
+
+    open_and_check(outfile, check_rr_onefile)
+
+def test_hybrid_modify_in_place_udf_path(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('modifyinplaceudfpath')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'f\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-udf', '-o', str(outfile), str(indir)])
+
+    # Address the file via its UDF path only; the ISO9660 view must be
+    # updated too since both share the same Inode.
+    foostr = b'foo\n'
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        ed.modify_file(io.BytesIO(foostr), len(foostr), udf_path='/foo')
+
+    open_and_check(outfile, check_udf_onefile)
+
+def test_hybrid_modify_in_place_no_path(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('modifyinplacenopath')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'f\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    foostr = b'foo\n'
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.modify_file(io.BytesIO(foostr), len(foostr))
+        assert(str(excinfo.value) == "Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
+
+def test_hybrid_modify_in_place_too_many_paths(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('modifyinplacetoomanypaths')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'f\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-J', '-o', str(outfile), str(indir)])
+
+    foostr = b'foo\n'
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.modify_file(io.BytesIO(foostr), len(foostr), '/FOO.;1', joliet_path='/foo')
+        assert(str(excinfo.value) == "Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
+
+def test_hybrid_modify_in_place_rr_path_not_rr(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('modifyinplacerrpathnotrr')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'f\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    foostr = b'foo\n'
+    with pycdlib.InPlaceEditor(str(outfile)) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.modify_file(io.BytesIO(foostr), len(foostr), rr_path='/foo')
+        assert(str(excinfo.value) == 'Cannot fetch a rr_path from a non-Rock Ridge ISO')
+
+@uses_deprecated("modify_file_in_place")
+def test_hybrid_modify_in_place_deprecated_rr_path(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('modifyinplacedeprecatedrrpath')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'f\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-rational-rock', '-o', str(outfile), str(indir)])
+
+    # The deprecated PyCdlib method accepts (and ignores) rr_name for
+    # backwards compatibility, and threads rr_path through.
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile), 'r+b')
+    foostr = b'foo\n'
+    iso.modify_file_in_place(io.BytesIO(foostr), len(foostr), rr_name='foo', rr_path='/foo')
+    iso.close()
+
+    open_and_check(outfile, check_rr_onefile)
+
+@uses_deprecated("modify_file_in_place")
+def test_hybrid_modify_in_place_deprecated_multiple_paths(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('modifyinplacedeprecatedmultiplepaths')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'f\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-J', '-o', str(outfile), str(indir)])
+
+    # The deprecated PyCdlib method has always accepted iso_path alongside
+    # joliet_path/udf_path (ignoring the latter); that must keep working.
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile), 'r+b')
+    foostr = b'foo\n'
+    iso.modify_file_in_place(io.BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo', joliet_path='/foo', udf_path='/foo')
+    iso.close()
+
+    open_and_check(outfile, check_joliet_onefile)
 
 def test_hybrid_try_to_use_new_on_open_file(tmpdir):
     # First set things up, and generate the ISO with genisoimage.

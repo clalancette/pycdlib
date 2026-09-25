@@ -44,9 +44,9 @@ if TYPE_CHECKING:
     from typing import BinaryIO, Literal, Optional, Union  # noqa: F401
 
 
-def _do_modify_file_in_place(iso, fp, length, iso_path, rr_name=None,  # pylint: disable=unused-argument
-                             joliet_path=None, udf_path=None):          # pylint: disable=unused-argument
-    # type: (PyCdlib, BinaryIO, int, str, Optional[str], Optional[str], Optional[str]) -> None
+def _do_modify_file_in_place(iso, fp, length, iso_path=None, rr_path=None,
+                             joliet_path=None, udf_path=None):
+    # type: (PyCdlib, BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[str]) -> None
     """
     Implementation of in-place modification of a file's bytes.  Operates
     on an open :class:`pycdlib.PyCdlib` object's internal state; not a
@@ -55,7 +55,10 @@ def _do_modify_file_in_place(iso, fp, length, iso_path, rr_name=None,  # pylint:
 
     The constraints documented on the public-facing wrappers apply here:
     the file must exist on the ISO, must not be a directory, and the new
-    content must occupy the same number of extents as the old content.
+    content cannot occupy more extents than the old content.  Exactly one
+    of iso_path, rr_path, joliet_path, or udf_path identifies the file;
+    whichever view it is found through, every record linked to the
+    file's Inode (ISO9660, Joliet, and UDF) is updated.
     """
     if not iso._initialized:  # pylint: disable=protected-access
         raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -63,7 +66,29 @@ def _do_modify_file_in_place(iso, fp, length, iso_path, rr_name=None,  # pylint:
     if hasattr(iso._cdfp, 'mode') and not iso._cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):  # pylint: disable=protected-access
         raise pycdlibexception.PyCdlibInvalidInput('To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
 
-    child = iso._find_iso_record(utils.normpath(iso_path))  # pylint: disable=protected-access
+    num_paths = sum(1 for path in (iso_path, rr_path, joliet_path, udf_path)
+                    if path is not None)
+    if num_paths != 1:
+        raise pycdlibexception.PyCdlibInvalidInput("Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
+
+    child = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
+    if udf_path is not None:
+        if iso.udf_root is None:
+            raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
+        (ident_unused, child) = iso._find_udf_record(utils.normpath(udf_path))  # pylint: disable=protected-access
+    elif joliet_path is not None:
+        if iso.joliet_vd is None:
+            raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a joliet_path from a non-Joliet ISO')
+        child = iso._find_joliet_record(iso._normalize_joliet_path(joliet_path))  # pylint: disable=protected-access
+    elif rr_path is not None:
+        if not iso.rock_ridge:
+            raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
+        child = iso._find_rr_record(utils.normpath(rr_path))  # pylint: disable=protected-access
+    elif iso_path is not None:
+        child = iso._find_iso_record(utils.normpath(iso_path))  # pylint: disable=protected-access
+
+    if child is None:
+        raise pycdlibexception.PyCdlibInvalidInput('Could not find path to modify in place')
 
     old_num_extents = utils.ceiling_div(child.get_data_length(),
                                         iso.logical_block_size)
@@ -118,8 +143,11 @@ def _do_modify_file_in_place(iso, fp, length, iso_path, rr_name=None,  # pylint:
     # Only the UDF File Entry's data_length needs updating, which we
     # handle below alongside the ISO9660/Joliet records.
 
-    # Write out the actual file contents.
-    iso._seek_to_extent(child.extent_location())  # pylint: disable=protected-access
+    # Write out the actual file contents.  Seek via the Inode rather than
+    # the record we looked up: for a UDF File Entry, extent_location() is
+    # the entry's own extent, not the data's, and writing there would
+    # clobber the File Entry.
+    iso._seek_to_extent(child.inode.extent_location())  # pylint: disable=protected-access
     with inode.InodeOpenData(child.inode, iso.logical_block_size) as (data_fp, data_len):
         utils.copy_data(data_len, iso.logical_block_size, data_fp, iso._cdfp)  # pylint: disable=protected-access
         utils.zero_pad(iso._cdfp, data_len, iso.logical_block_size)  # pylint: disable=protected-access
@@ -480,14 +508,19 @@ class InPlaceEditor:
         self._iso.close()
         return False  # don't suppress exceptions
 
-    def modify_file(self, fp, length, iso_path, rr_name=None,  # pylint: disable=unused-argument
-                    joliet_path=None, udf_path=None):          # pylint: disable=unused-argument
-        # type: (BinaryIO, int, str, Optional[str], Optional[str], Optional[str]) -> None
+    def modify_file(self, fp, length, iso_path=None, rr_path=None,
+                    joliet_path=None, udf_path=None):
+        # type: (BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[str]) -> None
         """
         Replace the bytes of an existing file on the ISO with new content.
 
         Constraints:
-         - The file must already exist on the ISO.
+         - The file must already exist on the ISO, and exactly one of
+           iso_path, rr_path, joliet_path, or udf_path must be given to
+           identify it.  The file is looked up through that one view;
+           every other view of the same file (ISO9660, Rock Ridge,
+           Joliet, UDF) is updated as well, since they all share the
+           underlying data.
          - The file must not be a directory.
          - The new content cannot occupy more extents than the old
            content.  Within that ceiling the new length is free: a
@@ -500,18 +533,14 @@ class InPlaceEditor:
          fp - A file-like object containing the new contents.
          length - The length of the new contents.
          iso_path - The ISO9660 absolute path identifying the file.
-         rr_name - Rock Ridge name (accepted for API symmetry; not used
-                   for lookup).
-         joliet_path - Joliet absolute path (accepted for API symmetry;
-                       not used for lookup).
-         udf_path - UDF absolute path (accepted for API symmetry; not
-                    used for lookup).
+         rr_path - The Rock Ridge absolute path identifying the file.
+         joliet_path - The Joliet absolute path identifying the file.
+         udf_path - The UDF absolute path identifying the file.
         Returns:
          Nothing.
         """
-        _do_modify_file_in_place(self._iso, fp, length, iso_path,
-                                 rr_name=rr_name,
-                                 joliet_path=joliet_path,
+        _do_modify_file_in_place(self._iso, fp, length, iso_path=iso_path,
+                                 rr_path=rr_path, joliet_path=joliet_path,
                                  udf_path=udf_path)
 
     def rm_file(self, iso_path):

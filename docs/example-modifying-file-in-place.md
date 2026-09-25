@@ -65,7 +65,7 @@ bazstr = b'bazzzzzz\n'
 iso.modify_file_in_place(BytesIO(bazstr), len(bazstr), '/FOO.;1')
 ```
 
-Here we get to the heart of the example.  We use [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) to modify the "/FOO.;1" file to have the contents 'bazzzzzz\n'.  We are allowed to expand the size of the file because we are still smaller than the size of the extent (the [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) API enforces this).
+Here we get to the heart of the example.  We use [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) to modify the "/FOO.;1" file to have the contents 'bazzzzzz\n'.  We are allowed to expand the size of the file because we are still smaller than the size of the extent (the [modify_file_in_place](pycdlib-api.html#PyCdlib-modify_file_in_place) API enforces this).  The file can also be identified by its Rock Ridge, Joliet, or UDF path instead of its ISO9660 path, by passing exactly one of `rr_path`, `joliet_path`, or `udf_path` in place of `iso_path`; whichever view is used, all views of the file are updated.
 
 ```python
 modifiediso = BytesIO()
