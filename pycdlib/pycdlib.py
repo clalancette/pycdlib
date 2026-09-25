@@ -4901,9 +4901,9 @@ class PyCdlib:
 
         self._finish_add(0, num_bytes_to_add)
 
-    def modify_file_in_place(self, fp, length, iso_path, rr_name=None,
-                             joliet_path=None, udf_path=None):
-        # type: (BinaryIO, int, str, Optional[str], Optional[str], Optional[str]) -> None
+    def modify_file_in_place(self, fp, length, iso_path=None, rr_name=None,  # pylint: disable=unused-argument
+                             joliet_path=None, udf_path=None, rr_path=None):
+        # type: (BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]) -> None
         """
         Modify a file in place on the ISO.
 
@@ -4919,9 +4919,17 @@ class PyCdlib:
          fp - The file object to use for the contents of the new file.
          length - The length of the new data for the file.
          iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_name - The Rock Ridge name of the file destination on the ISO.
-         joliet_path - The Joliet absolute path to the file destination on the ISO.
-         udf_path - The UDF absolute path to the file destination on the ISO.
+         rr_name - Ignored.  Earlier versions accepted this parameter but
+                   never used it; pass rr_path to address a file via its
+                   Rock Ridge path.
+         joliet_path - The Joliet absolute path to the file destination on
+                       the ISO.  Ignored when iso_path is given, for
+                       backwards compatibility.
+         udf_path - The UDF absolute path to the file destination on the
+                    ISO.  Ignored when iso_path is given, for backwards
+                    compatibility.
+         rr_path - The Rock Ridge absolute path to the file destination on
+                   the ISO.  Only valid when iso_path is not given.
         Returns:
          Nothing.
         """
@@ -4929,12 +4937,21 @@ class PyCdlib:
             'PyCdlib.modify_file_in_place is deprecated; use '
             'pycdlib.InPlaceEditor (context manager) instead.',
             DeprecationWarning, stacklevel=2)
+
+        # Historically this method looked the file up by iso_path and
+        # silently ignored joliet_path and udf_path.  Preserve that so
+        # existing callers that pass several paths keep working; the
+        # strict "exactly one path" rule applies only when iso_path is
+        # absent (a new capability, so no compatibility concern).
+        if iso_path is not None:
+            joliet_path = None
+            udf_path = None
+
         # Local import to avoid a circular import at module load time:
         # inplaceeditor.py imports PyCdlib from this module.
         from pycdlib.inplaceeditor import _do_modify_file_in_place  # pylint: disable=import-outside-toplevel
-        _do_modify_file_in_place(self, fp, length, iso_path,
-                                 rr_name=rr_name,
-                                 joliet_path=joliet_path,
+        _do_modify_file_in_place(self, fp, length, iso_path=iso_path,
+                                 rr_path=rr_path, joliet_path=joliet_path,
                                  udf_path=udf_path)
 
     def _rewrite_dir_record_extent(self, parent):
