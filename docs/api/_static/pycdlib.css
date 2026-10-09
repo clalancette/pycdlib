@@ -1,0 +1,91 @@
+/*
+    Stylesheet for the PyCdlib API reference, layered on top of the
+    furo Sphinx theme.  Signatures are shown in a box with the "def" or
+    "class" keyword in front, long signatures wrap one parameter per
+    line, and parameter lists use a plain "Parameters:" label.
+*/
+
+/* Signature blocks: grey box, monospace. */
+dl.py > dt.sig {
+    background: var(--color-background-secondary);
+    border: 1px solid var(--color-background-border);
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    margin-top: 1.5rem;
+    font-family: var(--font-stack--monospace);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    overflow-x: auto;
+}
+
+/* Furo gives signatures a hanging indent via negative text-indent, which
+   the boxed layout clips; use a plain indent instead. */
+article dl.py > dt.sig {
+    text-indent: 0;
+    padding-left: 0.75rem;
+}
+
+/* "def" in front of function and method names. */
+dl.py.method > dt.sig > .sig-name::before,
+dl.py.function > dt.sig > .sig-name::before {
+    content: "def ";
+    color: var(--color-brand-primary);
+    font-weight: bold;
+}
+
+/* "class" (and other property keywords) styled like "def". */
+article dl.py > dt.sig > .property {
+    color: var(--color-brand-primary);
+    font-weight: bold;
+    font-style: normal;
+}
+
+dl.py > dt.sig .sig-name {
+    color: var(--color-brand-primary);
+    font-weight: bold;
+}
+dl.py > dt.sig .sig-prename {
+    display: none;
+}
+dl.py > dt.sig .sig-param .n {
+    color: var(--color-foreground-primary);
+}
+dl.py > dt.sig .sig-param .default_value {
+    color: var(--color-foreground-muted);
+}
+
+/* Multi-line signatures: indent each parameter. */
+dl.py > dt.sig.sig-wrap .sig-param,
+dl.py > dt.sig .sig-param-decl {
+    display: block;
+    padding-left: 2rem;
+}
+
+/* Indent class members under the class box. */
+dl.py.class > dd {
+    margin-left: 1rem;
+}
+
+/* Napoleon field lists: "Parameters:" label plus a bullet list. */
+dl.field-list.simple {
+    display: block;
+}
+dl.field-list.simple > dd {
+    margin-left: 0;
+}
+dl.field-list.simple > dd > ul {
+    margin-left: 1.25rem;
+}
+dl.field-list.simple li p strong {
+    font-weight: 600;
+}
+
+/* Beat furo's high-specificity small-caps rule for field-list labels. */
+dl.py dl.field-list > dt,
+dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.glossary):not(.simple) .field-list > dt {
+    text-transform: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    letter-spacing: 0;
+    margin-top: 0.75rem;
+}
