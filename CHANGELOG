@@ -2,7 +2,7 @@ Changelog for PyCdlib
 
 1.22.0 (2026-10-09)
 -------------------
-* Fix a potential infinite loop in UDF File Entry parsing
+* Fix a potential infinite loop in UDF File Entry parsing; pointed out by R0ck3t (zhangyan8216 on GitHub)
 * Fix a potential infinite loop in ISO directory record parsing
 
 1.21.0 (2026-09-25)
