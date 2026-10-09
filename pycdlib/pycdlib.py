@@ -1130,6 +1130,9 @@ class PyCdlib:
         # are false positives (e.g. a Mac HFS-hybrid ISO whose system-use
         # area happens to start with bytes matching an RR signature).
         saw_rrip_er = False
+        # Refuse to walk the same directory extent twice, so an image
+        # whose directory records loop cannot refill this queue forever.
+        seen_dir_extents = set([root_dir_record.extent_location()])  # type: Set[int]
         dirs = collections.deque([root_dir_record])
         while dirs:
             dir_record = dirs.popleft()
@@ -1304,10 +1307,6 @@ class PyCdlib:
                         # Make sure to mark a dotdot record with a parent link
                         # record in the parent_links list for later linking.
                         parent_links.append(new_record)
-                    if not dots and not rr_cl:
-                        dirs.append(new_record)
-                        new_record.set_ptr(extent_to_ptr[new_extent_loc])
-
                 if new_record.parent is None:
                     raise pycdlibexception.PyCdlibInternalError('Trying to track child with no parent')
                 try_long_entry = False
@@ -1328,6 +1327,16 @@ class PyCdlib:
                 if try_long_entry:
                     new_record.parent.track_child(new_record,
                                                   self.logical_block_size, True)
+
+                # Enqueue after the duplicate-name check above, so a
+                # duplicate directory keeps its specific error; a repeated
+                # extent here is a loop.
+                if is_dir and not dots and not rr_cl:
+                    if new_extent_loc in seen_dir_extents:
+                        raise pycdlibexception.PyCdlibInvalidISO('ISO Directory Records form a loop')
+                    seen_dir_extents.add(new_extent_loc)
+                    dirs.append(new_record)
+                    new_record.set_ptr(extent_to_ptr[new_extent_loc])
 
                 if is_pvd:
                     if new_record.is_dir():
