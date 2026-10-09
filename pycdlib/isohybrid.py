@@ -101,10 +101,10 @@ def crc32(data):
     """
     Calculate the CRC32 over a range of bytes.
 
-    Parameters:
-     data - The array of bytes to calculate the CRC32 over.
+    Args:
+        data: The array of bytes to calculate the CRC32 over.
     Returns:
-     The CRC32 of the data.
+        The CRC32 of the data.
     """
     crc = 0xFFFFFFFF
     for x in data:
@@ -134,10 +134,10 @@ class APMPartHeader:
         """
         Parse an APM Partition Header out of existing data.
 
-        Parameters:
-         instr - The data to parse.
+        Args:
+            instr: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This APMPartHeader object is already initialized')
@@ -162,12 +162,12 @@ class APMPartHeader:
         """
         Create a new APM Partition Header.
 
-        Parameters:
-         name - The name for this partition map.
-         type_desc - The type of this partition map.
-         status - The status for this partition map.
+        Args:
+            name: The name for this partition map.
+            type_desc: The type of this partition map.
+            status: The status for this partition map.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This APMPartHeader object is already initialized')
@@ -197,10 +197,8 @@ class APMPartHeader:
         """
         Generate a string representing this APM Partition Header.
 
-        Parameters:
-         None.
         Returns:
-         A bytestring representing this APM Partition Header.
+            A bytestring representing this APM Partition Header.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This APMPartHeader object is not initialized')
@@ -235,10 +233,10 @@ class GPTPartHeader:
         """
         Parse a GPT Partition Header out of existing data.
 
-        Parameters:
-         instr - The data to parse.
+        Args:
+            instr: The data to parse.
         Returns:
-         The number of bytes consumed.
+            The number of bytes consumed.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPTPartHeader object is already initialized')
@@ -262,12 +260,12 @@ class GPTPartHeader:
         """
         Create a new GPT Partition Header.
 
-        Parameters:
-         is_basic - Whether this is a basic GPTPartHeader (True), or an HFS
-                    one (False).
-         name - Bytestring containing the name to store.
+        Args:
+            is_basic: Whether this is a basic GPTPartHeader (True), or an HFS
+                one (False).
+            name: Bytestring containing the name to store.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPTPartHeader object is already initialized')
@@ -290,10 +288,8 @@ class GPTPartHeader:
         """
         Generate a string representing this GPT Partition Header.
 
-        Parameters:
-         None.
         Returns:
-         A bytestring representing this GPT Partition Header.
+            A bytestring representing this GPT Partition Header.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPTPartHeader object is not initialized')
@@ -324,10 +320,10 @@ class GPTHeader:
         """
         Parse a GPT Header out of existing data.
 
-        Parameters:
-         instr - The data to parse.
+        Args:
+            instr: The data to parse.
         Returns:
-         The number of bytes consumed.
+            The number of bytes consumed.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPTHeader object is already initialized')
@@ -359,10 +355,10 @@ class GPTHeader:
         """
         Create a new GPT Header.
 
-        Parameters:
-         mac - Whether this GPT has Mac support.
+        Args:
+            mac: Whether this GPT has Mac support.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPTHeader object is already initialized')
@@ -386,11 +382,11 @@ class GPTHeader:
         """
         Set the current and backup LBAs for this GPT Header.
 
-        Parameters:
-         current - The current LBA to set for this GPT Header.
-         backup - The backup LBA to set for this GPT Header.
+        Args:
+            current: The current LBA to set for this GPT Header.
+            backup: The backup LBA to set for this GPT Header.
         Returns:
-         Nothing
+            Nothing
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPTHeader object is not initialized')
@@ -403,10 +399,10 @@ class GPTHeader:
         """
         Set the last usable LBA for this GPT Header.
 
-        Parameters:
-         iso_size_and_padding - The size of the ISO with padding.
+        Args:
+            iso_size_and_padding: The size of the ISO with padding.
         Returns:
-         Nothing
+            Nothing
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPTHeader object is not initialized')
@@ -418,10 +414,8 @@ class GPTHeader:
         """
         Generate a string representing this GPT Header.
 
-        Parameters:
-         None.
         Returns:
-         A bytestring representing this GPT Header.
+            A bytestring representing this GPT Header.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPTHeader object is not initialized')
@@ -467,11 +461,11 @@ class GPT:
         """
         Parse a primary GPT.
 
-        Parameters:
-         instr - The string containing the data to parse.
-         mac - Whether this GPT contains mac data as well.
+        Args:
+            instr: The string containing the data to parse.
+            mac: Whether this GPT contains mac data as well.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPT object is already initialized')
@@ -514,10 +508,10 @@ class GPT:
         """
         Parse a secondary GPT Header.
 
-        Parameters:
-         instr - The string containing the data to parse.
+        Args:
+            instr: The string containing the data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPT object is already initialized')
@@ -532,10 +526,10 @@ class GPT:
         """
         Parse a secondary GPT set of partitions.
 
-        Parameters:
-         instr - The string containing the data to parse.
+        Args:
+            instr: The string containing the data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPT object is already initialized')
@@ -560,10 +554,10 @@ class GPT:
         """
         Create a new GPT.
 
-        Parameters:
-         mac - Whether this is a GPT for a Macintosh boot.
+        Args:
+            mac: Whether this is a GPT for a Macintosh boot.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPT object is already initialized')
@@ -608,10 +602,8 @@ class GPT:
         """
         Create a string representing this GPT.
 
-        Parameters:
-         None.
         Returns:
-         A bytestring representing this GPT.
+            A bytestring representing this GPT.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This GPT object is not initialized')
@@ -675,10 +667,10 @@ class IsoHybrid:
         """
         Parse ISO hybridization info out of an existing ISO.
 
-        Parameters:
-         instr - The data for the ISO hybridization.
+        Args:
+            instr: The data for the ISO hybridization.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is already initialized')
@@ -746,10 +738,10 @@ class IsoHybrid:
         """
         Parse the secondary GPT Header.
 
-        Parameters:
-         instr -  The data to parse for the GPT Header.
+        Args:
+            instr:  The data to parse for the GPT Header.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
@@ -761,10 +753,10 @@ class IsoHybrid:
         """
         Parse the secondary GPT Partitions.
 
-        Parameters:
-         instr - The data to parse for the partitions.
+        Args:
+            instr: The data to parse for the partitions.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
@@ -777,17 +769,17 @@ class IsoHybrid:
         """
         Add ISO hybridization to an ISO.
 
-        Parameters:
-         efi - Whether this ISO should be setup for EFI boot.
-         mac - Whether this ISO should be made bootable for the Macintosh.
-         part_entry - The partition entry for the hybridization.
-         mbr_id - The mbr_id to use for the hybridization.
-         part_offset - The partition offset to use for the hybridization.
-         geometry_sectors - The number of sectors to use for the hybridization.
-         geometry_heads - The number of heads to use for the hybridization.
-         part_type - The partition type for the hybridization.
+        Args:
+            efi: Whether this ISO should be setup for EFI boot.
+            mac: Whether this ISO should be made bootable for the Macintosh.
+            part_entry: The partition entry for the hybridization.
+            mbr_id: The mbr_id to use for the hybridization.
+            part_offset: The partition offset to use for the hybridization.
+            geometry_sectors: The number of sectors to use for the hybridization.
+            geometry_heads: The number of heads to use for the hybridization.
+            part_type: The partition type for the hybridization.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is already initialized')
@@ -843,10 +835,10 @@ class IsoHybrid:
         """
         Calculate the 'cc' and the 'padding' values for this hybridization.
 
-        Parameters:
-         iso_size - The size of the ISO, excluding the hybridization.
+        Args:
+            iso_size: The size of the ISO, excluding the hybridization.
         Returns:
-         A tuple containing the cc value and the padding.
+            A tuple containing the cc value and the padding.
         """
         cylsize = self.geometry_heads * self.geometry_sectors * 512
         frac = iso_size % cylsize
@@ -862,10 +854,10 @@ class IsoHybrid:
         """
         Generate a string containing the ISO hybridization.
 
-        Parameters:
-         iso_size - The size of the ISO, excluding the hybridization.
+        Args:
+            iso_size: The size of the ISO, excluding the hybridization.
         Returns:
-         A string containing the ISO hybridization.
+            A string containing the ISO hybridization.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
@@ -903,10 +895,10 @@ class IsoHybrid:
         """
         Record padding for the ISO hybridization.
 
-        Parameters:
-         iso_size - The size of the ISO, excluding the hybridization.
+        Args:
+            iso_size: The size of the ISO, excluding the hybridization.
         Returns:
-         A string of zeros the right size to pad the ISO.
+            A string of zeros the right size to pad the ISO.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
@@ -920,10 +912,10 @@ class IsoHybrid:
         """
         Update the current rba for the ISO hybridization.
 
-        Parameters:
-         current_extent - The new extent to set the RBA to.
+        Args:
+            current_extent: The new extent to set the RBA to.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
@@ -935,12 +927,12 @@ class IsoHybrid:
         """
         Update the current EFI lba for the ISO hybridization.
 
-        Parameters:
-         current_extent - The new extent to set the RBA to.
-         sector_count - The number of sectors for the EFI entry.
-         iso_size - The full size of the ISO.
+        Args:
+            current_extent: The new extent to set the RBA to.
+            sector_count: The number of sectors for the EFI entry.
+            iso_size: The full size of the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')
@@ -973,11 +965,11 @@ class IsoHybrid:
         """
         Update the current MAC lba for the ISO hybridization.
 
-        Parameters:
-         current_extent - The new extent to set the RBA to.
-         sector_count - The number of sectors for the MAC entry.
+        Args:
+            current_extent: The new extent to set the RBA to.
+            sector_count: The number of sectors for the MAC entry.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This IsoHybrid object is not initialized')

@@ -35,10 +35,10 @@ def string_to_timestruct(input_string):
     because of an illegal value, then the all-zero time.struct_time will be
     returned instead.
 
-    Parameters:
-     input_string - The string to attempt to parse.
+    Args:
+        input_string: The string to attempt to parse.
     Returns:
-     A time.struct_time object representing the time.
+        A time.struct_time object representing the time.
     """
     try:
         timestruct = time.strptime(input_string.decode('utf-8'), VolumeDescriptorDate.TIME_FMT)
@@ -78,10 +78,10 @@ class DirectoryRecordDate:
         """
         Parse a Directory Record date out of a string.
 
-        Parameters:
-         datestr - The string to parse the date out of.
+        Args:
+            datestr: The string to parse the date out of.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record Date already initialized')
@@ -99,10 +99,10 @@ class DirectoryRecordDate:
         of seconds from the epoch, which will be used to fill in this Volume
         Descriptor Date object.
 
-        Parameters:
-         tm - Seconds since the epoch to base the new DirectoryRecordDate off of.
+        Args:
+            tm: Seconds since the epoch to base the new DirectoryRecordDate off of.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record Date already initialized')
@@ -123,10 +123,8 @@ class DirectoryRecordDate:
         """
         Return a string representation of the Directory Record date.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this Directory Record Date.
+            A string representing this Directory Record Date.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record Date not initialized')
@@ -194,10 +192,10 @@ class VolumeDescriptorDate:
         Parse a Volume Descriptor Date out of a string.  A string of all zeros
         is valid, which means that the date in this field was not specified.
 
-        Parameters:
-         datestr - The string to be parsed.
+        Args:
+            datestr: The string to be parsed.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date object is already initialized')
@@ -233,10 +231,8 @@ class VolumeDescriptorDate:
         """
         Return the date string for this object.
 
-        Parameters:
-         None.
         Returns:
-         Date as a string.
+            Date as a string.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date is not initialized')
@@ -251,11 +247,11 @@ class VolumeDescriptorDate:
         is not 0.0, it is expected to be a float number of seconds from the
         epoch, which will be used to fill in this Volume Descriptor Date object.
 
-        Parameters:
-         tm - Seconds since the epoch to base the new VolumeDescriptorDate off
-              of, or 0.0 for an empty VolumeDescriptorDate.
+        Args:
+            tm: Seconds since the epoch to base the new VolumeDescriptorDate off
+                of, or 0.0 for an empty VolumeDescriptorDate.
         Returns:
-          Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor Date object is already initialized')

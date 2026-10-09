@@ -44,10 +44,10 @@ class PathTableRecord:
         """
         Parse an ISO9660 Path Table Record out of a string.
 
-        Parameters:
-         data - The string to parse.
+        Args:
+            data: The string to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record already initialized')
@@ -67,12 +67,12 @@ class PathTableRecord:
         """
         An internal method to generate a string representing this Path Table Record.
 
-        Parameters:
-         ext_loc - The extent location to place in this Path Table Record.
-         parent_dir_num - The parent directory number to place in this Path Table
-                          Record.
+        Args:
+            ext_loc: The extent location to place in this Path Table Record.
+            parent_dir_num: The parent directory number to place in this Path Table
+                Record.
         Returns:
-         A string representing this Path Table Record.
+            A string representing this Path Table Record.
         """
         return struct.pack(self.FMT, self.len_di, self.xattr_length,
                            ext_loc, parent_dir_num) + self.directory_identifier + b'\x00' * (self.len_di % 2)
@@ -83,10 +83,8 @@ class PathTableRecord:
         Generate a string representing the little endian version of this Path
         Table Record.
 
-        Parameters:
-         None.
         Returns:
-         A string representing the little endian version of this Path Table Record.
+            A string representing the little endian version of this Path Table Record.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
@@ -99,10 +97,8 @@ class PathTableRecord:
         Generate a string representing the big endian version of
         this Path Table Record.
 
-        Parameters:
-         None.
         Returns:
-         A string representing the big endian version of this Path Table Record.
+            A string representing the big endian version of this Path Table Record.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
@@ -116,10 +112,10 @@ class PathTableRecord:
         """
         A class method to calculate the length of a Path Table Record.
 
-        Parameters:
-         len_di - The length of the name for this Path Directory Record.
+        Args:
+            len_di: The length of the name for this Path Directory Record.
         Returns:
-         The total length that a Path Directory Record with this name would occupy.
+            The total length that a Path Directory Record with this name would occupy.
         """
         return cls._FMT_SIZE + len_di + (len_di % 2)
 
@@ -128,12 +124,12 @@ class PathTableRecord:
         """
         An internal method to create a new Path Table Record.
 
-        Parameters:
-         name - The name for this Path Table Record.
-         parent_dir_num - The directory number of the parent of this Path Table
-                          Record.
+        Args:
+            name: The name for this Path Table Record.
+            parent_dir_num: The directory number of the parent of this Path Table
+                Record.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.len_di = len(name)
         self.xattr_length = 0  # FIXME: we don't support xattr for now
@@ -146,10 +142,8 @@ class PathTableRecord:
         """
         Create a new root Path Table Record.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record already initialized')
@@ -161,10 +155,10 @@ class PathTableRecord:
         """
         Create a new Path Table Record.
 
-        Parameters:
-         name - The name for this Path Table Record.
+        Args:
+            name: The name for this Path Table Record.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record already initialized')
@@ -177,10 +171,10 @@ class PathTableRecord:
         """
         Update the extent location for this Path Table Record.
 
-        Parameters:
-         extent_loc - The new extent location.
+        Args:
+            extent_loc: The new extent location.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
@@ -192,10 +186,10 @@ class PathTableRecord:
         """
         Update the parent directory number for this Path Table Record.
 
-        Parameters:
-         parent_dir_num - The new parent directory number to assign to this PTR.
+        Args:
+            parent_dir_num: The new parent directory number to assign to this PTR.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')
@@ -207,12 +201,12 @@ class PathTableRecord:
         Compare a little-endian path table record to its big-endian counterpart.
         This is used to ensure that the ISO is sane.
 
-        Parameters:
-         be_record - The big-endian object to compare with the little-endian
-                     object.
+        Args:
+            be_record: The big-endian object to compare with the little-endian
+                object.
         Returns:
-         True if this record is equal to the big-endian record passed in,
-         False otherwise.
+            True if this record is equal to the big-endian record passed in,
+            False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record not initialized')

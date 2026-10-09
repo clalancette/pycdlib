@@ -82,11 +82,11 @@ class PrimaryOrSupplementaryVD:
         """
         Parse a Volume Descriptor out of a string.
 
-        Parameters:
-         vd - The string containing the Volume Descriptor.
-         extent_loc - The location on the ISO of this Volume Descriptor.
+        Args:
+            vd: The string containing the Volume Descriptor.
+            extent_loc: The location on the ISO of this Volume Descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is already initialized')
@@ -217,38 +217,38 @@ class PrimaryOrSupplementaryVD:
         """
         Create a new Volume Descriptor.
 
-        Parameters:
-         flags - The flags to set for this Volume Descriptor (must be 0 for a
-                 Primay Volume Descriptor).
-         sys_ident - The system identification string to use on the new ISO.
-         vol_ident - The volume identification string to use on the new ISO.
-         set_size - The size of the set of ISOs this ISO is a part of.
-         seqnum - The sequence number of the set of this ISO.
-         log_block_size - The logical block size to use for the ISO.  Ecma-119
-                          allows 512, 1024, or 2048 (the default).
-         vol_set_ident - The volume set identification string to use on the
-                         new ISO.
-         pub_ident_str - The publisher identification string to use on the new ISO.
-         preparer_ident_str - The preparer identification string to use on the new
-                              ISO.
-         app_ident_str - The application identification string to use on the new
-                         ISO.
-         copyright_file - The name of a file at the root of the ISO to use as
-                          the copyright file.
-         abstract_file - The name of a file at the root of the ISO to use as the
-                         abstract file.
-         bibli_file - The name of a file at the root of the ISO to use as the
-                      bibliographic file.
-         vol_expire_date - The date that this ISO will expire at.
-         app_use - Arbitrary data that the application can stuff into the
-                   primary volume descriptor of this ISO.
-         xa - Whether to embed XA data into the volume descriptor.
-         version - What version to assign to the header (ignored).
-         escape_sequence - The escape sequence to assign to this volume
-                           descriptor (must be empty for a PVD, or empty or a
-                           valid Joliet escape sequence for an SVD).
+        Args:
+            flags: The flags to set for this Volume Descriptor (must be 0 for a
+                Primay Volume Descriptor).
+            sys_ident: The system identification string to use on the new ISO.
+            vol_ident: The volume identification string to use on the new ISO.
+            set_size: The size of the set of ISOs this ISO is a part of.
+            seqnum: The sequence number of the set of this ISO.
+            log_block_size: The logical block size to use for the ISO.  Ecma-119
+                allows 512, 1024, or 2048 (the default).
+            vol_set_ident: The volume set identification string to use on the
+                new ISO.
+            pub_ident_str: The publisher identification string to use on the new ISO.
+            preparer_ident_str: The preparer identification string to use on the new
+                ISO.
+            app_ident_str: The application identification string to use on the new
+                ISO.
+            copyright_file: The name of a file at the root of the ISO to use as
+                the copyright file.
+            abstract_file: The name of a file at the root of the ISO to use as the
+                abstract file.
+            bibli_file: The name of a file at the root of the ISO to use as the
+                bibliographic file.
+            vol_expire_date: The date that this ISO will expire at.
+            app_use: Arbitrary data that the application can stuff into the
+                primary volume descriptor of this ISO.
+            xa: Whether to embed XA data into the volume descriptor.
+            version: What version to assign to the header (ignored).
+            escape_sequence: The escape sequence to assign to this volume
+                descriptor (must be empty for a PVD, or empty or a
+                valid Joliet escape sequence for an SVD).
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is already initialized')
@@ -356,10 +356,10 @@ class PrimaryOrSupplementaryVD:
         """
         Populate and initialize this VD object from the contents of an old VD.
 
-        Parameters:
-         orig_pvd - The original VD to copy data from.
+        Args:
+            orig_pvd: The original VD to copy data from.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is already initialized')
@@ -414,10 +414,8 @@ class PrimaryOrSupplementaryVD:
         """
         Generate the string representing this Volume Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this Volume Descriptor.
+            A string representing this Volume Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -473,14 +471,14 @@ class PrimaryOrSupplementaryVD:
         This method is expected to be used during parse time, when an extent,
         offset and length are already assigned to the entry.
 
-        Parameters:
-         extent - The extent that this Continuation Entry lives at.
-         offset - The offset within the extent that this Continuation Entry
-                  lives at.
-         length - The length of this Continuation Entry.
+        Args:
+            extent: The extent that this Continuation Entry lives at.
+            offset: The offset within the extent that this Continuation Entry
+                lives at.
+            length: The length of this Continuation Entry.
         Returns:
-         The object representing the block in which the Continuation Entry was
-         placed in.
+            The object representing the block in which the Continuation Entry was
+            placed in.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is not initialized')
@@ -506,12 +504,12 @@ class PrimaryOrSupplementaryVD:
         list of Continuation Blocks.  If it doesn't fit in any of the existing
         blocks, a new block for it is allocated.
 
-        Parameters:
-         length - The length of the Continuation Entry that should be added.
+        Args:
+            length: The length of the Continuation Entry that should be added.
         Returns:
-         A 3-tuple consisting of whether we added a new block, the object
-         representing the block that this entry was added to, and the offset
-         within the block that the entry was added to.
+            A 3-tuple consisting of whether we added a new block, the object
+            representing the block that this entry was added to, and the offset
+            within the block that the entry was added to.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is not initialized')
@@ -543,10 +541,8 @@ class PrimaryOrSupplementaryVD:
         Entries that the PVD is tracking.  This can be used to reset all data
         before assigning new data.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Primary Volume Descriptor is not initialized')
@@ -559,10 +555,8 @@ class PrimaryOrSupplementaryVD:
         """
         Get the path table size of the Volume Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Path table size in bytes.
+            Path table size in bytes.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -574,10 +568,10 @@ class PrimaryOrSupplementaryVD:
         """
         Add bytes to the space size tracked by this Volume Descriptor.
 
-        Parameters:
-         addition_bytes - The number of bytes to add to the space size.
+        Args:
+            addition_bytes: The number of bytes to add to the space size.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -590,10 +584,10 @@ class PrimaryOrSupplementaryVD:
         """
         Remove bytes from the volume descriptor.
 
-        Parameters:
-         removal_bytes - The number of bytes to remove.
+        Args:
+            removal_bytes: The number of bytes to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -606,11 +600,9 @@ class PrimaryOrSupplementaryVD:
         """
         Get a handle to this Volume Descriptor's root directory record.
 
-        Parameters:
-         None.
         Returns:
-         DirectoryRecord object representing this Volume Descriptor's root
-         directory record.
+            DirectoryRecord object representing this Volume Descriptor's root
+            directory record.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -622,10 +614,8 @@ class PrimaryOrSupplementaryVD:
         """
         Get this Volume Descriptor's logical block size.
 
-        Parameters:
-         None.
         Returns:
-         Size of this Volume Descriptor's logical block size in bytes.
+            Size of this Volume Descriptor's logical block size in bytes.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -638,10 +628,8 @@ class PrimaryOrSupplementaryVD:
         An internal method to compute how many Logical Blocks the path table
         occupies.  pycdlib allocates path tables in pairs of blocks.
 
-        Parameters:
-         None.
         Returns:
-         The number of Logical Blocks the path table occupies.
+            The number of Logical Blocks the path table occupies.
         """
         return utils.ceiling_div(utils.ceiling_div(self.path_tbl_size, self.log_block_size), 2) * 2
 
@@ -650,10 +638,10 @@ class PrimaryOrSupplementaryVD:
         """
         Add the space for a path table record to the volume descriptor.
 
-        Parameters:
-         ptr_size - The length of the Path Table Record being added to this Volume Descriptor.
+        Args:
+            ptr_size: The length of the Path Table Record being added to this Volume Descriptor.
         Returns:
-         True if extents need to be added to the Volume Descriptor, False otherwise.
+            True if extents need to be added to the Volume Descriptor, False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -674,10 +662,10 @@ class PrimaryOrSupplementaryVD:
         """
         Remove the space for a path table record from the volume descriptor.
 
-        Parameters:
-         ptr_size - The length of the Path Table Record being removed from this Volume Descriptor.
+        Args:
+            ptr_size: The length of the Path Table Record being removed from this Volume Descriptor.
         Returns:
-         True if extents need to be removed from the Volume Descriptor, False otherwise.
+            True if extents need to be removed from the Volume Descriptor, False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -701,10 +689,8 @@ class PrimaryOrSupplementaryVD:
         """
         Get this Volume Descriptor's sequence number.
 
-        Parameters:
-         None.
         Returns:
-         This Volume Descriptor's sequence number.
+            This Volume Descriptor's sequence number.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -717,10 +703,10 @@ class PrimaryOrSupplementaryVD:
         Copy the path_tbl_size, path_table_num_extents, and space_size from
         another volume descriptor.
 
-        Parameters:
-         othervd - The other volume descriptor to copy from.
+        Args:
+            othervd: The other volume descriptor to copy from.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -734,10 +720,8 @@ class PrimaryOrSupplementaryVD:
         """
         Get this Volume Descriptor's extent location.
 
-        Parameters:
-         None.
         Returns:
-         Integer of this Volume Descriptor's extent location.
+            Integer of this Volume Descriptor's extent location.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -751,10 +735,10 @@ class PrimaryOrSupplementaryVD:
         """
         Set the new location for this PVD/SVD.
 
-        Parameters:
-         extent - The new extent location to set for this PVD/SVD.
+        Args:
+            extent: The new extent location to set for this PVD/SVD.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -765,10 +749,8 @@ class PrimaryOrSupplementaryVD:
         """
         Determine whether this Volume Descriptor is a Primary one.
 
-        Parameters:
-         None.
         Returns:
-         True if this Volume Descriptor is Primary, False otherwise.
+            True if this Volume Descriptor is Primary, False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -811,30 +793,30 @@ def pvd_factory(sys_ident, vol_ident, set_size, seqnum, log_block_size,
     """
     An internal function to create a Primary Volume Descriptor.
 
-    Parameters:
-     sys_ident - The system identification string to use on the new ISO.
-     vol_ident - The volume identification string to use on the new ISO.
-     set_size - The size of the set of ISOs this ISO is a part of.
-     seqnum - The sequence number of the set of this ISO.
-     log_block_size - The logical block size to use for the ISO.  Ecma-119
-                      allows 512, 1024, or 2048 (the default).
-     vol_set_ident - The volume set identification string to use on the new ISO.
-     pub_ident_str - The publisher identification string to use on the new ISO.
-     preparer_ident_str - The preparer identification string to use on the new ISO.
-     app_ident_str - The application identification string to use on the new ISO.
-     copyright_file - The name of a file at the root of the ISO to use as the
-                      copyright file.
-     abstract_file - The name of a file at the root of the ISO to use as the
-                     abstract file.
-     bibli_file - The name of a file at the root of the ISO to use as the
-                  bibliographic file.
-     vol_expire_date - The date that this ISO will expire at.
-     app_use - Arbitrary data that the application can stuff into the primary
-               volume descriptor of this ISO.
-     xa - Whether to add the ISO9660 Extended Attribute extensions to this
-          ISO.  The default is False.
+    Args:
+        sys_ident: The system identification string to use on the new ISO.
+        vol_ident: The volume identification string to use on the new ISO.
+        set_size: The size of the set of ISOs this ISO is a part of.
+        seqnum: The sequence number of the set of this ISO.
+        log_block_size: The logical block size to use for the ISO.  Ecma-119
+            allows 512, 1024, or 2048 (the default).
+        vol_set_ident: The volume set identification string to use on the new ISO.
+        pub_ident_str: The publisher identification string to use on the new ISO.
+        preparer_ident_str: The preparer identification string to use on the new ISO.
+        app_ident_str: The application identification string to use on the new ISO.
+        copyright_file: The name of a file at the root of the ISO to use as the
+            copyright file.
+        abstract_file: The name of a file at the root of the ISO to use as the
+            abstract file.
+        bibli_file: The name of a file at the root of the ISO to use as the
+            bibliographic file.
+        vol_expire_date: The date that this ISO will expire at.
+        app_use: Arbitrary data that the application can stuff into the primary
+            volume descriptor of this ISO.
+        xa: Whether to add the ISO9660 Extended Attribute extensions to this
+            ISO.  The default is False.
     Returns:
-     The newly created Primary Volume Descriptor.
+        The newly created Primary Volume Descriptor.
     """
     pvd = PrimaryOrSupplementaryVD(VOLUME_DESCRIPTOR_TYPE_PRIMARY)
     pvd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
@@ -853,30 +835,30 @@ def enhanced_vd_factory(sys_ident, vol_ident, set_size, seqnum,
     """
     An internal function to create an Enhanced Volume Descriptor for ISO 1999.
 
-    Parameters:
-     sys_ident - The system identification string to use on the new ISO.
-     vol_ident - The volume identification string to use on the new ISO.
-     set_size - The size of the set of ISOs this ISO is a part of.
-     seqnum - The sequence number of the set of this ISO.
-     log_block_size - The logical block size to use for the ISO.  Ecma-119
-                      allows 512, 1024, or 2048 (the default).
-     vol_set_ident - The volume set identification string to use on the new ISO.
-     pub_ident_str - The publisher identification string to use on the new ISO.
-     preparer_ident_str - The preparer identification string to use on the new ISO.
-     app_ident_str - The application identification string to use on the new ISO.
-     copyright_file - The name of a file at the root of the ISO to use as the
-                      copyright file.
-     abstract_file - The name of a file at the root of the ISO to use as the
-                     abstract file.
-     bibli_file - The name of a file at the root of the ISO to use as the
-                  bibliographic file.
-     vol_expire_date - The date that this ISO will expire at.
-     app_use - Arbitrary data that the application can stuff into the primary
-               volume descriptor of this ISO.
-     xa - Whether to add the ISO9660 Extended Attribute extensions to this
-          ISO.  The default is False.
+    Args:
+        sys_ident: The system identification string to use on the new ISO.
+        vol_ident: The volume identification string to use on the new ISO.
+        set_size: The size of the set of ISOs this ISO is a part of.
+        seqnum: The sequence number of the set of this ISO.
+        log_block_size: The logical block size to use for the ISO.  Ecma-119
+            allows 512, 1024, or 2048 (the default).
+        vol_set_ident: The volume set identification string to use on the new ISO.
+        pub_ident_str: The publisher identification string to use on the new ISO.
+        preparer_ident_str: The preparer identification string to use on the new ISO.
+        app_ident_str: The application identification string to use on the new ISO.
+        copyright_file: The name of a file at the root of the ISO to use as the
+            copyright file.
+        abstract_file: The name of a file at the root of the ISO to use as the
+            abstract file.
+        bibli_file: The name of a file at the root of the ISO to use as the
+            bibliographic file.
+        vol_expire_date: The date that this ISO will expire at.
+        app_use: Arbitrary data that the application can stuff into the primary
+            volume descriptor of this ISO.
+        xa: Whether to add the ISO9660 Extended Attribute extensions to this
+            ISO.  The default is False.
     Returns:
-     The newly created Enhanced Volume Descriptor.
+        The newly created Enhanced Volume Descriptor.
     """
     svd = PrimaryOrSupplementaryVD(VOLUME_DESCRIPTOR_TYPE_SUPPLEMENTARY)
     svd.new(0, sys_ident, vol_ident, set_size, seqnum, log_block_size,
@@ -894,31 +876,31 @@ def joliet_vd_factory(joliet, sys_ident, vol_ident, set_size, seqnum,
     """
     An internal function to create an Joliet Volume Descriptor.
 
-    Parameters:
-     joliet - The joliet version to use, one of 1, 2, or 3.
-     sys_ident - The system identification string to use on the new ISO.
-     vol_ident - The volume identification string to use on the new ISO.
-     set_size - The size of the set of ISOs this ISO is a part of.
-     seqnum - The sequence number of the set of this ISO.
-     log_block_size - The logical block size to use for the ISO.  Ecma-119
-                      allows 512, 1024, or 2048 (the default).
-     vol_set_ident - The volume set identification string to use on the new ISO.
-     pub_ident_str - The publisher identification string to use on the new ISO.
-     preparer_ident_str - The preparer identification string to use on the new ISO.
-     app_ident_str - The application identification string to use on the new ISO.
-     copyright_file - The name of a file at the root of the ISO to use as the
-                      copyright file.
-     abstract_file - The name of a file at the root of the ISO to use as the
-                     abstract file.
-     bibli_file - The name of a file at the root of the ISO to use as the
-                  bibliographic file.
-     vol_expire_date - The date that this ISO will expire at.
-     app_use - Arbitrary data that the application can stuff into the primary
-               volume descriptor of this ISO.
-     xa - Whether to add the ISO9660 Extended Attribute extensions to this
-          ISO.  The default is False.
+    Args:
+        joliet: The joliet version to use, one of 1, 2, or 3.
+        sys_ident: The system identification string to use on the new ISO.
+        vol_ident: The volume identification string to use on the new ISO.
+        set_size: The size of the set of ISOs this ISO is a part of.
+        seqnum: The sequence number of the set of this ISO.
+        log_block_size: The logical block size to use for the ISO.  Ecma-119
+            allows 512, 1024, or 2048 (the default).
+        vol_set_ident: The volume set identification string to use on the new ISO.
+        pub_ident_str: The publisher identification string to use on the new ISO.
+        preparer_ident_str: The preparer identification string to use on the new ISO.
+        app_ident_str: The application identification string to use on the new ISO.
+        copyright_file: The name of a file at the root of the ISO to use as the
+            copyright file.
+        abstract_file: The name of a file at the root of the ISO to use as the
+            abstract file.
+        bibli_file: The name of a file at the root of the ISO to use as the
+            bibliographic file.
+        vol_expire_date: The date that this ISO will expire at.
+        app_use: Arbitrary data that the application can stuff into the primary
+            volume descriptor of this ISO.
+        xa: Whether to add the ISO9660 Extended Attribute extensions to this
+            ISO.  The default is False.
     Returns:
-     The newly created Joliet Volume Descriptor.
+        The newly created Joliet Volume Descriptor.
     """
     if joliet == 1:
         escape_sequence = b'%/@'
@@ -963,10 +945,10 @@ class FileOrTextIdentifier:
         """
         Parse a file or text identifier out of a string.
 
-        Parameters:
-          ident_str  - The string to parse the file or text identifier from.
+        Args:
+                ident_str  - The string to parse the file or text identifier from.
         Returns:
-          Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This File or Text identifier is already initialized')
@@ -982,10 +964,10 @@ class FileOrTextIdentifier:
         """
         Create a new file or text identifier.
 
-        Parameters:
-          text   - The text to store into the identifier.
+        Args:
+                text   - The text to store into the identifier.
         Returns:
-          Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This File or Text identifier is already initialized')
@@ -1002,10 +984,8 @@ class FileOrTextIdentifier:
         """
         Returns the file or text identification string suitable for recording.
 
-        Parameters:
-          None.
         Returns:
-          The text representing this identifier.
+            The text representing this identifier.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This File or Text identifier is not initialized')
@@ -1044,11 +1024,11 @@ class VolumeDescriptorSetTerminator:
         """
         Parse a Volume Descriptor Set Terminator out of a string.
 
-        Parameters:
-         vd - The string to parse.
-         extent_loc - The extent this VDST is currently located at.
+        Args:
+            vd: The string to parse.
+            extent_loc: The extent this VDST is currently located at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Volume Descriptor Set Terminator already initialized')
@@ -1082,10 +1062,8 @@ class VolumeDescriptorSetTerminator:
         """
         Create a new Volume Descriptor Set Terminator.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Volume Descriptor Set Terminator already initialized')
@@ -1097,10 +1075,8 @@ class VolumeDescriptorSetTerminator:
         """
         Generate a string representing this Volume Descriptor Set Terminator.
 
-        Parameters:
-         None.
         Returns:
-         String representing this Volume Descriptor Set Terminator.
+            String representing this Volume Descriptor Set Terminator.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Volume Descriptor Set Terminator not initialized')
@@ -1112,10 +1088,8 @@ class VolumeDescriptorSetTerminator:
         """
         Get this Volume Descriptor Set Terminator's extent location.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location.
+            Integer extent location.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Volume Descriptor Set Terminator not initialized')
@@ -1129,10 +1103,10 @@ class VolumeDescriptorSetTerminator:
         """
         Set the new location for this Volume Descriptor Set Terminator.
 
-        Parameters:
-         extent - The new extent location to set for this Volume Descriptor Set Terminator.
+        Args:
+            extent: The new extent location to set for this Volume Descriptor Set Terminator.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -1144,10 +1118,8 @@ def vdst_factory():
     """
     An internal function to create a new Volume Descriptor Set Terminator.
 
-    Parameters:
-     None.
     Returns:
-     The newly created Volume Descriptor Set Terminator.
+        The newly created Volume Descriptor Set Terminator.
     """
     vdst = VolumeDescriptorSetTerminator()
     vdst.new()
@@ -1171,11 +1143,11 @@ class BootRecord:
         """
         Parse a Boot Record out of a string.
 
-        Parameters:
-         vd - The string to parse the Boot Record out of.
-         extent_loc - The extent location this Boot Record is current at.
+        Args:
+            vd: The string to parse the Boot Record out of.
+            extent_loc: The extent location this Boot Record is current at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Boot Record already initialized')
@@ -1203,11 +1175,11 @@ class BootRecord:
         """
         Create a new Boot Record.
 
-        Parameters:
-         boot_system_id - The system identifier to associate with this Boot
-                          Record.
+        Args:
+            boot_system_id: The system identifier to associate with this Boot
+                Record.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Boot Record already initialized')
@@ -1223,10 +1195,8 @@ class BootRecord:
         """
         Generate a string representing this Boot Record.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this Boot Record.
+            A string representing this Boot Record.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Boot Record not initialized')
@@ -1240,10 +1210,10 @@ class BootRecord:
         """
         Update the boot system use field of this Boot Record.
 
-        Parameters:
-         boot_sys_use - The new boot system use field for this Boot Record.
+        Args:
+            boot_sys_use: The new boot system use field for this Boot Record.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Boot Record not initialized')
@@ -1258,10 +1228,8 @@ class BootRecord:
         """
         Get the extent location of this Boot Record.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this Boot Record.
+            Integer extent location of this Boot Record.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Boot Record not initialized')
@@ -1275,10 +1243,10 @@ class BootRecord:
         """
         Set the new location for this Boot Record.
 
-        Parameters:
-         extent - The new extent location to set for this Boot Record.
+        Args:
+            extent: The new extent location to set for this Boot Record.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -1305,12 +1273,12 @@ class VersionVolumeDescriptor:
         whether the data is either all zero or starts with 'MKI', and if so,
         setting the extent location of the Version Volume Descriptor properly.
 
-        Parameters:
-         data - The potential version data.
-         extent - The location of the extent on the original ISO of this
-                  Version Volume Descriptor.
+        Args:
+            data: The potential version data.
+            extent: The location of the extent on the original ISO of this
+                Version Volume Descriptor.
         Returns:
-         True if the data passed in is a Version Descriptor, False otherwise.
+            True if the data passed in is a Version Descriptor, False otherwise.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is already initialized')
@@ -1329,10 +1297,10 @@ class VersionVolumeDescriptor:
         """
         Create a new Version Volume Descriptor.
 
-        Parameters:
-         log_block_size - The size of one extent.
+        Args:
+            log_block_size: The size of one extent.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is already initialized')
@@ -1346,10 +1314,10 @@ class VersionVolumeDescriptor:
         Generate a string representing this Version Volume Descriptor.  Note that
         right now, this is always a string of zeros.
 
-        Parameters:
-         log_block_size - The logical block size to use when generating this string.
+        Args:
+            log_block_size: The logical block size to use when generating this string.
         Returns:
-         A string representing this Version Volume Descriptor.
+            A string representing this Version Volume Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is not initialized')
@@ -1361,11 +1329,9 @@ class VersionVolumeDescriptor:
         """
         Get the extent location of this Version Volume Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         An integer representing the extent location of this Version Volume
-         Descriptor.
+            An integer representing the extent location of this Version Volume
+            Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Version Volume Descriptor is not initialized')
@@ -1379,10 +1345,10 @@ class VersionVolumeDescriptor:
         """
         Set the new location for this Version Volume Descriptor.
 
-        Parameters:
-         extent - The new extent location to set for this Version Volume Descriptor.
+        Args:
+            extent: The new extent location to set for this Version Volume Descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -1394,10 +1360,10 @@ def version_vd_factory(log_block_size):
     """
     An internal function to create a new Version Volume Descriptor.
 
-    Parameters:
-     log_block_size - The size of one extent.
+    Args:
+        log_block_size: The size of one extent.
     Returns:
-     The newly created Version Volume Descriptor.
+        The newly created Version Volume Descriptor.
     """
     version_vd = VersionVolumeDescriptor()
     version_vd.new(log_block_size)

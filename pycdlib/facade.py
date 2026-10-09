@@ -35,12 +35,12 @@ def iso_path_to_rr_name(iso_path, interchange_level, is_dir):
     """
     Take an absolute ISO path and generate a corresponding Rock Ridge basename.
 
-    Parameters:
-     iso_path - The absolute iso_path to generate a Rock Ridge name from.
-     interchange_level - The interchange level at which to operate.
-     is_dir - Whether this will be a directory or not.
+    Args:
+        iso_path: The absolute iso_path to generate a Rock Ridge name from.
+        interchange_level: The interchange level at which to operate.
+        is_dir: Whether this will be a directory or not.
     Returns:
-     The Rock Ridge name as a string.
+        The Rock Ridge name as a string.
     """
 
     if iso_path[0] != '/':
@@ -75,11 +75,11 @@ class PyCdlibISO9660:
         Fetch a single file from the ISO via an absolute ISO path and write it
         out to a local file.
 
-        Parameters:
-         local_path - The local file to write to.
-         iso_path - The absolute ISO9660 path to lookup on the ISO.
+        Args:
+            local_path: The local file to write to.
+            iso_path: The absolute ISO9660 path to lookup on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.get_file_from_iso(local_path, iso_path=iso_path)
 
@@ -89,11 +89,11 @@ class PyCdlibISO9660:
         Fetch a single file from the ISO via an absolute ISO path and write it
         out to the file object.
 
-        Parameters:
-         outfp - The file object to write data to.
-         iso_path - The absolute ISO9660 path to lookup on the ISO.
+        Args:
+            outfp: The file object to write data to.
+            iso_path: The absolute ISO9660 path to lookup on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.get_file_from_iso_fp(outfp, iso_path=iso_path)
 
@@ -111,12 +111,12 @@ class PyCdlibISO9660:
         (mastering) the ISO.  To have PyCdlib manage this automatically, use
         'add_file' instead.
 
-        Parameters:
-         fp - The file object to use for the contents of the new file.
-         length - The length of the data for the new file.
-         iso_path - The ISO9660 absolute path to the file destination on the ISO.
+        Args:
+            fp: The file object to use for the contents of the new file.
+            length: The length of the data for the new file.
+            iso_path: The ISO9660 absolute path to the file destination on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         rr_name = None
         if self.pycdlib_obj.has_rock_ridge():
@@ -133,11 +133,11 @@ class PyCdlibISO9660:
         in which a file shows up, use the 'add_hard_link' API and/or use the
         regular PyCdlib object (not this facade).
 
-        Parameters:
-         filename - The filename to use for the data contents for the new file.
-         iso_path - The ISO9660 absolute path to the file destination on the ISO.
+        Args:
+            filename: The filename to use for the data contents for the new file.
+            iso_path: The ISO9660 absolute path to the file destination on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         rr_name = None
         if self.pycdlib_obj.has_rock_ridge():
@@ -153,10 +153,10 @@ class PyCdlibISO9660:
         contexts in which a directory shows up, use the regular PyCdlib object
         (not this facade).
 
-        Parameters:
-         iso_path - The ISO9660 absolute path to use for the directory.
+        Args:
+            iso_path: The ISO9660 absolute path to use for the directory.
         Returns:
-         Nothing.
+            Nothing.
         """
         rr_name = None
         if self.pycdlib_obj.has_rock_ridge():
@@ -172,10 +172,10 @@ class PyCdlibISO9660:
         happen, so this method may need to be called on more than one facade for
         zero-byte files.
 
-        Parameters:
-         iso_path - The path to the file to remove.
+        Args:
+            iso_path: The path to the file to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.rm_file(iso_path=iso_path)
 
@@ -186,10 +186,10 @@ class PyCdlibISO9660:
         just the ISO9660 context (and by extension, the Rock Ridge context).
         The directory must be empty.
 
-        Parameters:
-         iso_path - The path to the directory to remove.
+        Args:
+            iso_path: The path to the directory to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.rm_directory(iso_path=iso_path)
 
@@ -199,12 +199,12 @@ class PyCdlibISO9660:
         Generate a list of all of the file/directory objects in the
         specified location on the ISO.
 
-        Parameters:
-         iso_path - The absolute path on the ISO to list the children for.
+        Args:
+            iso_path: The absolute path on the ISO to list the children for.
         Yields:
-         Children of this path.
+            Children of this path.
         Returns:
-         Nothing.
+            Nothing.
         """
         return self.pycdlib_obj.list_children(iso_path=iso_path)
 
@@ -213,11 +213,11 @@ class PyCdlibISO9660:
         """
         Get the directory record for a particular ISO path.
 
-        Parameters:
-         iso_path - The absolute path on the ISO9660 filesystem to get the
-                    record for.
+        Args:
+            iso_path: The absolute path on the ISO9660 filesystem to get the
+                record for.
         Returns:
-         A dr.DirectoryRecord object that represents the path.
+            A dr.DirectoryRecord object that represents the path.
         """
         ret = self.pycdlib_obj.get_record(iso_path=iso_path)
         if not isinstance(ret, dr.DirectoryRecord):
@@ -231,12 +231,12 @@ class PyCdlibISO9660:
         to os.walk(), yield a 3-tuple of (path-to-here, dirlist, filelist)
         for each directory level.
 
-        Parameters:
-         iso_path - The absolute ISO path to the starting entry on the ISO.
+        Args:
+            iso_path: The absolute ISO path to the starting entry on the ISO.
         Yields:
-         3-tuples of (path-to-here, dirlist, filelist)
+            3-tuples of (path-to-here, dirlist, filelist)
         Returns:
-         Nothing.
+            Nothing.
         """
         return self.pycdlib_obj.walk(iso_path=iso_path)
 
@@ -247,10 +247,10 @@ class PyCdlibISO9660:
         operate on the file in user-defined chunks (utilizing the read() method
         of the returned context manager).
 
-        Parameters:
-         iso_path - The absolute ISO path to the file on the ISO.
+        Args:
+            iso_path: The absolute ISO path to the file on the ISO.
         Returns:
-         A PyCdlibIO object allowing access to the file.
+            A PyCdlibIO object allowing access to the file.
         """
         return self.pycdlib_obj.open_file_from_iso(iso_path=iso_path)
 
@@ -272,12 +272,12 @@ class PyCdlibJoliet:
         Fetch a single file from the ISO via an absolute Joliet path and write
         it out to a local file.
 
-        Parameters:
-         local_path - The local file to write to.
-         joliet_path - The absolute Joliet path to lookup on the ISO (exclusive
-                       with iso_path, rr_path, and udf_path).
+        Args:
+            local_path: The local file to write to.
+            joliet_path: The absolute Joliet path to lookup on the ISO (exclusive
+                with iso_path, rr_path, and udf_path).
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.get_file_from_iso(local_path, joliet_path=joliet_path)
 
@@ -287,11 +287,11 @@ class PyCdlibJoliet:
         Fetch a single file from the ISO via an absolute Joliet path and write
         it out to the file object.
 
-        Parameters:
-         outfp - The file object to write data to.
-         joliet_path - The absolute Joliet path to lookup on the ISO.
+        Args:
+            outfp: The file object to write data to.
+            joliet_path: The absolute Joliet path to lookup on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.get_file_from_iso_fp(outfp, joliet_path=joliet_path)
 
@@ -307,12 +307,12 @@ class PyCdlibJoliet:
         (mastering) the ISO.  To have PyCdlib manage this automatically, use
         'add_file' instead.
 
-        Parameters:
-         fp - The file object to use for the contents of the new file.
-         length - The length of the data for the new file.
-         joliet_path - The Joliet absolute path to the file destination on the ISO.
+        Args:
+            fp: The file object to use for the contents of the new file.
+            length: The length of the data for the new file.
+            joliet_path: The Joliet absolute path to the file destination on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
 
         # Since Joliet is a totally separate namespace from ISO9660/Rock Ridge,
@@ -329,11 +329,11 @@ class PyCdlibJoliet:
         in which a file shows up, use the 'add_hard_link' API and/or use the
         regular PyCdlib object (not this facade).
 
-        Parameters:
-         filename - The filename to use for the data contents for the new file.
-         joliet_path - The Joliet absolute path to the file destination on the ISO.
+        Args:
+            filename: The filename to use for the data contents for the new file.
+            joliet_path: The Joliet absolute path to the file destination on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
 
         # Since Joliet is a totally separate namespace from ISO9660/Rock Ridge,
@@ -349,10 +349,10 @@ class PyCdlibJoliet:
         contexts in which a directory shows up, use the regular PyCdlib object
         (not this facade).
 
-        Parameters:
-         iso_path - The ISO9660 absolute path to use for the directory.
+        Args:
+            iso_path: The ISO9660 absolute path to use for the directory.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.add_directory(joliet_path=joliet_path)
 
@@ -365,10 +365,10 @@ class PyCdlibJoliet:
         happen, so this method may need to be called on more than one facade for
         zero-byte files.
 
-        Parameters:
-         joliet_path - The path to the file to remove.
+        Args:
+            joliet_path: The path to the file to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.rm_file(joliet_path=joliet_path)
 
@@ -378,10 +378,10 @@ class PyCdlibJoliet:
         Remove a directory from the ISO.  This removes the directory from
         just the Joliet context.  The directory must be empty.
 
-        Parameters:
-         joliet_path - The path to the directory to remove.
+        Args:
+            joliet_path: The path to the directory to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.rm_directory(joliet_path=joliet_path)
 
@@ -391,12 +391,12 @@ class PyCdlibJoliet:
         Generate a list of all of the file/directory objects in the
         specified location on the ISO.
 
-        Parameters:
-         joliet_path - The absolute path on the Joliet portion of the ISO to list the children for.
+        Args:
+            joliet_path: The absolute path on the Joliet portion of the ISO to list the children for.
         Yields:
-         Children of this path.
+            Children of this path.
         Returns:
-         Nothing.
+            Nothing.
         """
         return self.pycdlib_obj.list_children(joliet_path=joliet_path)
 
@@ -405,11 +405,11 @@ class PyCdlibJoliet:
         """
         Get the directory record for a particular Joliet path.
 
-        Parameters:
-         joliet_path - The absolute path on the Joliet filesystem to get the
-                    record for.
+        Args:
+            joliet_path: The absolute path on the Joliet filesystem to get the
+                record for.
         Returns:
-         A dr.DirectoryRecord object that represents the path.
+            A dr.DirectoryRecord object that represents the path.
         """
         ret = self.pycdlib_obj.get_record(joliet_path=joliet_path)
         if not isinstance(ret, dr.DirectoryRecord):
@@ -423,12 +423,12 @@ class PyCdlibJoliet:
         Joliet path.  Similar to os.walk(), yield a 3-tuple of
         (path-to-here, dirlist, filelist) for each directory level.
 
-        Parameters:
-         joliet_path - The absolute Joliet path to the starting entry on the ISO.
+        Args:
+            joliet_path: The absolute Joliet path to the starting entry on the ISO.
         Yields:
-         3-tuples of (path-to-here, dirlist, filelist)
+            3-tuples of (path-to-here, dirlist, filelist)
         Returns:
-         Nothing.
+            Nothing.
         """
         return self.pycdlib_obj.walk(joliet_path=joliet_path)
 
@@ -439,10 +439,10 @@ class PyCdlibJoliet:
         operate on the file in user-defined chunks (utilizing the read() method
         of the returned context manager).
 
-        Parameters:
-         joliet_path - The absolute Joliet path to the file on the ISO.
+        Args:
+            joliet_path: The absolute Joliet path to the file on the ISO.
         Returns:
-         A PyCdlibIO object allowing access to the file.
+            A PyCdlibIO object allowing access to the file.
         """
         return self.pycdlib_obj.open_file_from_iso(joliet_path=joliet_path)
 
@@ -464,11 +464,11 @@ class PyCdlibRockRidge:
         Fetch a single file from the ISO via an absolute Rock Ridge path and
         write it out to a local file.
 
-        Parameters:
-         local_path - The local file to write to.
-         rr_path - The absolute Rock Ridge path to lookup on the ISO.
+        Args:
+            local_path: The local file to write to.
+            rr_path: The absolute Rock Ridge path to lookup on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.get_file_from_iso(local_path, rr_path=rr_path)
 
@@ -478,11 +478,11 @@ class PyCdlibRockRidge:
         Fetch a single file from the ISO via an absolute Rock Ridge path and
         write it out to the file object.
 
-        Parameters:
-         outfp - The file object to write data to.
-         joliet_path - The absolute Joliet path to lookup on the ISO.
+        Args:
+            outfp: The file object to write data to.
+            joliet_path: The absolute Joliet path to lookup on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.get_file_from_iso_fp(outfp, rr_path=rr_path)
 
@@ -493,10 +493,10 @@ class PyCdlibRockRidge:
         is accomplished by finding the Rock Ridge directory record, then
         reconstructing the ISO path by walking up to the root.
 
-        Parameters:
-         rr_path - The Rock Ridge path to generate an ISO9660 path for.
+        Args:
+            rr_path: The Rock Ridge path to generate an ISO9660 path for.
         Returns:
-         The ISO9660 path corresponding to the Rock Ridge path.
+            The ISO9660 path corresponding to the Rock Ridge path.
         """
         if rr_path[0] != '/':
             raise pycdlibexception.PyCdlibInvalidInput("rr_path must start with '/'")
@@ -522,12 +522,12 @@ class PyCdlibRockRidge:
         Rock Ridge directory record of the parent, then reconstructing the ISO
         parent path by walking up to the root.
 
-        Parameters:
-         rr_path - The absolute Rock Ridge path to generate for.
-         is_dir - Whether this path is a directory or a file.
+        Args:
+            rr_path: The absolute Rock Ridge path to generate for.
+            is_dir: Whether this path is a directory or a file.
         Returns:
-         A tuple where the first element is the absolute ISO9660 path of the
-         parent, and the second element is the Rock Ridge name.
+            A tuple where the first element is the absolute ISO9660 path of the
+            parent, and the second element is the Rock Ridge name.
         """
         if rr_path[0] != '/':
             raise pycdlibexception.PyCdlibInvalidInput("rr_path must start with '/'")
@@ -570,16 +570,16 @@ class PyCdlibRockRidge:
         descriptor internally when writing (mastering) the ISO.  To have PyCdlib
         manage this automatically, use 'add_file' instead.
 
-        Parameters:
-         fp - The file object to use for the contents of the new file.
-         length - The length of the data for the new file.
-         rr_path - The Rock Ridge absolute path to the file destination on the
-                   ISO.
-         file_mode - The POSIX file_mode to apply to this file.  If this is None
-                     (the default), the permissions from the original file are
-                     used.
+        Args:
+            fp: The file object to use for the contents of the new file.
+            length: The length of the data for the new file.
+            rr_path: The Rock Ridge absolute path to the file destination on the
+                ISO.
+            file_mode: The POSIX file_mode to apply to this file.  If this is None
+                (the default), the permissions from the original file are
+                used.
         Returns:
-         Nothing.
+            Nothing.
         """
         iso_path, rr_name = self._rr_path_to_iso_path_and_rr_name(rr_path, False)
         self.pycdlib_obj.add_fp(fp, length, iso_path, rr_name=rr_name,
@@ -594,14 +594,14 @@ class PyCdlibRockRidge:
         use the 'add_hard_link' API and/or use the regular PyCdlib object (not
         this facade).
 
-        Parameters:
-         filename - The filename to use for the data contents for the new file.
-         rr_path - The Rock Ridge absolute path to the file destination on the ISO.
-         file_mode - The POSIX file_mode to apply to this file.  If this is None
-                     (the default), the permissions from the original file are
-                     used.
+        Args:
+            filename: The filename to use for the data contents for the new file.
+            rr_path: The Rock Ridge absolute path to the file destination on the ISO.
+            file_mode: The POSIX file_mode to apply to this file.  If this is None
+                (the default), the permissions from the original file are
+                used.
         Returns:
-         Nothing.
+            Nothing.
         """
         iso_path, rr_name = self._rr_path_to_iso_path_and_rr_name(rr_path, False)
         self.pycdlib_obj.add_file(filename, iso_path, rr_name=rr_name,
@@ -614,13 +614,13 @@ class PyCdlibRockRidge:
         context).  For more control over which contexts in which a directory
         shows up, use the regular PyCdlib object (not this facade).
 
-        Parameters:
-         rr_path - The Rock Ridge absolute path to use for the directory.
-         file_mode - The POSIX file_mode to apply to this file.  If this is None
-                     (the default), the permissions from the original file are
-                     used.
+        Args:
+            rr_path: The Rock Ridge absolute path to use for the directory.
+            file_mode: The POSIX file_mode to apply to this file.  If this is None
+                (the default), the permissions from the original file are
+                used.
         Returns:
-         Nothing.
+            Nothing.
         """
         iso_path, rr_name = self._rr_path_to_iso_path_and_rr_name(rr_path, True)
         self.pycdlib_obj.add_directory(iso_path=iso_path, rr_name=rr_name,
@@ -635,10 +635,10 @@ class PyCdlibRockRidge:
         happen, so this method may need to be called on more than one facade for
         zero-byte files.
 
-        Parameters:
-         rr_path - The path to the file to remove.
+        Args:
+            rr_path: The path to the file to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.rm_file(self._rr_path_to_iso_path(rr_path))
 
@@ -649,10 +649,10 @@ class PyCdlibRockRidge:
         just the Rock Ridge context (and by extension, the ISO9660 context).
         The directory must be empty.
 
-        Parameters:
-         rr_path - The path to the directory to remove.
+        Args:
+            rr_path: The path to the directory to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.rm_directory(self._rr_path_to_iso_path(rr_path))
 
@@ -661,13 +661,13 @@ class PyCdlibRockRidge:
         """
         Add a symlink from rr_symlink_name to the rr_path.
 
-        Parameters:
-         rr_symlink_path - The absolute Rock Ridge path of the symlink itself on
-                           the ISO.
-         rr_target_path - The Rock Ridge path of the entry on the ISO that the
-                          symlink points to.
+        Args:
+            rr_symlink_path: The absolute Rock Ridge path of the symlink itself on
+                the ISO.
+            rr_target_path: The Rock Ridge path of the entry on the ISO that the
+                symlink points to.
         Returns:
-         Nothing.
+            Nothing.
         """
         symlink_path, rr_symlink_name = self._rr_path_to_iso_path_and_rr_name(rr_symlink_path,
                                                                               False)
@@ -681,12 +681,12 @@ class PyCdlibRockRidge:
         Generate a list of all of the file/directory objects in the
         specified location on the ISO.
 
-        Parameters:
-         rr_path - The absolute path on the ISO to list the children for.
+        Args:
+            rr_path: The absolute path on the ISO to list the children for.
         Yields:
-         Children of this path.
+            Children of this path.
         Returns:
-         Nothing.
+            Nothing.
         """
         return self.pycdlib_obj.list_children(rr_path=rr_path)
 
@@ -695,11 +695,11 @@ class PyCdlibRockRidge:
         """
         Get the directory record for a particular ISO path.
 
-        Parameters:
-         rr_path - The absolute path on the Rock Ridge filesystem to get the
-                   record for.
+        Args:
+            rr_path: The absolute path on the Rock Ridge filesystem to get the
+                record for.
         Returns:
-         A dr.DirectoryRecord object that represents the path.
+            A dr.DirectoryRecord object that represents the path.
         """
         ret = self.pycdlib_obj.get_record(rr_path=rr_path)
         if not isinstance(ret, dr.DirectoryRecord):
@@ -713,12 +713,12 @@ class PyCdlibRockRidge:
         Similar to os.walk(), yield a 3-tuple of
         (path-to-here, dirlist, filelist) for each directory level.
 
-        Parameters:
-         rr_path - The absolute Rock Ridge path to the starting entry on the ISO.
+        Args:
+            rr_path: The absolute Rock Ridge path to the starting entry on the ISO.
         Yields:
-         3-tuples of (path-to-here, dirlist, filelist)
+            3-tuples of (path-to-here, dirlist, filelist)
         Returns:
-         Nothing.
+            Nothing.
         """
         return self.pycdlib_obj.walk(rr_path=rr_path)
 
@@ -729,10 +729,10 @@ class PyCdlibRockRidge:
         operate on the file in user-defined chunks (utilizing the read() method
         of the returned context manager).
 
-        Parameters:
-         rr_path - The absolute Rock Ridge path to the file on the ISO.
+        Args:
+            rr_path: The absolute Rock Ridge path to the file on the ISO.
         Returns:
-         A PyCdlibIO object allowing access to the file.
+            A PyCdlibIO object allowing access to the file.
         """
         return self.pycdlib_obj.open_file_from_iso(rr_path=rr_path)
 
@@ -754,11 +754,11 @@ class PyCdlibUDF:
         Fetch a single file from the ISO via an absolute UDF path and write it
         out to a local file.
 
-        Parameters:
-         local_path - The local file to write to.
-         udf_path - The absolute UDF path to lookup on the ISO.
+        Args:
+            local_path: The local file to write to.
+            udf_path: The absolute UDF path to lookup on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.get_file_from_iso(local_path, udf_path=udf_path)
 
@@ -768,11 +768,11 @@ class PyCdlibUDF:
         Fetch a single file from the ISO via an absolute UDF path and write it
         out to the file object.
 
-        Parameters:
-         outfp - The file object to write data to.
-         udf_path - The absolute UDF path to lookup on the ISO.
+        Args:
+            outfp: The file object to write data to.
+            udf_path: The absolute UDF path to lookup on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.get_file_from_iso_fp(outfp, udf_path=udf_path)
 
@@ -788,12 +788,12 @@ class PyCdlibUDF:
         (mastering) the ISO.  To have PyCdlib manage this automatically, use
         'add_file' instead.
 
-        Parameters:
-         fp - The file object to use for the contents of the new file.
-         length - The length of the data for the new file.
-         udf_path - The UDF absolute path to the file destination on the ISO.
+        Args:
+            fp: The file object to use for the contents of the new file.
+            length: The length of the data for the new file.
+            udf_path: The UDF absolute path to the file destination on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.add_fp(fp, length, udf_path=udf_path)
 
@@ -805,11 +805,11 @@ class PyCdlibUDF:
         in which a file shows up, use the 'add_hard_link' API and/or use the
         regular PyCdlib object (not this facade).
 
-        Parameters:
-         filename - The filename to use for the data contents for the new file.
-         udf_path - The UDF absolute path to the file destination on the ISO.
+        Args:
+            filename: The filename to use for the data contents for the new file.
+            udf_path: The UDF absolute path to the file destination on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.add_file(filename, udf_path=udf_path)
 
@@ -820,10 +820,10 @@ class PyCdlibUDF:
         contexts in which a directory shows up, use the regular PyCdlib object
         (not this facade).
 
-        Parameters:
-         udf_path - The UDF absolute path to use for the directory.
+        Args:
+            udf_path: The UDF absolute path to use for the directory.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.add_directory(udf_path=udf_path)
 
@@ -836,10 +836,10 @@ class PyCdlibUDF:
         happen, so this method may need to be called on more than one facade for
         zero-byte files.
 
-        Parameters:
-         udf_path - The path to the file to remove.
+        Args:
+            udf_path: The path to the file to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.rm_file(udf_path=udf_path)
 
@@ -849,10 +849,10 @@ class PyCdlibUDF:
         Remove a directory from the ISO.  This removes the directory from
         just the UDF context.  The directory must be empty.
 
-        Parameters:
-         udf_path - The path to the directory to remove.
+        Args:
+            udf_path: The path to the directory to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.rm_directory(udf_path=udf_path)
 
@@ -861,12 +861,12 @@ class PyCdlibUDF:
         """
         Add a symlink from udf_symlink_path to udf_target.
 
-        Parameters:
-         udf_symlink_path - The UDF path of the symlink itself on the ISO.
-         udf_target - The UDF name of the entry on the ISO that the symlink
-                      points to.
+        Args:
+            udf_symlink_path: The UDF path of the symlink itself on the ISO.
+            udf_target: The UDF name of the entry on the ISO that the symlink
+                points to.
         Returns:
-         Nothing.
+            Nothing.
         """
         self.pycdlib_obj.add_symlink(udf_symlink_path=udf_symlink_path,
                                      udf_target=udf_target)
@@ -877,12 +877,12 @@ class PyCdlibUDF:
         Generate a list of all of the file/directory objects in the
         specified location on the ISO.
 
-        Parameters:
-         udf_path - The absolute path on the ISO to list the children for.
+        Args:
+            udf_path: The absolute path on the ISO to list the children for.
         Yields:
-         Children of this path.
+            Children of this path.
         Returns:
-         Nothing.
+            Nothing.
         """
         return self.pycdlib_obj.list_children(udf_path=udf_path)
 
@@ -891,11 +891,11 @@ class PyCdlibUDF:
         """
         Get the directory record for a particular UDF path.
 
-        Parameters:
-         udf_path - The absolute path on the UDF filesystem to get the
-                    record for.
+        Args:
+            udf_path: The absolute path on the UDF filesystem to get the
+                record for.
         Returns:
-         A udf.UDFFileEntry object that represents the path.
+            A udf.UDFFileEntry object that represents the path.
         """
         ret = self.pycdlib_obj.get_record(udf_path=udf_path)
         if not isinstance(ret, udfmod.UDFFileEntry):
@@ -909,12 +909,12 @@ class PyCdlibUDF:
         to os.walk(), yield a 3-tuple of (path-to-here, dirlist, filelist)
         for each directory level.
 
-        Parameters:
-         udf_path - The absolute UDF path to the starting entry on the ISO.
+        Args:
+            udf_path: The absolute UDF path to the starting entry on the ISO.
         Yields:
-         3-tuples of (path-to-here, dirlist, filelist)
+            3-tuples of (path-to-here, dirlist, filelist)
         Returns:
-         Nothing.
+            Nothing.
         """
         return self.pycdlib_obj.walk(udf_path=udf_path)
 
@@ -925,9 +925,9 @@ class PyCdlibUDF:
         operate on the file in user-defined chunks (utilizing the read() method
         of the returned context manager).
 
-        Parameters:
-         udf_path - The absolute UDF path to the file on the ISO.
+        Args:
+            udf_path: The absolute UDF path to the file on the ISO.
         Returns:
-         A PyCdlibIO object allowing access to the file.
+            A PyCdlibIO object allowing access to the file.
         """
         return self.pycdlib_obj.open_file_from_iso(udf_path=udf_path)

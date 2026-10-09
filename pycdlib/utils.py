@@ -46,10 +46,10 @@ def swab_32bit(x):
     """
     A function to swab a 32-bit integer.
 
-    Parameters:
-     x - The 32-bit integer to swab.
+    Args:
+        x: The 32-bit integer to swab.
     Returns:
-     The swabbed version of the 32-bit integer.
+        The swabbed version of the 32-bit integer.
     """
     if x > (((1 << 32) - 1) & 0xFFFFFFFF) or x < 0:
         raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swab; must be unsigned 32-bits!')
@@ -62,10 +62,10 @@ def swab_16bit(x):
     """
     A function to swab a 16-bit integer.
 
-    Parameters:
-     x - The 16-bit integer to swab.
+    Args:
+        x: The 16-bit integer to swab.
     Returns:
-     The swabbed version of the 16-bit integer.
+        The swabbed version of the 16-bit integer.
     """
     if x > (((1 << 16) - 1) & 0xFFFFFFFF) or x < 0:
         raise pycdlibexception.PyCdlibInternalError('Invalid integer passed to swab; must be unsigned 16-bits!')
@@ -79,11 +79,11 @@ def ceiling_div(numer, denom):
     A function to do ceiling division; that is, dividing numerator by denominator
     and taking the ceiling.
 
-    Parameters:
-     numer - The numerator for the division.
-     denom - The denominator for the division.
+    Args:
+        numer: The numerator for the division.
+        denom: The denominator for the division.
     Returns:
-     The ceiling after dividing numerator by denominator.
+        The ceiling after dividing numerator by denominator.
     """
     # Doing division and then getting the ceiling is tricky; we do upside-down
     # floor division to make this happen.
@@ -97,13 +97,13 @@ def copy_data_yield(data_length, blocksize, infp, outfp):
     A utility function to copy data from the input file object to the output
     file object.
 
-    Parameters:
-     data_length - The amount of data to copy.
-     blocksize - How much data to copy per iteration.
-     infp - The file object to copy data from.
-     outfp - The file object to copy data to.
+    Args:
+        data_length: The amount of data to copy.
+        blocksize: How much data to copy per iteration.
+        infp: The file object to copy data from.
+        outfp: The file object to copy data to.
     Returns:
-     Nothing.
+        Nothing.
     """
     left = data_length
     while left > 0:
@@ -127,13 +127,13 @@ def copy_data(data_length, blocksize, infp, outfp):
     A utility function to copy data from the input file object to the output
     file object.
 
-    Parameters:
-     data_length - The amount of data to copy.
-     blocksize - How much data to copy per iteration.
-     infp - The file object to copy data from.
-     outfp - The file object to copy data to.
+    Args:
+        data_length: The amount of data to copy.
+        blocksize: How much data to copy per iteration.
+        infp: The file object to copy data from.
+        outfp: The file object to copy data to.
     Returns:
-     Nothing.
+        Nothing.
     """
     for len_unused in copy_data_yield(data_length, blocksize, infp, outfp):
         pass
@@ -146,12 +146,12 @@ def encode_space_pad(instr, length, encoding):
     The space is first encoded into the specified encoding, then appended to
     the input string until the length is reached.
 
-    Parameters:
-     instr - The input string to encode and pad.
-     length - The length to pad the input string to.
-     encoding - The encoding to use.
+    Args:
+        instr: The input string to encode and pad.
+        length: The length to pad the input string to.
+        encoding: The encoding to use.
     Returns:
-     The input string encoded in the encoding and padded with encoded spaces.
+        The input string encoded in the encoding and padded with encoded spaces.
     """
     output = instr.decode('utf-8').encode(encoding)
     if len(output) > length:
@@ -173,10 +173,10 @@ def normpath(path):
     a copy of the built-in python normpath, except we do *not* allow double
     slashes at the start.
 
-    Parameters:
-     path - The path to normalize.
+    Args:
+        path: The path to normalize.
     Returns:
-     The normalized path.
+        The normalized path.
     """
     sep = '/'
     empty = ''
@@ -210,11 +210,11 @@ def gmtoffset_from_tm(tm, localtime):
     A function to compute the GMT offset in 15 minute intervals from the time
     in seconds since the epoch and the local time object.
 
-    Parameters:
-     tm - The time in seconds since the epoch.
-     localtime - The struct_time object representing the local time.
+    Args:
+        tm: The time in seconds since the epoch.
+        localtime: The struct_time object representing the local time.
     Returns:
-     The GMT offset in 15 minute intervals.
+        The GMT offset in 15 minute intervals.
     """
 
     # Note that this algorithm comes from cdrtools 3.01
@@ -238,12 +238,12 @@ def zero_pad(fp, data_size, pad_size):
     A function to write padding out from data_size up to pad_size
     efficiently.
 
-    Parameters:
-     fp - The file object to use to write padding out to.
-     data_size - The current size of the data.
-     pad_size - The boundary size of data to pad out to.
+    Args:
+        fp: The file object to use to write padding out to.
+        data_size: The current size of the data.
+        pad_size: The boundary size of data to pad out to.
     Returns:
-     The number of bytes that were padded.
+        The number of bytes that were padded.
     """
     padbytes = pad_size - (data_size % pad_size)
     if padbytes == pad_size:
@@ -262,10 +262,10 @@ def starts_with_slash(path):
     difficult to do portably with performance, so we have a dedicated function
     for it.
 
-    Parameters:
-     path - The path to determine if it starts with a slash
+    Args:
+        path: The path to determine if it starts with a slash
     Returns:
-     Whether the path starts with a slash.
+        Whether the path starts with a slash.
     """
     return bytearray(path)[0] == 47
 
@@ -275,10 +275,10 @@ def split_path(iso_path):
     """
     A function to take a fully-qualified iso path and split it into components.
 
-    Parameters:
-     iso_path - The path to split.
+    Args:
+        iso_path: The path to split.
     Returns:
-     The components of the path as a list.
+        The components of the path as a list.
     """
     if not starts_with_slash(iso_path):
         raise pycdlibexception.PyCdlibInvalidInput('Must be a path starting with /')
@@ -293,10 +293,10 @@ def file_object_supports_binary(fp):
     """
     A function to check whether a file-like object supports binary mode.
 
-    Parameters:
-     fp - The file-like object to check for binary mode support.
+    Args:
+        fp: The file-like object to check for binary mode support.
     Returns:
-     True if the file-like object supports binary mode, False otherwise.
+        True if the file-like object supports binary mode, False otherwise.
     """
     if hasattr(fp, 'mode'):
         return 'b' in fp.mode
@@ -310,13 +310,13 @@ def truncate_basename(basename, iso_level, is_dir):
     A function to truncate a basename and make it conformant to the passed-in
     ISO interchange level.
 
-    Parameters:
-     basename - The initial basename to truncate and translate
-     iso_level - The ISO interchange level to follow when truncating/translating
-     is_dir - Whether this is a directory or a file
+    Args:
+        basename: The initial basename to truncate and translate
+        iso_level: The ISO interchange level to follow when truncating/translating
+        is_dir: Whether this is a directory or a file
     Returns:
-     The truncated and translated name suitable for the ISO interchange level
-     specified.
+        The truncated and translated name suitable for the ISO interchange level
+        specified.
     """
     if iso_level == 4:
         # ISO level 4 allows "anything", so just return the original.
@@ -344,12 +344,12 @@ def mangle_file_for_iso9660(orig, iso_level):
     produce a tuple consisting of an ISO9660-valid basename and an ISO9660-valid
     extension.
 
-    Parameters:
-     orig - The original filename
-     iso_level - The ISO interchange level to conform to
+    Args:
+        orig: The original filename
+        iso_level: The ISO interchange level to conform to
     Returns:
-     A tuple where the first entry is the ISO9660-compliant basename and where
-     the second entry is the ISO9660-compliant extension.
+        A tuple where the first entry is the ISO9660-compliant basename and where
+        the second entry is the ISO9660-compliant extension.
     """
     # ISO9660 has a lot of restrictions on what valid names are.  Here, we mangle
     # the names to conform to those rules.  In particular, the rules for
@@ -416,11 +416,11 @@ def mangle_dir_for_iso9660(orig, iso_level):
     A function to take a regular Unix-style directory name and produce an
     ISO9660-valid directory name.
 
-    Parameters:
-     orig - The original filename
-     iso_level - The ISO interchange level to conform to
+    Args:
+        orig: The original filename
+        iso_level: The ISO interchange level to conform to
     Returns:
-     An ISO9660-compliant directory name.
+        An ISO9660-compliant directory name.
     """
     # ISO9660 has a lot of restrictions on what valid directory names are.
     # Here, we mangle the names to conform to those rules.  In particular, the

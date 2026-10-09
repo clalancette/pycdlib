@@ -57,11 +57,11 @@ class XARecord:
         """
         Parse an Extended Attribute Record out of a string.
 
-        Parameters:
-         xastr - The string to parse.
-         len_fi - The length of the file identifier for this record.
+        Args:
+            xastr: The string to parse.
+            len_fi: The length of the file identifier for this record.
         Returns:
-         True if the data contains an XA record, False otherwise.
+            True if the data contains an XA record, False otherwise.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This XARecord is already initialized')
@@ -108,10 +108,8 @@ class XARecord:
         """
         Create a new Extended Attribute Record.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This XARecord is already initialized')
@@ -128,10 +126,8 @@ class XARecord:
         """
         Record this Extended Attribute Record.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this Extended Attribute Record.
+            A string representing this Extended Attribute Record.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This XARecord is not initialized')
@@ -148,10 +144,8 @@ class XARecord:
         """
         A static method to return the size of an Extended Attribute Record.
 
-        Parameters:
-         None.
         Returns:
-         The size of an Extended Attribute Record.
+            The size of an Extended Attribute Record.
         """
         return 14
 
@@ -214,18 +208,18 @@ class DirectoryRecord:
         """
         Parse a directory record out of a string.
 
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         record - The string to parse for this record.
-         parent - The parent of this record.
-         xa - Whether the volume declares XA (via the PVD's 'CD-XA001'
-              marker).  When False, the system-use area is not scanned for
-              an XA record; this avoids false-positive matches against
-              Rock Ridge SUSP payload that happens to contain the bytes
-              'XA' at the signature offset.
+        Args:
+            vd: The Volume Descriptor this record is part of.
+            record: The string to parse for this record.
+            parent: The parent of this record.
+            xa: Whether the volume declares XA (via the PVD's 'CD-XA001'
+                marker).  When False, the system-use area is not scanned for
+                an XA record; this avoids false-positive matches against
+                Rock Ridge SUSP payload that happens to contain the bytes
+                'XA' at the signature offset.
         Returns:
-         The Rock Ridge version as a string if this Directory Record has Rock
-         Ridge, '' otherwise.
+            The Rock Ridge version as a string if this Directory Record has Rock
+            Ridge, '' otherwise.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
@@ -372,23 +366,23 @@ class DirectoryRecord:
         """
         Internal method to add Rock Ridge to a Directory Record.
 
-        Parameters:
-         rr_version - A string containing the version of Rock Ridge to use for
-                      this record.
-         rr_name - The Rock Ridge name to associate with this directory record.
-         rr_symlink_target - The target for the symlink, if this is a symlink
-                             record (otherwise, None).
-         rr_relocated_child - True if this is a directory record for a rock
-                              ridge relocated child.
-         rr_relocated - True if this is a directory record for a relocated
-                        entry.
-         rr_relocated_parent - True if this is a directory record for a rock
-                               ridge relocated parent.
-         file_mode - The Unix file mode for this Rock Ridge entry.
-         date_seconds - Time and date, in seconds since the epoch, to use for
-                        this directory record.
+        Args:
+            rr_version: A string containing the version of Rock Ridge to use for
+                this record.
+            rr_name: The Rock Ridge name to associate with this directory record.
+            rr_symlink_target: The target for the symlink, if this is a symlink
+                record (otherwise, None).
+            rr_relocated_child: True if this is a directory record for a rock
+                ridge relocated child.
+            rr_relocated: True if this is a directory record for a relocated
+                entry.
+            rr_relocated_parent: True if this is a directory record for a rock
+                ridge relocated parent.
+            file_mode: The Unix file mode for this Rock Ridge entry.
+            date_seconds: Time and date, in seconds since the epoch, to use for
+                this directory record.
         Returns:
-         Nothing.
+            Nothing.
         """
 
         if self.parent is None:
@@ -465,18 +459,18 @@ class DirectoryRecord:
         """
         Internal method to create a new Directory Record.
 
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         name - The name for this directory record.
-         parent - The parent of this directory record.
-         seqnum - The sequence number to associate with this directory record.
-         isdir - Whether this directory record represents a directory.
-         length - The length of the data for this directory record.
-         xa - True if this is an Extended Attribute record.
-         date_seconds - Time and date, in seconds since the epoch, to use for
-                        this directory record.
+        Args:
+            vd: The Volume Descriptor this record is part of.
+            name: The name for this directory record.
+            parent: The parent of this directory record.
+            seqnum: The sequence number to associate with this directory record.
+            isdir: Whether this directory record represents a directory.
+            length: The length of the data for this directory record.
+            xa: True if this is an Extended Attribute record.
+            date_seconds: Time and date, in seconds since the epoch, to use for
+                this directory record.
         Returns:
-         Nothing.
+            Nothing.
         """
 
         # Adding a new time should really be done when we are going to write
@@ -560,21 +554,21 @@ class DirectoryRecord:
         Create a new symlink Directory Record.  This implies that the new
         record will be Rock Ridge.
 
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         name - The name for this directory record.
-         parent - The parent of this directory record.
-         rr_target - The symlink target for this directory record.
-         seqnum - The sequence number for this directory record.
-         rock_ridge - The version of Rock Ridge to use for this directory record.
-         rr_name - The Rock Ridge name for this directory record.
-         xa - True if this is an Extended Attribute record.
-         date_seconds - Time and date, in seconds since the epoch, to use for
-                        this symlink.
-         creation_seconds - Optional creation time, in seconds since the epoch,
-                            for the Rock Ridge TF record.
+        Args:
+            vd: The Volume Descriptor this record is part of.
+            name: The name for this directory record.
+            parent: The parent of this directory record.
+            rr_target: The symlink target for this directory record.
+            seqnum: The sequence number for this directory record.
+            rock_ridge: The version of Rock Ridge to use for this directory record.
+            rr_name: The Rock Ridge name for this directory record.
+            xa: True if this is an Extended Attribute record.
+            date_seconds: Time and date, in seconds since the epoch, to use for
+                this symlink.
+            creation_seconds: Optional creation time, in seconds since the epoch,
+                for the Rock Ridge TF record.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
@@ -590,22 +584,22 @@ class DirectoryRecord:
         """
         Create a new file Directory Record.
 
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         length - The length of the data.
-         isoname - The name for this directory record.
-         parent - The parent of this directory record.
-         seqnum - The sequence number for this directory record.
-         rock_ridge - Whether to make this a Rock Ridge directory record.
-         rr_name - The Rock Ridge name for this directory record.
-         xa - True if this is an Extended Attribute record.
-         file_mode - The POSIX file mode for this entry.
-         date_seconds - Time and date, in seconds since the epoch, to use for
-                        this file.
-         creation_seconds - Optional creation time, in seconds since the epoch,
-                            for the Rock Ridge TF record.
+        Args:
+            vd: The Volume Descriptor this record is part of.
+            length: The length of the data.
+            isoname: The name for this directory record.
+            parent: The parent of this directory record.
+            seqnum: The sequence number for this directory record.
+            rock_ridge: Whether to make this a Rock Ridge directory record.
+            rr_name: The Rock Ridge name for this directory record.
+            xa: True if this is an Extended Attribute record.
+            file_mode: The POSIX file mode for this entry.
+            date_seconds: Time and date, in seconds since the epoch, to use for
+                this file.
+            creation_seconds: Optional creation time, in seconds since the epoch,
+                for the Rock Ridge TF record.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
@@ -620,14 +614,14 @@ class DirectoryRecord:
         """
         Create a new root Directory Record.
 
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         seqnum - The sequence number for this directory record.
-         log_block_size - The logical block size to use.
-         date_seconds - Time and date, in seconds since the epoch, to use for
-                        this root.
+        Args:
+            vd: The Volume Descriptor this record is part of.
+            seqnum: The sequence number for this directory record.
+            log_block_size: The logical block size to use.
+            date_seconds: Time and date, in seconds since the epoch, to use for
+                this root.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
@@ -641,18 +635,18 @@ class DirectoryRecord:
         """
         Create a new 'dot' Directory Record.
 
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         parent - The parent of this directory record.
-         seqnum - The sequence number for this directory record.
-         rock_ridge - Whether to make this a Rock Ridge directory record.
-         log_block_size - The logical block size to use.
-         xa - True if this is an Extended Attribute record.
-         file_mode - The POSIX file mode to set for this directory.
-         date_seconds - Time and date, in seconds since the epoch, to use for
-                        this dot record.
+        Args:
+            vd: The Volume Descriptor this record is part of.
+            parent: The parent of this directory record.
+            seqnum: The sequence number for this directory record.
+            rock_ridge: Whether to make this a Rock Ridge directory record.
+            log_block_size: The logical block size to use.
+            xa: True if this is an Extended Attribute record.
+            file_mode: The POSIX file mode to set for this directory.
+            date_seconds: Time and date, in seconds since the epoch, to use for
+                this dot record.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
@@ -668,19 +662,19 @@ class DirectoryRecord:
         """
         Create a new 'dotdot' Directory Record.
 
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         parent - The parent of this directory record.
-         seqnum - The sequence number for this directory record.
-         rock_ridge - Whether to make this a Rock Ridge directory record.
-         log_block_size - The logical block size to use.
-         rr_relocated_parent - True if this is a Rock Ridge relocated parent.
-         xa - True if this is an Extended Attribute record.
-         file_mode - The POSIX file mode to set for this directory.
-         date_seconds - Time and date, in seconds since the epoch, to use for
-                        this dotdot record.
+        Args:
+            vd: The Volume Descriptor this record is part of.
+            parent: The parent of this directory record.
+            seqnum: The sequence number for this directory record.
+            rock_ridge: Whether to make this a Rock Ridge directory record.
+            log_block_size: The logical block size to use.
+            rr_relocated_parent: True if this is a Rock Ridge relocated parent.
+            xa: True if this is an Extended Attribute record.
+            file_mode: The POSIX file mode to set for this directory.
+            date_seconds: Time and date, in seconds since the epoch, to use for
+                this dotdot record.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
@@ -697,24 +691,24 @@ class DirectoryRecord:
         """
         Create a new directory Directory Record.
 
-        Parameters:
-         vd - The Volume Descriptor this record is part of.
-         name - The name for this directory record.
-         parent - The parent of this directory record.
-         seqnum - The sequence number for this directory record.
-         rock_ridge - Whether to make this a Rock Ridge directory record.
-         rr_name - The Rock Ridge name for this directory record.
-         log_block_size - The logical block size to use.
-         rr_relocated_child - True if this is a Rock Ridge relocated child.
-         rr_relocated - True if this is a Rock Ridge relocated entry.
-         xa - True if this is an Extended Attribute record.
-         file_mode - The POSIX file mode to set for this directory.
-         date_seconds - Time and date, in seconds since the epoch, to use for
-                        this directory record.
-         creation_seconds - Optional creation time, in seconds since the epoch,
-                            for the Rock Ridge TF record.
+        Args:
+            vd: The Volume Descriptor this record is part of.
+            name: The name for this directory record.
+            parent: The parent of this directory record.
+            seqnum: The sequence number for this directory record.
+            rock_ridge: Whether to make this a Rock Ridge directory record.
+            rr_name: The Rock Ridge name for this directory record.
+            log_block_size: The logical block size to use.
+            rr_relocated_child: True if this is a Rock Ridge relocated child.
+            rr_relocated: True if this is a Rock Ridge relocated entry.
+            xa: True if this is an Extended Attribute record.
+            file_mode: The POSIX file mode to set for this directory.
+            date_seconds: Time and date, in seconds since the epoch, to use for
+                this directory record.
+            creation_seconds: Optional creation time, in seconds since the epoch,
+                for the Rock Ridge TF record.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
@@ -737,11 +731,11 @@ class DirectoryRecord:
         """
         Change the ISO9660 existence flag of this Directory Record.
 
-        Parameters:
-         is_hidden - True if this Directory Record should be hidden,
-                     False otherwise.
+        Args:
+            is_hidden: True if this Directory Record should be hidden,
+                False otherwise.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -757,13 +751,13 @@ class DirectoryRecord:
         Internal method to recalculate the extents and offsets associated with
         children of this directory record.
 
-        Parameters:
-         index - The index at which to start the recalculation.
-         logical_block_size - The block size to use for comparisons.
+        Args:
+            index: The index at which to start the recalculation.
+            logical_block_size: The block size to use for comparisons.
         Returns:
-         A tuple where the first element is the total number of extents required
-         by the children and where the second element is the offset into the
-         last extent currently being used.
+            A tuple where the first element is the total number of extents required
+            by the children and where the second element is the offset into the
+            last extent currently being used.
         """
         if index == 0:
             dirrecord_offset = 0
@@ -793,17 +787,17 @@ class DirectoryRecord:
         called both during parsing and when adding a new object to the system,
         so it shouldn't have any functionality that is not appropriate for both.
 
-        Parameters:
-         child - The child directory record object to add.
-         logical_block_size - The size of a logical block for this volume
-                              descriptor.
-         allow_duplicate - Whether to allow duplicate names, as there are
-                           situations where duplicate children are allowed.
-         check_overflow - Whether to check for overflow; if we are parsing, we
-                          don't want to do this.
+        Args:
+            child: The child directory record object to add.
+            logical_block_size: The size of a logical block for this volume
+                descriptor.
+            allow_duplicate: Whether to allow duplicate names, as there are
+                situations where duplicate children are allowed.
+            check_overflow: Whether to check for overflow; if we are parsing, we
+                don't want to do this.
         Returns:
-         True if adding this child caused the directory to overflow into another
-         extent, False otherwise.
+            True if adding this child caused the directory to overflow into another
+            extent, False otherwise.
         """
         if not self.isdir:
             raise pycdlibexception.PyCdlibInvalidInput('Trying to add a child to a record that is not a directory')
@@ -886,15 +880,15 @@ class DirectoryRecord:
         """
         Add a new child to this directory record.
 
-        Parameters:
-         child - The child directory record object to add.
-         logical_block_size - The size of a logical block for this volume
-                              descriptor.
-         allow_duplicate - Whether to allow duplicate names, as there are
-                           situations where duplicate children are allowed.
+        Args:
+            child: The child directory record object to add.
+            logical_block_size: The size of a logical block for this volume
+                descriptor.
+            allow_duplicate: Whether to allow duplicate names, as there are
+                situations where duplicate children are allowed.
         Returns:
-         True if adding this child caused the directory to overflow into another
-         extent, False otherwise.
+            True if adding this child caused the directory to overflow into another
+            extent, False otherwise.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -906,14 +900,14 @@ class DirectoryRecord:
         """
         Track an existing child of this directory record.
 
-        Parameters:
-         child - The child directory record object to add.
-         logical_block_size - The size of a logical block for this volume
-                              descriptor.
-         allow_duplicate - Whether to allow duplicate names, as there are
-                           situations where duplicate children are allowed.
+        Args:
+            child: The child directory record object to add.
+            logical_block_size: The size of a logical block for this volume
+                descriptor.
+            allow_duplicate: Whether to allow duplicate names, as there are
+                situations where duplicate children are allowed.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -925,13 +919,13 @@ class DirectoryRecord:
         """
         Remove a child from this Directory Record.
 
-        Parameters:
-         child - The child DirectoryRecord object to remove.
-         index - The index of the child into this DirectoryRecord children list.
-         logical_block_size - The size of a logical block on this volume
-                              descriptor.
+        Args:
+            child: The child DirectoryRecord object to remove.
+            index: The index of the child into this DirectoryRecord children list.
+            logical_block_size: The size of a logical block on this volume
+                descriptor.
         Returns:
-         True if removing this child caused an underflow, False otherwise.
+            True if removing this child caused an underflow, False otherwise.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1004,10 +998,8 @@ class DirectoryRecord:
         """
         Determine whether this Directory Record is a directory.
 
-        Parameters:
-         None.
         Returns:
-         True if this DirectoryRecord object is a directory, False otherwise.
+            True if this DirectoryRecord object is a directory, False otherwise.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1018,10 +1010,8 @@ class DirectoryRecord:
         """
         Determine whether this Directory Record is a file.
 
-        Parameters:
-         None.
         Returns:
-         True if this DirectoryRecord object is a file, False otherwise.
+            True if this DirectoryRecord object is a file, False otherwise.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1035,10 +1025,8 @@ class DirectoryRecord:
         directories, it is important to call this API *first*; symlinks are
         also considered files.
 
-        Parameters:
-         None.
         Returns:
-         True if this Directory Record object is a symlink, False otherwise.
+            True if this Directory Record object is a symlink, False otherwise.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1049,10 +1037,8 @@ class DirectoryRecord:
         """
         Determine whether this Directory Record is a 'dot' entry.
 
-        Parameters:
-         None.
         Returns:
-         True if this DirectoryRecord object is a 'dot' entry, False otherwise.
+            True if this DirectoryRecord object is a 'dot' entry, False otherwise.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1063,10 +1049,8 @@ class DirectoryRecord:
         """
         Determine whether this Directory Record is a 'dotdot' entry.
 
-        Parameters:
-         None.
         Returns:
-         True if this DirectoryRecord object is a 'dotdot' entry, False otherwise.
+            True if this DirectoryRecord object is a 'dotdot' entry, False otherwise.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1077,10 +1061,8 @@ class DirectoryRecord:
         """
         Determine the length of this Directory Record.
 
-        Parameters:
-         None.
         Returns:
-         The length of this Directory Record.
+            The length of this Directory Record.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1091,10 +1073,8 @@ class DirectoryRecord:
         An internal method to get the location of this Directory Record on the
         ISO.
 
-        Parameters:
-         None.
         Returns:
-         Extent location of this Directory Record on the ISO.
+            Extent location of this Directory Record on the ISO.
         """
         if self.new_extent_loc < 0:
             return self.orig_extent_loc
@@ -1105,10 +1085,8 @@ class DirectoryRecord:
         """
         Get the location of this Directory Record on the ISO.
 
-        Parameters:
-         None.
         Returns:
-         Extent location of this Directory Record on the ISO.
+            Extent location of this Directory Record on the ISO.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1119,10 +1097,8 @@ class DirectoryRecord:
         """
         Get the identifier of this Directory Record.
 
-        Parameters:
-         None.
         Returns:
-         String representing the identifier of this Directory Record.
+            String representing the identifier of this Directory Record.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1133,10 +1109,8 @@ class DirectoryRecord:
         """
         Generate the string representing this Directory Record.
 
-        Parameters:
-         None.
         Returns:
-         String representing this Directory Record.
+            String representing this Directory Record.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1171,11 +1145,9 @@ class DirectoryRecord:
         Determine whether this file is 'associated' with another file
         on the ISO.
 
-        Parameters:
-         None.
         Returns:
-         True if this file is associated with another file on the ISO, False
-         otherwise.
+            True if this file is associated with another file on the ISO, False
+            otherwise.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1187,10 +1159,10 @@ class DirectoryRecord:
         """
         Set the Path Table Record associated with this Directory Record.
 
-        Parameters:
-         ptr - The path table record to associate with this Directory Record.
+        Args:
+            ptr: The path table record to associate with this Directory Record.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1203,10 +1175,10 @@ class DirectoryRecord:
         Set the new extent location that the data for this Directory Record
         should live at.
 
-        Parameters:
-         current_extent - The new extent.
+        Args:
+            current_extent: The new extent.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1220,10 +1192,8 @@ class DirectoryRecord:
         """
         Get the length of the data that this Directory Record points to.
 
-        Parameters:
-         None.
         Returns:
-         The length of the data that this Directory Record points to.
+            The length of the data that this Directory Record points to.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
@@ -1236,10 +1206,10 @@ class DirectoryRecord:
         """
         Set the length of the data that this Directory Record points to.
 
-        Parameters:
-         length - The new length for the data.
+        Args:
+            length: The new length for the data.
         Returns:
-         The length of the data that this Directory Record points to.
+            The length of the data that this Directory Record points to.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')

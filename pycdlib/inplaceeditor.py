@@ -483,12 +483,12 @@ class InPlaceEditor:
         """
         Open `filename` for in-place editing.
 
-        Parameters:
-         filename - The local filesystem path to the ISO file to edit.
-         mode - The mode to open the ISO file in.  Must permit writing;
+        Args:
+            filename: The local filesystem path to the ISO file to edit.
+            mode: The mode to open the ISO file in.  Must permit writing;
                 defaults to ``'rb+'``.
         Returns:
-         Nothing.
+            Nothing.
         """
         self._iso = PyCdlib()
         self._iso.open(filename, mode=mode)
@@ -523,15 +523,15 @@ class InPlaceEditor:
            Shrinking past an extent boundary zeroes the orphaned
            extents inside the file's original on-disk allocation.
 
-        Parameters:
-         fp - A file-like object containing the new contents.
-         length - The length of the new contents.
-         iso_path - The ISO9660 absolute path identifying the file.
-         rr_path - The Rock Ridge absolute path identifying the file.
-         joliet_path - The Joliet absolute path identifying the file.
-         udf_path - The UDF absolute path identifying the file.
+        Args:
+            fp: A file-like object containing the new contents.
+            length: The length of the new contents.
+            iso_path: The ISO9660 absolute path identifying the file.
+            rr_path: The Rock Ridge absolute path identifying the file.
+            joliet_path: The Joliet absolute path identifying the file.
+            udf_path: The UDF absolute path identifying the file.
         Returns:
-         Nothing.
+            Nothing.
         """
         _do_modify_file_in_place(self._iso, fp, length, iso_path=iso_path,
                                  rr_path=rr_path, joliet_path=joliet_path,
@@ -556,10 +556,10 @@ class InPlaceEditor:
          - The ISO must not be a UDF ISO (UDF in-place rm is not
            supported yet).
 
-        Parameters:
-         iso_path - The ISO9660 absolute path identifying the file.
+        Args:
+            iso_path: The ISO9660 absolute path identifying the file.
         Returns:
-         Nothing.
+            Nothing.
         """
         _do_rm_file(self._iso, iso_path)
 
@@ -589,18 +589,18 @@ class InPlaceEditor:
          - The caller is responsible for keeping ``fp`` open for the
            lifetime of this editor (until the with-block exits).
 
-        Parameters:
-         fp - A file-like object containing the new file's content.
-         length - The length of the new content.
-         iso_path - The ISO9660 absolute path identifying where to
-                    insert the file.
-         rr_name - Rock Ridge name; required on Rock Ridge ISOs and
-                   rejected on non-Rock-Ridge ISOs.
-         joliet_path - The Joliet absolute path; if provided, a Joliet
-                       directory record is also inserted.
-         file_mode - File-mode bits (Rock Ridge only).
+        Args:
+            fp: A file-like object containing the new file's content.
+            length: The length of the new content.
+            iso_path: The ISO9660 absolute path identifying where to
+                insert the file.
+            rr_name: Rock Ridge name; required on Rock Ridge ISOs and
+                rejected on non-Rock-Ridge ISOs.
+            joliet_path: The Joliet absolute path; if provided, a Joliet
+                directory record is also inserted.
+            file_mode: File-mode bits (Rock Ridge only).
         Returns:
-         Nothing.
+            Nothing.
         """
         _do_add_fp(self._iso, fp, length, False, iso_path,
                    rr_name=rr_name,
@@ -619,18 +619,18 @@ class InPlaceEditor:
         :meth:`pycdlib.PyCdlib.add_file` does relative to
         :meth:`pycdlib.PyCdlib.add_fp`.
 
-        Parameters:
-         filename - The local filename whose content becomes the new
-                    file's content on the ISO.
-         iso_path - The ISO9660 absolute path identifying where to
-                    insert the file.
-         rr_name - Rock Ridge name; required on Rock Ridge ISOs and
-                   rejected on non-Rock-Ridge ISOs.
-         joliet_path - The Joliet absolute path; if provided, a Joliet
-                       directory record is also inserted.
-         file_mode - File-mode bits (Rock Ridge only).
+        Args:
+            filename: The local filename whose content becomes the new
+                file's content on the ISO.
+            iso_path: The ISO9660 absolute path identifying where to
+                insert the file.
+            rr_name: Rock Ridge name; required on Rock Ridge ISOs and
+                rejected on non-Rock-Ridge ISOs.
+            joliet_path: The Joliet absolute path; if provided, a Joliet
+                directory record is also inserted.
+            file_mode: File-mode bits (Rock Ridge only).
         Returns:
-         Nothing.
+            Nothing.
         """
         import os  # pylint: disable=import-outside-toplevel
         _do_add_fp(self._iso, filename, os.stat(filename).st_size, True,

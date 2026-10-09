@@ -60,10 +60,8 @@ class Inode:
         """
         Initialize a new Inode.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is already initialized')
@@ -82,10 +80,10 @@ class Inode:
         """
         Parse an existing Inode.  This just saves off the extent for later use.
 
-        Parameters:
-         extent - The original extent that the data lives at.
+        Args:
+            extent: The original extent that the data lives at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is already initialized')
@@ -106,10 +104,8 @@ class Inode:
         """
         Get the current location of this Inode on the ISO.
 
-        Parameters:
-         None.
         Returns:
-         The extent location of this Inode on the ISO.
+            The extent location of this Inode on the ISO.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
@@ -128,10 +124,10 @@ class Inode:
         """
         Set the current location of this Inode on the ISO.
 
-        Parameters:
-         extent - The new extent location for this Inode.
+        Args:
+            extent: The new extent location for this Inode.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
@@ -143,10 +139,8 @@ class Inode:
         """
         Get the length of the data pointed to by this Inode.
 
-        Parameters:
-         None.
         Returns:
-         The length of the data pointed to by this Inode.
+            The length of the data pointed to by this Inode.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
@@ -158,10 +152,10 @@ class Inode:
         """
         Add a boot info table to this Inode.
 
-        Parameters:
-         boot_info_table - The Boot Info Table object to add to this Inode.
+        Args:
+            boot_info_table: The Boot Info Table object to add to this Inode.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
@@ -173,16 +167,16 @@ class Inode:
         """
         Update the Inode to use a different file object and length.
 
-        Parameters:
-         fp - A file object that contains the data for this Inode, or
-              a filename if `manage_fp` is True.
-         length - The length of the data.
-         manage_fp - If True, `fp` is treated as a filename that pycdlib
-                     will open and close itself.  If False (the default),
-                     `fp` is a file-like object whose lifetime the caller
-                     manages.
+        Args:
+            fp: A file object that contains the data for this Inode, or
+                a filename if `manage_fp` is True.
+            length: The length of the data.
+            manage_fp: If True, `fp` is treated as a filename that pycdlib
+                will open and close itself.  If False (the default),
+                `fp` is a file-like object whose lifetime the caller
+                manages.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Inode is not initialized')
