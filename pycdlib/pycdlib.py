@@ -1210,6 +1210,73 @@ class PyCdlib:
 
             yield new_record, rr
 
+    def _link_file_record(self, new_record, is_symlink, data_length,
+                          extent_to_inode, vd, iso_file_length, lastbyte):
+        # type: (dr.DirectoryRecord, bool, int, Dict[int, inode.Inode], headervd.PrimaryOrSupplementaryVD, int, int) -> int
+        """
+        An internal method to link a non-directory record to the Inode
+        describing its on-disk data, creating the Inode if necessary.
+        Zero-length files and symlinks are deliberately linked to a
+        length-0, location-0 Inode that is never written out, so that
+        everything can be linked through an Inode.
+
+        Parameters:
+         new_record - The file directory record to link.
+         is_symlink - Whether the record is a symlink.
+         data_length - The data length declared by the record.
+         extent_to_inode - A dictionary mapping extents to Inodes.
+         vd - The volume descriptor being walked.
+         iso_file_length - The size of the ISO.
+         lastbyte - The largest byte offset used so far.
+        Returns:
+         The updated largest byte offset used.
+        """
+        # Some ISOs use random extent locations for zero-length files.  Thus it
+        # is not valid for us to link zero-length files to other files, as the
+        # linkage will be essentially random.  Ignore zero-length files
+        # (including symlinks) for linkage.  We don't do the lastbyte
+        # calculation on zero-length files for the same reason.
+        len_to_use = data_length
+        extent_to_use = new_record.extent_location()
+        if len_to_use == 0 or is_symlink:
+            len_to_use = 0
+            extent_to_use = 0
+
+        # Directory Records that point to the El Torito Boot Catalog do not
+        # get Inodes since all of that is handled in-memory.
+        if self.eltorito_boot_catalog is not None and extent_to_use == self.eltorito_boot_catalog.extent_location():
+            self.eltorito_boot_catalog.add_dirrecord(new_record)
+        else:
+            # For real files create an inode that points to the on-disk location
+            if extent_to_use in extent_to_inode:
+                ino = extent_to_inode[extent_to_use]
+            else:
+                ino = inode.Inode()
+                ino.parse(extent_to_use, len_to_use, self._cdfp,
+                          self.logical_block_size)
+                extent_to_inode[extent_to_use] = ino
+                self.inodes.append(ino)
+
+            ino.linked_records.append((new_record, vd == self.pvd))
+            new_record.inode = ino
+
+        new_end = extent_to_use * self.logical_block_size + len_to_use
+        if new_end > iso_file_length:
+            # The end of the file is beyond the size of the ISO.  Since this
+            # can't be true, truncate the file size.
+            if new_record.inode is not None:
+                truncated_length = iso_file_length - extent_to_use * self.logical_block_size
+                new_record.inode.data_length = truncated_length
+                for rec, _ in new_record.inode.linked_records:
+                    rec.set_data_length(truncated_length)
+        else:
+            # The new end is still within the file size, but the PVD size is
+            # wrong.  Set the lastbyte appropriately, which will eventually
+            # be used to fix the PVD size.
+            lastbyte = max(lastbyte, new_end)
+
+        return lastbyte
+
     def _walk_directories(self, vd, extent_to_ptr, extent_to_inode,
                           path_table_records):
         # type: (headervd.PrimaryOrSupplementaryVD, Dict[int, path_table_record.PathTableRecord], Dict[int, inode.Inode], List[path_table_record.PathTableRecord]) -> Tuple[int, int]
@@ -1226,7 +1293,6 @@ class PyCdlib:
         Returns:
          The interchange level that this ISO conforms to.
         """
-        cdfp = self._cdfp
         iso_file_length = self._get_iso_size()
 
         all_extent_to_dr = {}  # type: Dict[int, dr.DirectoryRecord]
@@ -1264,56 +1330,12 @@ class PyCdlib:
                 if is_pvd and not dots and not rr_cl and not is_symlink and new_extent_loc not in all_extent_to_dr:
                     all_extent_to_dr[new_extent_loc] = new_record
 
-                # Some ISOs use random extent locations for zero-length files.
-                # Thus, it is not valid for us to link zero-length files to
-                # other files, as the linkage will be essentially random.
-                # Ignore zero-length files (including symlinks) for linkage.
-                # We don't do the lastbyte calculation on zero-length files for
-                # the same reason.
                 if not is_dir:
-                    len_to_use = data_length
-                    extent_to_use = new_extent_loc
-                    # An important side-effect of this is that zero-length files
-                    # or symlinks get an inode, but it is always set to length 0
-                    # and location 0 and not actually written out.  This is so
-                    # that we can 'link' everything through the Inode.
-                    if len_to_use == 0 or is_symlink:
-                        len_to_use = 0
-                        extent_to_use = 0
-
-                    # Directory Records that point to the El Torito Boot Catalog
-                    # do not get Inodes since all of that is handled in-memory.
-                    if self.eltorito_boot_catalog is not None and extent_to_use == self.eltorito_boot_catalog.extent_location():
-                        self.eltorito_boot_catalog.add_dirrecord(new_record)
-                    else:
-                        # For real files, create an inode that points to the
-                        # location on disk.
-                        if extent_to_use in extent_to_inode:
-                            ino = extent_to_inode[extent_to_use]
-                        else:
-                            ino = inode.Inode()
-                            ino.parse(extent_to_use, len_to_use, cdfp,
-                                      self.logical_block_size)
-                            extent_to_inode[extent_to_use] = ino
-                            self.inodes.append(ino)
-
-                        ino.linked_records.append((new_record, vd == self.pvd))
-                        new_record.inode = ino
-
-                    new_end = extent_to_use * self.logical_block_size + len_to_use
-                    if new_end > iso_file_length:
-                        # The end of the file is beyond the size of the ISO.
-                        # Since this can't be true, truncate the file size.
-                        if new_record.inode is not None:
-                            truncated_length = iso_file_length - extent_to_use * self.logical_block_size
-                            new_record.inode.data_length = truncated_length
-                            for rec, is_pvd in new_record.inode.linked_records:
-                                rec.set_data_length(truncated_length)
-                    else:
-                        # The new end is still within the file size, but the PVD
-                        # size is wrong.  Set the lastbyte appropriately, which
-                        # will eventually be used to fix the PVD size.
-                        lastbyte = max(lastbyte, new_end)
+                    lastbyte = self._link_file_record(new_record, is_symlink,
+                                                      data_length,
+                                                      extent_to_inode, vd,
+                                                      iso_file_length,
+                                                      lastbyte)
 
                 # The PX record could be in the continuation blob, so the
                 # continuation is relevant to determine the actual Rock
