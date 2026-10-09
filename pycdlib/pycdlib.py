@@ -1099,12 +1099,12 @@ class PyCdlib:
     def _follow_rock_ridge_ce_chain(self, new_record, iso_file_length):
         # type: (dr.DirectoryRecord, int) -> str
         """
-        Follow a directory record's Rock Ridge Continuation Entry (CE)
-        chain, parsing each continuation area into the record's Rock Ridge
-        data.  A continuation area may itself end with a CE record pointing
-        at a further area, chaining as many times as needed to hold the
-        entries, so the whole chain is followed, remembering where we have
-        been so that an ISO whose CE records form a cycle cannot spin us
+        An internal method to follow a directory record's Rock Ridge
+        Continuation Entry (CE) chain, parsing each continuation area into the
+        record's Rock Ridge data.  A continuation area may itself end with a CE
+        record pointing at a further area, chaining as many times as needed to
+        hold the entries, so the whole chain is followed, remembering where we
+        have been so that an ISO whose CE records form a cycle cannot spin us
         forever.
 
         Parameters:
@@ -1155,6 +1155,61 @@ class PyCdlib:
 
         return new_record.rock_ridge.rr_version if new_record.rock_ridge else ''
 
+    def _iter_directory_records(self, vd, dir_record, iso_file_length):
+        # type: (headervd.PrimaryOrSupplementaryVD, dr.DirectoryRecord, int) -> Generator[Tuple[dr.DirectoryRecord, str], None, None]
+        """
+        An internal method to yield each directory record stored in a directory's
+        extent, skipping the zero-length padding that fills out the tail of each
+        logical block.
+
+        Parameters:
+         vd - The volume descriptor being walked.
+         dir_record - The directory record whose extent to read.
+         iso_file_length - The size of the ISO, used to clamp the read.
+        Yields:
+         Tuples of (directory record, Rock Ridge version string) for each
+         record parsed from the directory extent.
+        """
+        self._seek_to_extent(dir_record.extent_location())
+        length = dir_record.get_data_length()
+        offset = 0
+        data = self._read_clamped(length, iso_file_length)
+        while offset < length:
+            if offset > (len(data) - 1):
+                # The data we read off of the ISO was shorter than what we
+                # expected.  The ISO is corrupt, throw an error.
+                raise pycdlibexception.PyCdlibInvalidISO('Invalid directory record')
+            lenbyte = data[offset]
+            if lenbyte == 0:
+                # If we saw zero length, this is probably the padding for the
+                # end of this extent.  Move the offset to the start of the next
+                # extent.
+                padsize = self.logical_block_size - (offset % self.logical_block_size)
+                # ECMA-119 says DRs must not cross extent boundaries, so the
+                # rest of the current extent after a zero-length DR is padding
+                # zeros.  Most ISOs declare a data_length that is a multiple of
+                # the logical block size, so the full padsize matters.  But some
+                # real-world ISOs (Windows XP / 2003 install media, PS2 GT4)
+                # declare a sub-extent-aligned data_length where the last
+                # partial extent is just trailing zero pad; in that case we must
+                # not require zero bytes past data_length.
+                pad_check = min(padsize, length - offset)
+                if data[offset:offset + pad_check] != b'\x00' * pad_check:
+                    # For now we are pedantic, and throw an exception if the
+                    # padding bytes are not all zero.  We may have to loosen
+                    # this check depending on what we see in the wild.
+                    raise pycdlibexception.PyCdlibInvalidISO('Invalid padding on ISO')
+
+                offset = offset + pad_check
+                continue
+
+            new_record = dr.DirectoryRecord()
+            rr = new_record.parse(vd, data[offset:offset + lenbyte],
+                                  dir_record, self.xa)
+            offset += lenbyte
+
+            yield new_record, rr
+
     def _walk_directories(self, vd, extent_to_ptr, extent_to_inode,
                           path_table_records):
         # type: (headervd.PrimaryOrSupplementaryVD, Dict[int, path_table_record.PathTableRecord], Dict[int, inode.Inode], List[path_table_record.PathTableRecord]) -> Tuple[int, int]
@@ -1196,46 +1251,8 @@ class PyCdlib:
         while dirs:
             dir_record = dirs.popleft()
 
-            self._seek_to_extent(dir_record.extent_location())
-            length = dir_record.get_data_length()
-            offset = 0
             last_record = None  # type: Optional[dr.DirectoryRecord]
-            data = self._read_clamped(length, iso_file_length)
-            while offset < length:
-                if offset > (len(data) - 1):
-                    # The data we read off of the ISO was shorter than what we
-                    # expected.  The ISO is corrupt, throw an error.
-                    raise pycdlibexception.PyCdlibInvalidISO('Invalid directory record')
-                lenbyte = data[offset]
-                if lenbyte == 0:
-                    # If we saw a zero length, this is probably the padding for
-                    # the end of this extent.  Move the offset to the start of
-                    # the next extent.
-                    padsize = self.logical_block_size - (offset % self.logical_block_size)
-                    # ECMA-119 says DRs must not cross extent boundaries, so
-                    # the rest of the current extent after a zero-length DR
-                    # is padding zeros.  Most ISOs declare a data_length
-                    # that's a multiple of the logical block size, so the
-                    # full padsize matters.  But some real-world ISOs
-                    # (Windows XP / 2003 install media, PS2 GT4) declare a
-                    # sub-extent-aligned data_length where the last partial
-                    # extent is just trailing zero pad; in that case we
-                    # must not require zero bytes past data_length.
-                    pad_check = min(padsize, length - offset)
-                    if data[offset:offset + pad_check] != b'\x00' * pad_check:
-                        # For now we are pedantic, and throw an exception if the
-                        # padding bytes are not all zero.  We may have to loosen
-                        # this check depending on what we see in the wild.
-                        raise pycdlibexception.PyCdlibInvalidISO('Invalid padding on ISO')
-
-                    offset = offset + pad_check
-                    continue
-
-                new_record = dr.DirectoryRecord()
-                rr = new_record.parse(vd, data[offset:offset + lenbyte],
-                                      dir_record, self.xa)
-                offset += lenbyte
-
+            for new_record, rr in self._iter_directory_records(vd, dir_record, iso_file_length):
                 # Cache some properties of this record for later use.
                 is_symlink = new_record.is_symlink()
                 dots = new_record.is_dot() or new_record.is_dotdot()
