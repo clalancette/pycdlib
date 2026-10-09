@@ -1,7 +1,7 @@
 # Exceptions
 When things go wrong, PyCdlib generally throws an exception.  There is a base exception called `PyCdlibException`, which is never itself thrown.  Instead, PyCdlib will throw one of the following exceptions, all of which are subclasses of `PyCdlibException`:
 
-* PyCdlibInvalidISO - Thrown when PyCdlib can't successfully parse an ISO with one of the [open](pycdlib-api.html#PyCdlib-open) methods.  Usually this indicates that the ISO does not follow relevant standards, though it can also sometimes be a bug in PyCdlib itself.
+* PyCdlibInvalidISO - Thrown when PyCdlib can't successfully parse an ISO with one of the [open](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.open) methods.  Usually this indicates that the ISO does not follow relevant standards, though it can also sometimes be a bug in PyCdlib itself.
 * PyCdlibInvalidInput - Thrown when the user provides invalid input to a PyCdlib API.
 * PyCdlibInternalError - Thrown when an unexpected situation happens within PyCdlib itself.  This can happen when there is a bug within PyCdlib itself, or sometimes when an ISO that doesn't conform to standards is parsed.
 

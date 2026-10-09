@@ -36,7 +36,7 @@ iso = pycdlib.PyCdlib()
 iso.new(joliet=3)
 ```
 
-Create a new PyCdlib object, and then create a new ISO with that object.  As in previous examples, make it a Joliet ISO by passing `joliet=3` to the [new](pycdlib-api.html#PyCdlib-new) method.
+Create a new PyCdlib object, and then create a new ISO with that object.  As in previous examples, make it a Joliet ISO by passing `joliet=3` to the [new](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.new) method.
 
 ```python
 joliet = iso.get_joliet_facade()

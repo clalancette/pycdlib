@@ -48,14 +48,14 @@ This code creates a new ISO, adds a single file to it, and writes it out.  This 
 iso.open_fp(out)
 ```
 
-Here we open up the ISO we created above.  We can safely re-use the PyCdlib object because we called the [close](pycdlib-api.html#PyCdlib-close) method earlier.  Also note that we use [open_fp](pycdlib-api.html#PyCdlib-open_fp) to open the file-like object we wrote into using [write_fp](pycdlib-api.html#PyCdlib-write_fp) above; we do not need to seek `out` back to the beginning first because [open_fp](pycdlib-api.html#PyCdlib-open_fp) seeks the file pointer to the start of the ISO internally.
+Here we open up the ISO we created above.  We can safely re-use the PyCdlib object because we called the [close](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.close) method earlier.  Also note that we use [open_fp](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.open_fp) to open the file-like object we wrote into using [write_fp](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.write_fp) above; we do not need to seek `out` back to the beginning first because [open_fp](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.open_fp) seeks the file pointer to the start of the ISO internally.
 
 ```python
 extracted = BytesIO()
 iso.get_file_from_iso_fp(extracted, iso_path='/FOO.;1')
 ```
 
-Now we use the [get_file_from_iso_fp](pycdlib-api.html#PyCdlib-get_file_from_iso_fp) API to extract the data from a file on the ISO.  In this case, we access the "/FOO.;1" file that we created above, and write out the data to the BytesIO object `extracted`.
+Now we use the [get_file_from_iso_fp](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.get_file_from_iso_fp) API to extract the data from a file on the ISO.  In this case, we access the "/FOO.;1" file that we created above, and write out the data to the BytesIO object `extracted`.
 
 ```python
 iso.close()
