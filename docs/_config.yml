@@ -1,1 +1,5 @@
 theme: jekyll-theme-slate
+# Sphinx writes the API reference's stylesheets and search index to
+# docs/api/_static; Jekyll skips underscore-prefixed directories unless
+# told otherwise.
+include: [_static]
