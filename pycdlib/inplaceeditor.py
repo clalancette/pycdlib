@@ -18,7 +18,7 @@
 In-place editing of files on an existing ISO.
 
 :class:`InPlaceEditor` changes an ISO file on disk directly, rather than
-mastering a new ISO the way the :class:`pycdlib.PyCdlib` methods do.
+mastering a new ISO the way the :class:`pycdlib.pycdlib.PyCdlib` methods do.
 The two styles of editing cannot safely be mixed on one object, so
 in-place editing lives on its own class with its own small set of
 operations.
@@ -43,9 +43,9 @@ def _do_modify_file_in_place(iso, fp, length, iso_path=None, rr_path=None,
     # type: (PyCdlib, BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[str]) -> None
     """
     Implementation of in-place modification of a file's bytes.  Operates
-    on an open :class:`pycdlib.PyCdlib` object's internal state; not a
+    on an open :class:`pycdlib.pycdlib.PyCdlib` object's internal state; not a
     public API.  Used by both :class:`InPlaceEditor` and the deprecated
-    :meth:`pycdlib.PyCdlib.modify_file_in_place` wrapper.
+    :meth:`pycdlib.pycdlib.PyCdlib.modify_file_in_place` wrapper.
 
     The constraints documented on the public-facing wrappers apply here:
     the file must exist on the ISO, must not be a directory, and the new
@@ -209,7 +209,7 @@ def _do_rm_file(iso, iso_path):
     # type: (PyCdlib, str) -> None
     """
     Implementation of in-place file removal.  Operates on an open
-    :class:`pycdlib.PyCdlib` object's internal state; not a public API.
+    :class:`pycdlib.pycdlib.PyCdlib` object's internal state; not a public API.
     Used by :meth:`InPlaceEditor.rm_file`.
 
     Removes the file's directory record(s) from every tree the file
@@ -314,7 +314,7 @@ def _do_add_fp(iso, data_source, length, manage_fp, iso_path,
     # type: (PyCdlib, Union[BinaryIO, str], int, bool, str, Optional[str], Optional[str], Optional[int]) -> None
     """
     Implementation of in-place file addition.  Operates on an open
-    :class:`pycdlib.PyCdlib` object's internal state; not a public API.
+    :class:`pycdlib.pycdlib.PyCdlib` object's internal state; not a public API.
     Used by :meth:`InPlaceEditor.add_fp` and :meth:`InPlaceEditor.add_file`.
 
     The new file's data extent is allocated at the current end of the
@@ -552,7 +552,7 @@ class InPlaceEditor:
          - The path must identify an existing file.
          - The file must not be a directory.
          - The file must not be referenced by El Torito (use
-           :meth:`pycdlib.PyCdlib.rm_eltorito` first).
+           :meth:`pycdlib.pycdlib.PyCdlib.rm_eltorito` first).
          - The ISO must not be a UDF ISO (UDF in-place rm is not
            supported yet).
 
@@ -585,7 +585,7 @@ class InPlaceEditor:
          - The target's parent directory must already exist on the ISO.
          - The parent's directory extent must have enough slack to
            hold one more record; if not, this raises and you must use
-           :meth:`pycdlib.PyCdlib.add_fp` + ``write_fp`` instead.
+           :meth:`pycdlib.pycdlib.PyCdlib.add_fp` + ``write_fp`` instead.
          - The caller is responsible for keeping ``fp`` open for the
            lifetime of this editor (until the with-block exits).
 
@@ -616,8 +616,8 @@ class InPlaceEditor:
 
         Same semantics and constraints as :meth:`add_fp` except that
         pycdlib opens and closes ``filename`` itself, the same way
-        :meth:`pycdlib.PyCdlib.add_file` does relative to
-        :meth:`pycdlib.PyCdlib.add_fp`.
+        :meth:`pycdlib.pycdlib.PyCdlib.add_file` does relative to
+        :meth:`pycdlib.pycdlib.PyCdlib.add_fp`.
 
         Args:
             filename: The local filename whose content becomes the new
