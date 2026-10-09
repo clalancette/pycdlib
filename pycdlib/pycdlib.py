@@ -74,10 +74,10 @@ def _check_d1_characters(name):
     """
     A function to check that a name only uses d1 characters as defined by ISO9660.
 
-    Parameters:
-     name - The name to check.
+    Args:
+        name: The name to check.
     Returns:
-     Nothing.
+        Nothing.
     """
     if name.translate(None, _ALLOWED_D1_BYTES):
         raise pycdlibexception.PyCdlibInvalidInput('ISO9660 filenames must consist of characters A-Z, 0-9, and _')
@@ -89,10 +89,10 @@ def _split_iso9660_filename(fullname):
     A function to split an ISO 9660 filename into its constituent parts.  This
     is the name, the extension, and the version number.
 
-    Parameters:
-     fullname - The name to split.
+    Args:
+        fullname: The name to split.
     Returns:
-     A tuple containing the name, extension, and version.
+        A tuple containing the name, extension, and version.
     """
     # Peel off `;version` (if any) from the right, then `.extension` (if any)
     # from the remainder.  rpartition does one right-to-left scan and avoids
@@ -114,11 +114,11 @@ def _check_iso9660_filename(fullname, interchange_level):
     A function to check that a file identifier conforms to the ISO9660 rules
     for a particular interchange level.
 
-    Parameters:
-     fullname - The name to check.
-     interchange_level - The interchange level to check against.
+    Args:
+        fullname: The name to check.
+        interchange_level: The interchange level to check against.
     Returns:
-     Nothing.
+        Nothing.
     """
 
     # Ensure the filename is valid according to Ecma-119 7.5.
@@ -172,11 +172,11 @@ def _check_iso9660_directory(fullname, interchange_level):
     A function to check that an directory identifier conforms to the ISO9660
     rules for a particular interchange level.
 
-    Parameters:
-     fullname - The name to check.
-     interchange_level - The interchange level to check against.
+    Args:
+        fullname: The name to check.
+        interchange_level: The interchange level to check against.
     Returns:
-     Nothing.
+        Nothing.
     """
 
     # Ensure the directory name is valid according to Ecma-119 7.6.
@@ -216,10 +216,10 @@ def _interchange_level_from_filename(fullname):
     In theory, there are 3 levels, but in practice we only deal with level 1
     and level 3.
 
-    Parameters:
-     fullname - The name to use to determine the interchange level.
+    Args:
+        fullname: The name to use to determine the interchange level.
     Returns:
-     The interchange level determined from this filename.
+        The interchange level determined from this filename.
     """
     (name, extension, version) = _split_iso9660_filename(fullname)
 
@@ -250,10 +250,10 @@ def _interchange_level_from_directory(name):
     In theory, there are 3 levels, but in practice we only deal with level 1
     and level 3.
 
-    Parameters:
-     name - The name to use to determine the interchange level.
+    Args:
+        name: The name to use to determine the interchange level.
     Returns:
-     The interchange level determined from this filename.
+        The interchange level determined from this filename.
     """
     interchange_level = 1
     if len(name) > 8:
@@ -279,15 +279,15 @@ def _reassign_vd_dirrecord_extents(vd, current_extent, blocks_per_sector):
     Sector boundary, so directories are aligned up when a block is smaller
     than a sector; the padding blocks this adds are returned to the caller.
 
-    Parameters:
-     vd - The volume descriptor on which to operate.
-     current_extent - The current extent before assigning extents to the
-                      volume descriptor directory records.
-     blocks_per_sector - The number of Logical Blocks in a Logical Sector.
+    Args:
+        vd: The volume descriptor on which to operate.
+        current_extent: The current extent before assigning extents to the
+            volume descriptor directory records.
+        blocks_per_sector: The number of Logical Blocks in a Logical Sector.
     Returns:
-     A tuple of the current extent after assigning extents to the volume
-     descriptor directory records, the list of file inodes found, and the
-     number of padding blocks inserted for directory alignment.
+        A tuple of the current extent after assigning extents to the volume
+        descriptor directory records, the list of file inodes found, and the
+        number of padding blocks inserted for directory alignment.
     """
     log_block_size = vd.logical_block_size()
     padding = 0
@@ -418,10 +418,10 @@ def _check_path_depth(iso_path):
     An internal method to take a fully-qualified iso path and check whether
     it meets the path depth requirements of ISO9660/Ecma-119.
 
-    Parameters:
-     iso_path - The path to check.
+    Args:
+        iso_path: The path to check.
     Returns:
-     Nothing.
+        Nothing.
     """
     if len(utils.split_path(iso_path)) > 7:
         # Ecma-119 Section 6.8.2.1 says that the number of levels in the
@@ -436,14 +436,14 @@ def _yield_children(rec, rr):
     An internal function to gather and yield all of the children of a Directory
     Record.
 
-    Parameters:
-     rec - The Directory Record to get all of the children from (must be a
-           directory).
-     rr - Whether to follow Rock Ridge relocation entries or not.
+    Args:
+        rec: The Directory Record to get all of the children from (must be a
+            directory).
+        rr: Whether to follow Rock Ridge relocation entries or not.
     Yields:
-     Children of this Directory Record.
+        Children of this Directory Record.
     Returns:
-     Nothing.
+        Nothing.
     """
     if not rec.is_dir():
         raise pycdlibexception.PyCdlibInvalidInput('Record is not a directory!')
@@ -496,12 +496,12 @@ def _find_dr_record_by_name(vd, path, encoding):
     object corresponding to that entry.  If the entry could not be found,
     a pycdlibexception.PyCdlibInvalidInput exception is raised.
 
-    Parameters:
-     vd - The Volume Descriptor to look in for the Directory Record.
-     path - The ISO or Joliet entry to find the Directory Record for.
-     encoding - The string encoding used for the path.
+    Args:
+        vd: The Volume Descriptor to look in for the Directory Record.
+        path: The ISO or Joliet entry to find the Directory Record for.
+        encoding: The string encoding used for the path.
     Returns:
-     The directory record entry representing the entry on the ISO.
+        The directory record entry representing the entry on the ISO.
     """
     root_dir_record = vd.root_directory_record()
 
@@ -579,10 +579,8 @@ class PyCdlib:
         An internal method to re-initialize the object.  Called from
         both __init__ and close.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         self._cdfp = io.BytesIO()  # type: IO[Any]
         self.svds = []  # type: List[headervd.PrimaryOrSupplementaryVD]
@@ -633,10 +631,8 @@ class PyCdlib:
         """
         An internal method to parse the volume descriptors on an ISO.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         # Ecma-119 6.2.1: the System Area is Logical Sectors 0 to 15, so the
         # Volume Descriptor Set starts at sector 16.  Each descriptor is one
@@ -744,10 +740,10 @@ class PyCdlib:
         """
         An internal method to seek to a particular extent on the input ISO.
 
-        Parameters:
-         extent - The extent to seek to.
+        Args:
+            extent: The extent to seek to.
         Returns:
-         Nothing.
+            Nothing.
         """
         self._cdfp.seek(extent * self.logical_block_size)
 
@@ -760,10 +756,10 @@ class PyCdlib:
         corresponding to that entry.  If the entry could not be found, a
         pycdlibexception.PyCdlibInvalidInput is raised.
 
-        Parameters:
-         iso_path - The ISO9660 path to lookup.
+        Args:
+            iso_path: The ISO9660 path to lookup.
         Returns:
-         The directory record entry representing the entry on the ISO.
+            The directory record entry representing the entry on the ISO.
         """
         return _find_dr_record_by_name(self.pvd, iso_path, 'utf-8')
 
@@ -776,10 +772,10 @@ class PyCdlib:
         object corresponding to that entry.  If the entry could not be found, a
         pycdlibexception.PyCdlibInvalidInput is raised.
 
-        Parameters:
-         rr_path - The Rock Ridge path to lookup.
+        Args:
+            rr_path: The Rock Ridge path to lookup.
         Returns:
-         The directory record entry representing the entry on the ISO.
+            The directory record entry representing the entry on the ISO.
         """
         root_dir_record = self.pvd.root_directory_record()
 
@@ -857,10 +853,10 @@ class PyCdlib:
         corresponding to that entry.  If the entry could not be found, a
         pycdlibexception.PyCdlibInvalidInput is raised.
 
-        Parameters:
-         joliet_path - The Joliet path to lookup.
+        Args:
+            joliet_path: The Joliet path to lookup.
         Returns:
-         The directory record entry representing the entry on the ISO.
+            The directory record entry representing the entry on the ISO.
         """
         if self.joliet_vd is None:
             raise pycdlibexception.PyCdlibInternalError('Joliet path requested on non-Joliet ISO')
@@ -875,10 +871,10 @@ class PyCdlib:
         corresponding to that entry.  If the entry could not be found, a
         pycdlibexception.PyCdlibInvalidInput is raised.
 
-        Parameters:
-         udf_path - The UDF path to lookup.
+        Args:
+            udf_path: The UDF path to lookup.
         Returns:
-         The UDF File Entry representing the entry on the ISO.
+            The UDF File Entry representing the entry on the ISO.
         """
         # If the path is just the slash, return the root directory.
         if udf_path == b'/':
@@ -911,11 +907,11 @@ class PyCdlib:
         ISO path.  If the parent is found, return a tuple containing the
         basename of the path and the parent directory record object.
 
-        Parameters:
-         iso_path - The absolute ISO path to the entry on the ISO.
+        Args:
+            iso_path: The absolute ISO path to the entry on the ISO.
         Returns:
-         A tuple containing just the name of the entry and a Directory Record
-         object representing the parent of the entry.
+            A tuple containing just the name of the entry and a Directory Record
+            object representing the parent of the entry.
         """
 
         splitpath = utils.split_path(iso_path)
@@ -932,11 +928,11 @@ class PyCdlib:
         Joliet path.  If the parent is found, return a tuple containing the
         basename of the path and the parent directory record object.
 
-        Parameters:
-         joliet_path - The absolute Joliet path to the entry on the ISO.
+        Args:
+            joliet_path: The absolute Joliet path to the entry on the ISO.
         Returns:
-         A tuple containing just the name of the entry and a Directory Record
-         object representing the parent of the entry.
+            A tuple containing just the name of the entry and a Directory Record
+            object representing the parent of the entry.
         """
 
         splitpath = utils.split_path(joliet_path)
@@ -961,13 +957,13 @@ class PyCdlib:
             keeping pure-FE and pure-EFE ISOs round-trip-clean when adding
             entries to an opened ISO.
 
-        Parameters:
-         parent - The parent UDF File Entry the new entry will live under,
-                  or None for the root.
-         creation_time - The user-supplied creation time, or None.
+        Args:
+            parent: The parent UDF File Entry the new entry will live under,
+                or None for the root.
+            creation_time: The user-supplied creation time, or None.
         Returns:
-         A UDFFileEntry instance (or UDFExtendedFileEntry, which is-a
-         UDFFileEntry) ready to have .new() called on it.
+            A UDFFileEntry instance (or UDFExtendedFileEntry, which is-a
+            UDFFileEntry) ready to have .new() called on it.
         """
         if creation_time is not None:
             return udfmod.UDFExtendedFileEntry()
@@ -982,11 +978,11 @@ class PyCdlib:
         UDF path.  If the parent is found, return a tuple containing the
         basename of the path and the parent UDF File Entry object.
 
-        Parameters:
-         udf_path - The absolute UDF path to the entry on the ISO.
+        Args:
+            udf_path: The absolute UDF path to the entry on the ISO.
         Returns:
-         A tuple containing just the name of the entry and a UDF File Entry
-         object representing the parent of the entry.
+            A tuple containing just the name of the entry and a UDF File Entry
+            object representing the parent of the entry.
         """
         splitpath = utils.split_path(udf_path)
         name = splitpath.pop()
@@ -1000,10 +996,10 @@ class PyCdlib:
         An internal method to set the Rock Ridge version of the ISO given the
         Rock Ridge version of the previous entry.
 
-        Parameters:
-         rr - The version of rr from the last directory record.
+        Args:
+            rr: The version of rr from the last directory record.
         Returns:
-         Nothing.
+            Nothing.
         """
         # We don't allow mixed Rock Ridge versions on the ISO, so apply some
         # checking.  If the current overall Rock Ridge version on the ISO is
@@ -1030,10 +1026,8 @@ class PyCdlib:
         way to do it.  If that fails, we fall back to seeking and reading until
         we get empty data, which signals the end of the ISO.
 
-        Parameters:
-         None.
         Returns:
-         The size of the ISO in bytes.
+            The size of the ISO in bytes.
         """
         old = self._cdfp.tell()
         try:
@@ -1086,12 +1080,12 @@ class PyCdlib:
         itself; callers are responsible for dealing with the short data that
         comes back, since that means the ISO is corrupt.
 
-        Parameters:
-         length - The length that the ISO metadata claims the structure is.
-         iso_file_length - The total length of the ISO, as returned by
-                           _get_iso_size().
+        Args:
+            length: The length that the ISO metadata claims the structure is.
+            iso_file_length: The total length of the ISO, as returned by
+                _get_iso_size().
         Returns:
-         The data read, which may be shorter than length if the ISO is corrupt.
+            The data read, which may be shorter than length if the ISO is corrupt.
         """
         remaining = max(0, iso_file_length - self._cdfp.tell())
         return self._cdfp.read(min(length, remaining))
@@ -1107,12 +1101,12 @@ class PyCdlib:
         have been so that an ISO whose CE records form a cycle cannot spin us
         forever.
 
-        Parameters:
-         new_record - The directory record whose CE chain to follow.
-         iso_file_length - The size of the ISO, used to clamp reads.
+        Args:
+            new_record: The directory record whose CE chain to follow.
+            iso_file_length: The size of the ISO, used to clamp reads.
         Returns:
-         The Rock Ridge version string carried by the continuation data, or
-         the empty string if the record has no CE record.
+            The Rock Ridge version string carried by the continuation data, or
+            the empty string if the record has no CE record.
         """
         if new_record.rock_ridge is None or new_record.rock_ridge.dr_entries.ce_record is None:
             return ''
@@ -1162,13 +1156,13 @@ class PyCdlib:
         extent, skipping the zero-length padding that fills out the tail of each
         logical block.
 
-        Parameters:
-         vd - The volume descriptor being walked.
-         dir_record - The directory record whose extent to read.
-         iso_file_length - The size of the ISO, used to clamp the read.
+        Args:
+            vd: The volume descriptor being walked.
+            dir_record: The directory record whose extent to read.
+            iso_file_length: The size of the ISO, used to clamp the read.
         Yields:
-         Tuples of (directory record, Rock Ridge version string) for each
-         record parsed from the directory extent.
+            Tuples of (directory record, Rock Ridge version string) for each
+            record parsed from the directory extent.
         """
         self._seek_to_extent(dir_record.extent_location())
         length = dir_record.get_data_length()
@@ -1220,16 +1214,16 @@ class PyCdlib:
         length-0, location-0 Inode that is never written out, so that
         everything can be linked through an Inode.
 
-        Parameters:
-         new_record - The file directory record to link.
-         is_symlink - Whether the record is a symlink.
-         data_length - The data length declared by the record.
-         extent_to_inode - A dictionary mapping extents to Inodes.
-         vd - The volume descriptor being walked.
-         iso_file_length - The size of the ISO.
-         lastbyte - The largest byte offset used so far.
+        Args:
+            new_record: The file directory record to link.
+            is_symlink: Whether the record is a symlink.
+            data_length: The data length declared by the record.
+            extent_to_inode: A dictionary mapping extents to Inodes.
+            vd: The volume descriptor being walked.
+            iso_file_length: The size of the ISO.
+            lastbyte: The largest byte offset used so far.
         Returns:
-         The updated largest byte offset used.
+            The updated largest byte offset used.
         """
         # Some ISOs use random extent locations for zero-length files.  Thus it
         # is not valid for us to link zero-length files to other files, as the
@@ -1285,13 +1279,13 @@ class PyCdlib:
         starting with the root.  For each child in the directory record,
         create a new dr.DirectoryRecord object and append it to the parent.
 
-        Parameters:
-         vd - The volume descriptor to walk.
-         extent_to_ptr - A dictionary mapping extents to PTRs.
-         extent_to_inode - A dictionary mapping extents to Inodes.
-         path_table_records - The list of path table records.
+        Args:
+            vd: The volume descriptor to walk.
+            extent_to_ptr: A dictionary mapping extents to PTRs.
+            extent_to_inode: A dictionary mapping extents to Inodes.
+            path_table_records: The list of path table records.
         Returns:
-         The interchange level that this ISO conforms to.
+            The interchange level that this ISO conforms to.
         """
         iso_file_length = self._get_iso_size()
 
@@ -1432,12 +1426,12 @@ class PyCdlib:
         table entry found, a Path Table Record object is created and added to
         the output list.
 
-        Parameters:
-         ptr_size - The size of the PTR table to read.
-         extent - The extent at which this path table record starts.
+        Args:
+            ptr_size: The size of the PTR table to read.
+            extent: The extent at which this path table record starts.
         Returns:
-         A tuple consisting of the list of path table record entries and a
-         dictionary of the extent locations to the path table record entries.
+            A tuple consisting of the list of path table record entries and a
+            dictionary of the extent locations to the path table record entries.
         """
         self._seek_to_extent(extent)
         old = self._cdfp.tell()
@@ -1467,10 +1461,10 @@ class PyCdlib:
         El Torito Boot Record.  If it is, parse the El Torito Boot Catalog,
         verification entry, initial entry, and any additional section entries.
 
-        Parameters:
-         br - The boot record to examine for an El Torito signature.
+        Args:
+            br: The boot record to examine for an El Torito signature.
         Returns:
-         Nothing.
+            Nothing.
         """
         if br.boot_system_identifier != b'EL TORITO SPECIFICATION'.ljust(32, b'\x00'):
             return
@@ -1523,12 +1517,12 @@ class PyCdlib:
         """
         An internal method to assign UDF extents when reshuffling.
 
-        Parameters:
-         udf_files - The list of UDF Inodes that will need extents assigned.
-         current_extent - The current extent being assigned.
+        Args:
+            udf_files: The list of UDF Inodes that will need extents assigned.
+            current_extent: The current extent being assigned.
         Returns:
-         A tuple where the first entry is the new current extent, and the
-         second entry is the new partition start.
+            A tuple where the first entry is the new current extent, and the
+            second entry is the new partition start.
         """
         if current_extent > 32:
             # There is no *requirement* in the UDF specification that the UDF
@@ -1692,12 +1686,12 @@ class PyCdlib:
         An internal function to set the location of an inode and update the
         metadata of all records attached to it.
 
-        Parameters:
-         ino - The inode to update.
-         current_extent - The extent to set the inode to.
-         part_start - The start of the partition that the inode is on.
+        Args:
+            ino: The inode to update.
+            current_extent: The extent to set the inode to.
+            part_start: The start of the partition that the inode is on.
         Returns:
-         The new extent location.
+            The new extent location.
         """
         if len(self.udf_anchors) > 2 and current_extent == self.pvd.space_size - 256:
             current_extent += 1
@@ -1736,10 +1730,8 @@ class PyCdlib:
         sector, the El Torito Boot Catalog, the El Torito Initial Entry, the
         various UDF metadata entries, and the data for files.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         # Volume descriptors occupy whole Logical Sectors starting at sector
         # 16, so convert the start and stride into logical blocks.
@@ -1967,10 +1959,10 @@ class PyCdlib:
         An internal method to add a child to a directory record, expanding the
         space in the Volume Descriptor(s) if necessary.
 
-        Parameters:
-         child - The new child.
+        Args:
+            child: The new child.
         Returns:
-         The number of bytes to add for this directory record (this may be zero).
+            The number of bytes to add for this directory record (this may be zero).
         """
         if child.parent is None:
             raise pycdlibexception.PyCdlibInternalError('Trying to add child without a parent')
@@ -2004,11 +1996,11 @@ class PyCdlib:
         An internal method to remove a child from a directory record, shrinking
         the space in the Volume Descriptor if necessary.
 
-        Parameters:
-         child - The child to remove.
-         index - The index of the child into the parent's child array.
+        Args:
+            child: The child to remove.
+            index: The index of the child into the parent's child array.
         Returns:
-         The number of bytes to remove for this directory record (this may be zero).
+            The number of bytes to remove for this directory record (this may be zero).
         """
 
         if child.parent is None:
@@ -2031,11 +2023,11 @@ class PyCdlib:
         An internal method to add a PTR to a VD, adding space to the VD if
         necessary.
 
-        Parameters:
-         ptr - The PTR to add to the vd.
+        Args:
+            ptr: The PTR to add to the vd.
         Returns:
-         The number of additional bytes that are needed to fit the new PTR
-         (this may be zero).
+            The number of additional bytes that are needed to fit the new PTR
+            (this may be zero).
         """
         num_bytes_to_add = 0
         for pvd in self.pvds:
@@ -2053,10 +2045,10 @@ class PyCdlib:
         An internal method to remove a PTR from a VD, removing space from the
         VD if necessary.
 
-        Parameters:
-         ptr - The PTR to remove from the VD.
+        Args:
+            ptr: The PTR to remove from the VD.
         Returns:
-         The number of bytes to remove from the VDs (this may be zero).
+            The number of bytes to remove from the VDs (this may be zero).
         """
         num_bytes_to_remove = 0
         for pvd in self.pvds:
@@ -2075,11 +2067,9 @@ class PyCdlib:
         already exists, the directory record to it is returned.  If it doesn't
         yet exist, it is created and the directory record to it is returned.
 
-        Parameters:
-         None.
         Returns:
-         The number of additional bytes needed for the rr_moved directory (this
-         may be zero).
+            The number of additional bytes needed for the rr_moved directory (this
+            may be zero).
         """
 
         if self._rr_moved_record.initialized:
@@ -2121,11 +2111,11 @@ class PyCdlib:
         Table.  This checksum is a simple 32-bit checksum over all of the data
         in the boot file, starting right after the Boot Info Table itself.
 
-        Parameters:
-         data_fp - The file object to read the input data from.
-         data_len - The length of the input file.
+        Args:
+            data_fp: The file object to read the input data from.
+            data_len: The length of the input file.
         Returns:
-         An integer representing the 32-bit checksum for the boot info table.
+            An integer representing the 32-bit checksum for the boot info table.
         """
         # Read the boot file so we can calculate the checksum over it.
         num_sectors = utils.ceiling_div(data_len, self.logical_block_size)
@@ -2154,10 +2144,10 @@ class PyCdlib:
         An internal method to check a boot directory record to see if it has
         an El Torito Boot Info Table embedded inside of it.
 
-        Parameters:
-         ino - The Inode to check for a Boot Info Table.
+        Args:
+            ino: The Inode to check for a Boot Info Table.
         Returns:
-         Nothing.
+            Nothing.
         """
         orig = self._cdfp.tell()
         with inode.InodeOpenData(ino, self.logical_block_size) as (data_fp, data_len):
@@ -2179,10 +2169,10 @@ class PyCdlib:
         """
         An internal method to check whether this ISO requires a Rock Ridge path.
 
-        Parameters:
-         rr_name - The Rock Ridge name.
+        Args:
+            rr_name: The Rock Ridge name.
         Returns:
-         The Rock Ridge name in bytes if this is a Rock Ridge ISO, an empty byte string otherwise.
+            The Rock Ridge name in bytes if this is a Rock Ridge ISO, an empty byte string otherwise.
         """
         if self.rock_ridge:
             if not rr_name:
@@ -2204,10 +2194,10 @@ class PyCdlib:
         An internal method to check whether this ISO requires a Joliet path.
         If a Joliet path is required, the path is normalized and returned.
 
-        Parameters:
-         joliet_path - The joliet_path to normalize (if necessary).
+        Args:
+            joliet_path: The joliet_path to normalize (if necessary).
         Returns:
-         The normalized joliet_path if this ISO has Joliet, an empty byte string otherwise.
+            The normalized joliet_path if this ISO has Joliet, an empty byte string otherwise.
         """
         tmp_path = b''
         if self.joliet_vd is not None:
@@ -2227,10 +2217,10 @@ class PyCdlib:
         corresponding Directory Records, creating new ones if they are
         'hidden'.  Should only be called on an El Torito ISO.
 
-        Parameters:
-         extent_to_inode - A map from extents to Inodes.
+        Args:
+            extent_to_inode: A map from extents to Inodes.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.eltorito_boot_catalog is None:
             raise pycdlibexception.PyCdlibInternalError('Trying to link El Torito entries on a non-El Torito ISO')
@@ -2267,10 +2257,10 @@ class PyCdlib:
         """
         An internal method to parse a set of UDF Volume Descriptors.
 
-        Parameters:
-         udf_extent_ad - The UDF Extent of the anchor volume to parse.
+        Args:
+            udf_extent_ad: The UDF Extent of the anchor volume to parse.
         Returns:
-         The UDFDescriptorSequence object that stores parsed objects.
+            The UDFDescriptorSequence object that stores parsed objects.
         """
         self._seek_to_extent(udf_extent_ad.extent_location)
         vd_data = self._cdfp.read(udf_extent_ad.extent_length)
@@ -2285,10 +2275,8 @@ class PyCdlib:
         only be called if it the ISO has a valid UDF Volume Recognition Sequence
         at the beginning of the ISO.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         # Parse the anchors.  According to ECMA-167, Part 3, 8.4.2.1, there
         # must be anchors recorded in at least two of the three extent locations
@@ -2361,10 +2349,10 @@ class PyCdlib:
         An internal method to walk a UDF filesystem and add all the metadata to
         this object.
 
-        Parameters:
-         extent_to_inode - A map from extent numbers to Inodes.
+        Args:
+            extent_to_inode: A map from extent numbers to Inodes.
         Returns:
-         Nothing.
+            Nothing.
         """
         part_start = self.udf_main_descs.partitions[0].part_start_location
 
@@ -2477,10 +2465,10 @@ class PyCdlib:
         for the lifetime of this object, as the PyCdlib class uses it internally
         to do writing and reading operations.
 
-        Parameters:
-         fp - The file object containing the ISO to open up.
+        Args:
+            fp: The file object containing the ISO to open up.
         Returns:
-         Nothing.
+            Nothing.
         """
         if hasattr(fp, 'mode') and 'b' not in fp.mode:
             raise pycdlibexception.PyCdlibInvalidInput("The file to open must be in binary mode (add 'b' to the open flags)")
@@ -2676,12 +2664,12 @@ class PyCdlib:
         exists in multiple contexts, the Joliet data will be tried first,
         followed by ISO9660, followed by Rock Ridge.
 
-        Parameters:
-         iso_path - The absolute path to the file to get data from.
-         outfp - The file object to write data to.
-         blocksize - The blocksize to use when copying data.
+        Args:
+            iso_path: The absolute path to the file to get data from.
+            outfp: The file object to write data to.
+            blocksize: The blocksize to use when copying data.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.joliet_vd is not None:
             try:
@@ -2717,12 +2705,12 @@ class PyCdlib:
         An internal method to fetch a single UDF file from the ISO and write it
         out to the file object.
 
-        Parameters:
-         outfp - The file object to write data to.
-         blocksize - The number of bytes in each transfer.
-         udf_path - The absolute UDF path to lookup on the ISO.
+        Args:
+            outfp: The file object to write data to.
+            blocksize: The number of bytes in each transfer.
+            udf_path: The absolute UDF path to lookup on the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.udf_root is None:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
@@ -2748,17 +2736,17 @@ class PyCdlib:
         An internal method to fetch a single file from the ISO and write it out
         to the file object.
 
-        Parameters:
-         outfp - The file object to write data to.
-         blocksize - The number of bytes in each transfer.
-         iso_path - The absolute ISO9660 path to lookup on the ISO (exclusive
-                    with rr_path and joliet_path).
-         rr_path - The absolute Rock Ridge path to lookup on the ISO (exclusive
-                   with iso_path and joliet_path).
-         joliet_path - The absolute Joliet path to lookup on the ISO (exclusive
-                       with iso_path and rr_path).
+        Args:
+            outfp: The file object to write data to.
+            blocksize: The number of bytes in each transfer.
+            iso_path: The absolute ISO9660 path to lookup on the ISO (exclusive
+                with rr_path and joliet_path).
+            rr_path: The absolute Rock Ridge path to lookup on the ISO (exclusive
+                with iso_path and joliet_path).
+            joliet_path: The absolute Joliet path to lookup on the ISO (exclusive
+                with iso_path and rr_path).
         Returns:
-         Nothing.
+            Nothing.
         """
         if joliet_path is not None:
             if self.joliet_vd is None:
@@ -2870,15 +2858,15 @@ class PyCdlib:
         Internal method to write data out to the output file descriptor,
         ensuring that it doesn't go beyond the bounds of the ISO.
 
-        Parameters:
-         outfp - The file object to write to.
-         data - The actual data to write.
-         enable_overwrite_check - Whether to do overwrite checking if it is
-                                  enabled.  Some pieces of code explicitly want
-                                  to overwrite data, so this allows them to
-                                  disable the checking.
+        Args:
+            outfp: The file object to write to.
+            data: The actual data to write.
+            enable_overwrite_check: Whether to do overwrite checking if it is
+                enabled.  Some pieces of code explicitly want
+                to overwrite data, so this allows them to
+                disable the checking.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._track_writes:
             # When write tracking is on, capture the start offset and the
@@ -2902,12 +2890,12 @@ class PyCdlib:
         """
         Internal method to write a directory record entry out.
 
-        Parameters:
-         outfp - The file object to write the data to.
-         blocksize - The blocksize to use when writing the data out.
-         ino - The Inode to write.
+        Args:
+            outfp: The file object to write the data to.
+            blocksize: The blocksize to use when writing the data out.
+            ino: The Inode to write.
         Returns:
-         The total number of bytes written out.
+            The total number of bytes written out.
         """
         outfp.seek(ino.extent_location() * self.logical_block_size)
         start_offset = outfp.tell()
@@ -2974,12 +2962,12 @@ class PyCdlib:
         An internal method to write out the directory records from a particular
         Volume Descriptor.
 
-        Parameters:
-         vd - The Volume Descriptor to write the Directory Records from.
-         outfp - The file object to write data to.
-         progress - The _Progress object to use for outputting progress.
+        Args:
+            vd: The Volume Descriptor to write the Directory Records from.
+            outfp: The file object to write data to.
+            progress: The _Progress object to use for outputting progress.
         Returns:
-         Nothing.
+            Nothing.
         """
         le_ptr_offset = 0
         be_ptr_offset = 0
@@ -3062,12 +3050,12 @@ class PyCdlib:
         """
         An internal method to write out a UDF Descriptor sequence.
 
-        Parameters:
-         descs - The UDF Descriptors object to write out.
-         outfp - The output file descriptor to use for writing.
-         progress - The _Progress object to use for updating progress.
+        Args:
+            descs: The UDF Descriptors object to write out.
+            outfp: The output file descriptor to use for writing.
+            progress: The _Progress object to use for updating progress.
         Returns:
-         Nothing.
+            Nothing.
         """
         for pvd in descs.pvds:
             outfp.seek(pvd.extent_location() * self.logical_block_size)
@@ -3117,15 +3105,15 @@ class PyCdlib:
         Write a properly formatted ISO out to the file object passed in.  This
         also goes by the name of 'mastering'.
 
-        Parameters:
-         outfp - The file object to write the data to.
-         blocksize - The blocksize to use when copying data.
-         progress_cb - If not None, a function to call as the write call does its
-                       work.  The callback function must have a signature of:
-                       def func(done, total, progress_data).
-         progress_opaque - User data to be passed to the progress callback.
+        Args:
+            outfp: The file object to write the data to.
+            blocksize: The blocksize to use when copying data.
+            progress_cb: If not None, a function to call as the write call does its
+                work.  The callback function must have a signature of:
+                def func(done, total, progress_data).
+            progress_opaque: User data to be passed to the progress callback.
         Returns:
-         Nothing.
+            Nothing.
         """
         if hasattr(outfp, 'mode') and 'b' not in outfp.mode:
             raise pycdlibexception.PyCdlibInvalidInput("The file to write out must be in binary mode (add 'b' to the open flags)")
@@ -3324,10 +3312,10 @@ class PyCdlib:
         An internal method to update the Rock Ridge CE entry for the given
         record.
 
-        Parameters:
-         rec - The record to update the Rock Ridge CE entry for (if it exists).
+        Args:
+            rec: The record to update the Rock Ridge CE entry for (if it exists).
         Returns:
-         The number of additional bytes needed for this Rock Ridge CE entry.
+            The number of additional bytes needed for this Rock Ridge CE entry.
         """
         if rec.rock_ridge is not None and rec.rock_ridge.dr_entries.ce_record is not None:
             # The entries may need more than one area to hold them, in which
@@ -3359,13 +3347,13 @@ class PyCdlib:
         something is added to the ISO.  This method should only be called by
         public API methods.
 
-        Parameters:
-         num_bytes_to_add - The number of additional bytes to add to all
-                            descriptors.
-         num_partition_bytes_to_add - The number of additional bytes to add to
-                                      the partition if this is a UDF file.
+        Args:
+            num_bytes_to_add: The number of additional bytes to add to all
+                descriptors.
+            num_partition_bytes_to_add: The number of additional bytes to add to
+                the partition if this is a UDF file.
         Returns:
-         Nothing.
+            Nothing.
         """
         for pvd in self.pvds:
             pvd.add_to_space_size(num_bytes_to_add + num_partition_bytes_to_add)
@@ -3396,11 +3384,11 @@ class PyCdlib:
         something is removed from the ISO.  This method should only be called
         by public API methods.
 
-        Parameters:
-         num_bytes_to_remove - The number of additional bytes to remove from the descriptors.
-         is_partition - Whether these bytes are part of a UDF partition.
+        Args:
+            num_bytes_to_remove: The number of additional bytes to remove from the descriptors.
+            is_partition: Whether these bytes are part of a UDF partition.
         Returns:
-         Nothing.
+            Nothing.
         """
         for pvd in self.pvds:
             pvd.remove_from_space_size(num_bytes_to_remove)
@@ -3437,18 +3425,18 @@ class PyCdlib:
         In all cases, exactly one old path must be specified, and exactly one
         new path must be specified.
 
-        Parameters:
-         data_ino - The inode of the old record to link against.
-         length - The length of the old record to link against.
-         file_mode - The file mode of the old record to link against.
-         boot_catalog_old - Whether this is a link to an old boot catalog.
-         iso_new_path - The new path on the ISO9660 filesystem to link to.
-         joliet_new_path - The new path on the Joliet filesystem to link to.
-         rr_name - The Rock Ridge name to use for the new file if this is a
-                   Rock Ridge ISO and the new path is on the ISO9660 filesystem.
-         udf_new_path - The new path on the UDF filesystem to link to.
+        Args:
+            data_ino: The inode of the old record to link against.
+            length: The length of the old record to link against.
+            file_mode: The file mode of the old record to link against.
+            boot_catalog_old: Whether this is a link to an old boot catalog.
+            iso_new_path: The new path on the ISO9660 filesystem to link to.
+            joliet_new_path: The new path on the Joliet filesystem to link to.
+            rr_name: The Rock Ridge name to use for the new file if this is a
+                Rock Ridge ISO and the new path is on the ISO9660 filesystem.
+            udf_new_path: The new path on the UDF filesystem to link to.
         Returns:
-         The number of bytes to add to the descriptors.
+            The number of bytes to add to the descriptors.
         """
         num_new = 0
         iso_new_path = None
@@ -3569,24 +3557,24 @@ class PyCdlib:
         lifetime of the ISO object, as the PyCdlib class uses the file
         descriptor internally when writing (mastering) the ISO.
 
-        Parameters:
-         fp - The file object to use for the contents of the new file.
-         length - The length of the data for the new file.
-         manage_fp - Whether or not pycdlib should internally manage the file
-                     pointer.  It is faster to manage the file pointer
-                     externally, but it is more convenient to have pycdlib do it
-                     internally.
-         iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_name - The Rock Ridge name of the file destination on the ISO.
-         joliet_path - The Joliet absolute path to the file destination on the ISO.
-         udf_path - The UDF absolute path to the file destination on the ISO.
-         file_mode - The POSIX file_mode to apply to this file.  This only
-                     applies if this is a Rock Ridge ISO.  If this is None (the
-                     default), the permissions from the original file are used.
-         eltorito_catalog - Whether this entry represents an El Torito Boot
-                            Catalog.
+        Args:
+            fp: The file object to use for the contents of the new file.
+            length: The length of the data for the new file.
+            manage_fp: Whether or not pycdlib should internally manage the file
+                pointer.  It is faster to manage the file pointer
+                externally, but it is more convenient to have pycdlib do it
+                internally.
+            iso_path: The ISO9660 absolute path to the file destination on the ISO.
+            rr_name: The Rock Ridge name of the file destination on the ISO.
+            joliet_path: The Joliet absolute path to the file destination on the ISO.
+            udf_path: The UDF absolute path to the file destination on the ISO.
+            file_mode: The POSIX file_mode to apply to this file.  This only
+                applies if this is a Rock Ridge ISO.  If this is None (the
+                default), the permissions from the original file are used.
+            eltorito_catalog: Whether this entry represents an El Torito Boot
+                Catalog.
         Returns:
-         The number of bytes to add to the descriptors.
+            The number of bytes to add to the descriptors.
         """
 
         if iso_path is None and joliet_path is None and udf_path is None:
@@ -3689,10 +3677,10 @@ class PyCdlib:
         """
         An internal method to remove a Directory Record link given the record.
 
-        Parameters:
-         rec - The Directory Record to remove.
+        Args:
+            rec: The Directory Record to remove.
         Returns:
-         The number of bytes to remove from the ISO.
+            The number of bytes to remove from the ISO.
         """
         if not rec.is_file():
             raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_hard_link (try rm_directory instead)')
@@ -3745,11 +3733,11 @@ class PyCdlib:
         An internal method to remove a UDF File Identifier from the parent
         and remove any space from the Logical Volume as necessary.
 
-        Parameters:
-         parent - The parent entry to remove the UDF File Identifier from.
-         fi - The file identifier to remove.
+        Args:
+            parent: The parent entry to remove the UDF File Identifier from.
+            fi: The file identifier to remove.
         Returns:
-         The number of bytes to remove from the ISO.
+            The number of bytes to remove from the ISO.
         """
         num_extents_to_remove = parent.remove_file_ident_desc_by_name(fi,
                                                                       self.logical_block_size)
@@ -3765,10 +3753,10 @@ class PyCdlib:
         """
         An internal method to remove a UDF File Entry link.
 
-        Parameters:
-         rec - The UDF File Entry to remove.
+        Args:
+            rec: The UDF File Entry to remove.
         Returns:
-         The number of bytes to remove from the ISO.
+            The number of bytes to remove from the ISO.
         """
         if not rec.is_file() and not rec.is_symlink():
             raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_hard_link (try rm_directory instead)')
@@ -3830,10 +3818,10 @@ class PyCdlib:
         """
         An internal method to add a joliet directory to the ISO.
 
-        Parameters:
-         joliet_path - The path to add to the Joliet portion of the ISO.
+        Args:
+            joliet_path: The path to add to the Joliet portion of the ISO.
         Returns:
-         The number of additional bytes needed on the ISO to fit this directory.
+            The number of additional bytes needed on the ISO to fit this directory.
         """
 
         if self.joliet_vd is None:
@@ -3866,10 +3854,10 @@ class PyCdlib:
         """
         An internal method to remove a directory from the Joliet portion of the ISO.
 
-        Parameters:
-         joliet_path - The Joliet directory to remove.
+        Args:
+            joliet_path: The Joliet directory to remove.
         Returns:
-         The number of bytes to remove from the ISO for this Joliet directory.
+            The number of bytes to remove from the ISO for this Joliet directory.
         """
         if self.joliet_vd is None:
             raise pycdlibexception.PyCdlibInternalError('Tried to remove joliet dir from non-Joliet ISO')
@@ -3891,10 +3879,10 @@ class PyCdlib:
         """
         Internal method to get the directory record for an ISO path.
 
-        Parameters:
-         iso_path - The path on the ISO filesystem to look up the record for.
+        Args:
+            iso_path: The path on the ISO filesystem to look up the record for.
         Returns:
-         A dr.DirectoryRecord object representing the path.
+            A dr.DirectoryRecord object representing the path.
         """
         if self._needs_reshuffle:
             self._reshuffle_extents()
@@ -3906,11 +3894,11 @@ class PyCdlib:
         """
         Internal method to get the directory record for a Rock Ridge path.
 
-        Parameters:
-         rr_path - The Rock Ridge path on the ISO filesystem to look up the
-                   record for.
+        Args:
+            rr_path: The Rock Ridge path on the ISO filesystem to look up the
+                record for.
         Returns:
-         A dr.DirectoryRecord object representing the path.
+            A dr.DirectoryRecord object representing the path.
         """
         if self._needs_reshuffle:
             self._reshuffle_extents()
@@ -3922,11 +3910,11 @@ class PyCdlib:
         """
         Internal method to get the directory record for a Joliet path.
 
-        Parameters:
-         joliet_path - The path on the Joliet filesystem to look up the record
-                       for.
+        Args:
+            joliet_path: The path on the Joliet filesystem to look up the record
+                for.
         Returns:
-         A dr.DirectoryRecord object representing the path.
+            A dr.DirectoryRecord object representing the path.
         """
         if self._needs_reshuffle:
             self._reshuffle_extents()
@@ -3938,10 +3926,10 @@ class PyCdlib:
         """
         Internal method to get the UDF File Entry for a particular path.
 
-        Parameters:
-         udf_path - The path on the UDF filesystem to look up the record for.
+        Args:
+            udf_path: The path on the UDF filesystem to look up the record for.
         Returns:
-         A udfmod.UDFFileEntry object representing the path.
+            A udfmod.UDFFileEntry object representing the path.
         """
         if self._needs_reshuffle:
             self._reshuffle_extents()
@@ -3953,10 +3941,10 @@ class PyCdlib:
         """
         Internal method to check if an Inode is referenced by El Torito at all.
 
-        Parameters:
-         ino - The Inode to look for in the El Torito part of the ISO.
+        Args:
+            ino: The Inode to look for in the El Torito part of the ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.eltorito_boot_catalog is not None:
             eltorito_entries = set()
@@ -3976,10 +3964,10 @@ class PyCdlib:
         Internal method to remove all of the Directory Records and UDF File
         Entries linked to this child's Inode.
 
-        Parameters:
-         child - The DirectoryRecord to remove.
+        Args:
+            child: The DirectoryRecord to remove.
         Returns:
-         The number of bytes to remove from the ISO.
+            The number of bytes to remove from the ISO.
         """
 
         if not child.is_file():
@@ -4019,10 +4007,10 @@ class PyCdlib:
         """
         Internal method to completely remove a file given an ISO path.
 
-        Parameters:
-         iso_path - The path to the file in the ISO9660 context to remove.
+        Args:
+            iso_path: The path to the file in the ISO9660 context to remove.
         Returns:
-         The number of bytes to remove from the ISO.
+            The number of bytes to remove from the ISO.
         """
 
         iso_path_bytes = utils.normpath(iso_path)
@@ -4034,10 +4022,10 @@ class PyCdlib:
         """
         Internal method to completely remove a file given a Joliet path.
 
-        Parameters:
-         joliet_path - The path to the file in the Joliet context to remove.
+        Args:
+            joliet_path: The path to the file in the Joliet context to remove.
         Returns:
-         The number of bytes to remove from the ISO.
+            The number of bytes to remove from the ISO.
         """
 
         joliet_path_bytes = self._normalize_joliet_path(joliet_path)
@@ -4049,10 +4037,10 @@ class PyCdlib:
         """
         Internal method to completely remove a file given a UDF path.
 
-        Parameters:
-         udf_path - The path to the file in the UDF context to remove.
+        Args:
+            udf_path: The path to the file in the UDF context to remove.
         Returns:
-         The number of bytes to remove from the ISO.
+            The number of bytes to remove from the ISO.
         """
         if self.udf_root is None:
             raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
@@ -4105,14 +4093,14 @@ class PyCdlib:
         """
         An internal method to create a new 'dot' Directory Record.
 
-        Parameters:
-         vd - The volume descriptor to attach the 'dot' Directory Record to.
-         parent - The parent Directory Record for new Directory Record.
-         rock_ridge - The Rock Ridge version to use for this entry (if any).
-         xa - Whether this Directory Record should have extended attributes.
-         file_mode - The mode to assign to the dot directory (only applies to Rock Ridge).
+        Args:
+            vd: The volume descriptor to attach the 'dot' Directory Record to.
+            parent: The parent Directory Record for new Directory Record.
+            rock_ridge: The Rock Ridge version to use for this entry (if any).
+            xa: Whether this Directory Record should have extended attributes.
+            file_mode: The mode to assign to the dot directory (only applies to Rock Ridge).
         Returns:
-         Nothing.
+            Nothing.
         """
         dot = dr.DirectoryRecord()
         dot.new_dot(vd, parent, vd.sequence_number(), rock_ridge,
@@ -4124,15 +4112,15 @@ class PyCdlib:
         """
         An internal method to create a new 'dotdot' Directory Record.
 
-        Parameters:
-         vd - The volume descriptor to attach the 'dotdot' Directory Record to.
-         parent - The parent Directory Record for new Directory Record.
-         rock_ridge - The Rock Ridge version to use for this entry (if any).
-         relocated - Whether this Directory Record is a Rock Ridge relocated entry.
-         xa - Whether this Directory Record should have extended attributes.
-         file_mode - The mode to assign to the dot directory (only applies to Rock Ridge).
+        Args:
+            vd: The volume descriptor to attach the 'dotdot' Directory Record to.
+            parent: The parent Directory Record for new Directory Record.
+            rock_ridge: The Rock Ridge version to use for this entry (if any).
+            relocated: Whether this Directory Record is a Rock Ridge relocated entry.
+            xa: Whether this Directory Record should have extended attributes.
+            file_mode: The mode to assign to the dot directory (only applies to Rock Ridge).
         Returns:
-         Nothing.
+            Nothing.
         """
         dotdot = dr.DirectoryRecord()
         dotdot.new_dotdot(vd, parent, vd.sequence_number(), rock_ridge,
@@ -4161,55 +4149,55 @@ class PyCdlib:
         """
         Create a new ISO from scratch.
 
-        Parameters:
-         interchange_level - The ISO9660 interchange level to use; this dictates
-                             the rules on the names of files.  Levels 1, 2, 3,
-                             and 4 are supported.  Level 1 is the most
-                             conservative, and is the default, but level 3 is
-                             recommended.
-         sys_ident - The system identification string to use on the new ISO.
-         vol_ident - The volume identification string to use on the new ISO.
-         set_size - The size of the set of ISOs this ISO is a part of.
-         seqnum - The sequence number of the set of this ISO.
-         log_block_size - The logical block size to use for the ISO.  Ecma-119
-                          allows 512, 1024, or 2048 (the default).  Sizes other
-                          than 2048 cannot be combined with UDF or El Torito,
-                          and most other ISO tools (though not the Linux
-                          kernel) only understand 2048.  Note that the Linux
-                          isofs driver refuses blocks smaller than its own
-                          'block=' mount option, which defaults to 1024, so a
-                          512-byte-block ISO must be mounted with
-                          '-o block=512'.
-         vol_set_ident - The volume set identification string to use on the new ISO.
-         pub_ident_str - The publisher identification string to use on the new ISO.
-         preparer_ident_str - The preparer identification string to use on the new ISO.
-         app_ident_str - The application identification string to use on the new ISO.
-         copyright_file - The name of a file at the root of the ISO to use as the
-                          copyright file.
-         abstract_file - The name of a file at the root of the ISO to use as the
-                         abstract file.
-         bibli_file - The name of a file at the root of the ISO to use as the
-                      bibliographic file.
-         vol_expire_date - The date that this ISO will expire at.
-         app_use - Arbitrary data that the application can stuff into the primary
-                   volume descriptor of this ISO.
-         joliet - A integer that can have the value 1, 2, or 3 for Joliet
-                  levels 1, 2, or 3 (3 is by far the most common), or None for
-                  no Joliet support (the default).  For legacy reasons, this
-                  parameter also accepts a boolean, where the value of 'False'
-                  means no Joliet and a value of 'True' means level 3.
-         rock_ridge - Whether to make this ISO have the Rock Ridge extensions or
-                      not.  The default value of None does not add Rock Ridge
-                      extensions.  A string value of '1.09', '1.10', or '1.12'
-                      adds the specified Rock Ridge version to the ISO.  If
-                      unsure, pass '1.09' to ensure maximum compatibility.
-         xa - Whether to add the ISO9660 Extended Attribute extensions to this
-              ISO.  The default is False.
-         udf - Whether to add UDF support to this ISO.  If it is None (the
-               default), no UDF support is added.  If it is "2.60", version 2.60
-               of the UDF spec is used.  All other values are disallowed.
+        Args:
+            interchange_level: The ISO9660 interchange level to use; this dictates
+                the rules on the names of files.  Levels 1, 2, 3,
+                and 4 are supported.  Level 1 is the most
+                conservative, and is the default, but level 3 is
+                recommended.
+            sys_ident: The system identification string to use on the new ISO.
+            vol_ident: The volume identification string to use on the new ISO.
+            set_size: The size of the set of ISOs this ISO is a part of.
+            seqnum: The sequence number of the set of this ISO.
+            log_block_size: The logical block size to use for the ISO.  Ecma-119
+                allows 512, 1024, or 2048 (the default).  Sizes other
+                than 2048 cannot be combined with UDF or El Torito,
+                and most other ISO tools (though not the Linux
+                kernel) only understand 2048.  Note that the Linux
+                isofs driver refuses blocks smaller than its own
+                'block=' mount option, which defaults to 1024, so a
+                512-byte-block ISO must be mounted with
+                '-o block=512'.
+            vol_set_ident: The volume set identification string to use on the new ISO.
+            pub_ident_str: The publisher identification string to use on the new ISO.
+            preparer_ident_str: The preparer identification string to use on the new ISO.
+            app_ident_str: The application identification string to use on the new ISO.
+            copyright_file: The name of a file at the root of the ISO to use as the
+                copyright file.
+            abstract_file: The name of a file at the root of the ISO to use as the
+                abstract file.
+            bibli_file: The name of a file at the root of the ISO to use as the
+                bibliographic file.
+            vol_expire_date: The date that this ISO will expire at.
+            app_use: Arbitrary data that the application can stuff into the primary
+                volume descriptor of this ISO.
+            joliet: A integer that can have the value 1, 2, or 3 for Joliet
+                levels 1, 2, or 3 (3 is by far the most common), or None for
+                no Joliet support (the default).  For legacy reasons, this
+                parameter also accepts a boolean, where the value of 'False'
+                means no Joliet and a value of 'True' means level 3.
+            rock_ridge: Whether to make this ISO have the Rock Ridge extensions or
+                not.  The default value of None does not add Rock Ridge
+                extensions.  A string value of '1.09', '1.10', or '1.12'
+                adds the specified Rock Ridge version to the ISO.  If
+                unsure, pass '1.09' to ensure maximum compatibility.
+            xa: Whether to add the ISO9660 Extended Attribute extensions to this
+                ISO.  The default is False.
+            udf: Whether to add UDF support to this ISO.  If it is None (the
+                default), no UDF support is added.  If it is "2.60", version 2.60
+                of the UDF spec is used.  All other values are disallowed.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object already has an ISO; either close it or create a new object')
@@ -4486,11 +4474,11 @@ class PyCdlib:
         """
         Open up an existing ISO for inspection and modification.
 
-        Parameters:
-         filename - The filename containing the ISO to open up.
-         mode - The mode to use when opening the ISO file; the default is 'rb'.
+        Args:
+            filename: The filename containing the ISO to open up.
+            mode: The mode to use when opening the ISO file; the default is 'rb'.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object already has an ISO; either close it or create a new object')
@@ -4512,10 +4500,10 @@ class PyCdlib:
         operations.  To have PyCdlib manage this automatically, use 'open'
         instead.
 
-        Parameters:
-         fp - The file object containing the ISO to open up.
+        Args:
+            fp: The file object containing the ISO to open up.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object already has an ISO; either close it or create a new object')
@@ -4527,19 +4515,19 @@ class PyCdlib:
         """
         Fetch a single file from the ISO and write it out to a local file.
 
-        Parameters:
-         local_path - The local file to write to.
-         blocksize - The number of bytes in each transfer.
-         iso_path - The absolute ISO9660 path to lookup on the ISO (exclusive
-                    with rr_path, joliet_path, and udf_path).
-         rr_path - The absolute Rock Ridge path to lookup on the ISO (exclusive
-                   with iso_path, joliet_path, and udf_path).
-         joliet_path - The absolute Joliet path to lookup on the ISO (exclusive
-                       with iso_path, rr_path, and udf_path).
-         udf_path - The absolute UDF path to lookup on the ISO (exclusive with
-                    iso_path, rr_path, and joliet_path).
+        Args:
+            local_path: The local file to write to.
+            blocksize: The number of bytes in each transfer.
+            iso_path: The absolute ISO9660 path to lookup on the ISO (exclusive
+                with rr_path, joliet_path, and udf_path).
+            rr_path: The absolute Rock Ridge path to lookup on the ISO (exclusive
+                with iso_path, joliet_path, and udf_path).
+            joliet_path: The absolute Joliet path to lookup on the ISO (exclusive
+                with iso_path, rr_path, and udf_path).
+            udf_path: The absolute UDF path to lookup on the ISO (exclusive with
+                iso_path, rr_path, and joliet_path).
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -4597,19 +4585,19 @@ class PyCdlib:
         """
         Fetch a single file from the ISO and write it out to the file object.
 
-        Parameters:
-         outfp - The file object to write data to.
-         blocksize - The number of bytes in each transfer.
-         iso_path - The absolute ISO9660 path to lookup on the ISO (exclusive
-                    with rr_path, joliet_path, and udf_path).
-         rr_path - The absolute Rock Ridge path to lookup on the ISO (exclusive
-                   with iso_path, joliet_path, and udf_path).
-         joliet_path - The absolute Joliet path to lookup on the ISO (exclusive
-                       with iso_path, rr_path, and udf_path).
-         udf_path - The absolute UDF path to lookup on the ISO (exclusive with
-                    iso_path, rr_path, and joliet_path).
+        Args:
+            outfp: The file object to write data to.
+            blocksize: The number of bytes in each transfer.
+            iso_path: The absolute ISO9660 path to lookup on the ISO (exclusive
+                with rr_path, joliet_path, and udf_path).
+            rr_path: The absolute Rock Ridge path to lookup on the ISO (exclusive
+                with iso_path, joliet_path, and udf_path).
+            joliet_path: The absolute Joliet path to lookup on the ISO (exclusive
+                with iso_path, rr_path, and udf_path).
+            udf_path: The absolute UDF path to lookup on the ISO (exclusive with
+                iso_path, rr_path, and joliet_path).
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -4687,17 +4675,17 @@ class PyCdlib:
         ISO produced by new() they are valid only after a successful
         write_fp().
 
-        Parameters:
-         iso_path - The absolute ISO9660 path to lookup on the ISO (exclusive
-                    with rr_path, joliet_path, and udf_path).
-         rr_path - The absolute Rock Ridge path to lookup on the ISO (exclusive
-                   with iso_path, joliet_path, and udf_path).
-         joliet_path - The absolute Joliet path to lookup on the ISO (exclusive
-                       with iso_path, rr_path, and udf_path).
-         udf_path - The absolute UDF path to lookup on the ISO (exclusive with
-                    iso_path, rr_path, and joliet_path).
+        Args:
+            iso_path: The absolute ISO9660 path to lookup on the ISO (exclusive
+                with rr_path, joliet_path, and udf_path).
+            rr_path: The absolute Rock Ridge path to lookup on the ISO (exclusive
+                with iso_path, joliet_path, and udf_path).
+            joliet_path: The absolute Joliet path to lookup on the ISO (exclusive
+                with iso_path, rr_path, and udf_path).
+            udf_path: The absolute UDF path to lookup on the ISO (exclusive with
+                iso_path, rr_path, and joliet_path).
         Returns:
-         A list of (byte_offset, length) tuples in file order.
+            A list of (byte_offset, length) tuples in file order.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -4799,12 +4787,12 @@ class PyCdlib:
         by the Rock Ridge path.  It is recommended to use the get_file_from_iso
         API instead to resolve this ambiguity.
 
-        Parameters:
-         iso_path - The absolute path to the file to get data from.
-         local_path - The local filename to write the contents to.
-         blocksize - The blocksize to use when copying data; the default is 8192.
+        Args:
+            iso_path: The absolute path to the file to get data from.
+            local_path: The local filename to write the contents to.
+            blocksize: The blocksize to use when copying data; the default is 8192.
         Returns:
-         Nothing.
+            Nothing.
         """
         warnings.warn('get_and_write is deprecated; use get_file_from_iso instead.',
                       DeprecationWarning, stacklevel=2)
@@ -4826,12 +4814,12 @@ class PyCdlib:
         It is recommend to use the get_file_from_iso_fp API instead to resolve
         this ambiguity.
 
-        Parameters:
-         iso_path - The absolute path to the file to get data from.
-         outfp - The file object to write data to.
-         blocksize - The blocksize to use when copying data; the default is 8192.
+        Args:
+            iso_path: The absolute path to the file to get data from.
+            outfp: The file object to write data to.
+            blocksize: The blocksize to use when copying data; the default is 8192.
         Returns:
-         Nothing.
+            Nothing.
         """
         warnings.warn('get_and_write_fp is deprecated; use get_file_from_iso_fp instead.',
                       DeprecationWarning, stacklevel=2)
@@ -4848,16 +4836,16 @@ class PyCdlib:
         Write a properly formatted ISO out to the filename passed in.  This
         also goes by the name of 'mastering'.
 
-        Parameters:
-         filename - The filename to write the data to.
-         blocksize - The blocksize to use when copying data; the default is 32768.
-         progress_cb - If not None, a function to call as the write call does its
-                       work.  The callback function must have a signature of:
-                       def func(done, total, opaque).
-         progress_opaque - User data to be passed to the progress callback; the
-                           default is None.
+        Args:
+            filename: The filename to write the data to.
+            blocksize: The blocksize to use when copying data; the default is 32768.
+            progress_cb: If not None, a function to call as the write call does its
+                work.  The callback function must have a signature of:
+                def func(done, total, opaque).
+            progress_opaque: User data to be passed to the progress callback; the
+                default is None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -4872,16 +4860,16 @@ class PyCdlib:
         Write a properly formatted ISO out to the file object passed in.  This
         also goes by the name of 'mastering'.
 
-        Parameters:
-         outfp - The file object to write the data to.
-         blocksize - The blocksize to use when copying data; the default is 32768.
-         progress_cb - If not None, a function to call as the write call does its
-                       work.  The callback function must have a signature of:
-                       def func(done, total, opaque).
-         progress_opaque - User data to be passed to the progress callback; the
-                           default is None.
+        Args:
+            outfp: The file object to write the data to.
+            blocksize: The blocksize to use when copying data; the default is 32768.
+            progress_cb: If not None, a function to call as the write call does its
+                work.  The callback function must have a signature of:
+                def func(done, total, opaque).
+            progress_opaque: User data to be passed to the progress callback; the
+                default is None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -4900,25 +4888,25 @@ class PyCdlib:
         the file descriptor internally when writing (mastering) the ISO.  To
         have PyCdlib manage this automatically, use 'add_file' instead.
 
-        Parameters:
-         fp - The file object to use for the contents of the new file.
-         length - The length of the data for the new file.
-         iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_name - The Rock Ridge name of the file destination on the ISO.
-         joliet_path - The Joliet absolute path to the file destination on the ISO.
-         file_mode - The POSIX file_mode to apply to this file.  This only
-                     applies if this is a Rock Ridge ISO.  If this is None (the
-                     default), the permissions from the original file are used.
-         udf_path - The UDF name of the file destination on the ISO.
-         creation_time - Optional creation time, in seconds since the epoch.
-                         Stored on Rock Ridge TF (CREATION timestamp) and on
-                         UDF (forces an Extended File Entry, which has the
-                         on-disk slot).  Plain ISO9660 and Joliet have no
-                         creation-time field, so when supplied this value
-                         requires that at least one of iso_path (with Rock
-                         Ridge enabled) or udf_path is also supplied.
+        Args:
+            fp: The file object to use for the contents of the new file.
+            length: The length of the data for the new file.
+            iso_path: The ISO9660 absolute path to the file destination on the ISO.
+            rr_name: The Rock Ridge name of the file destination on the ISO.
+            joliet_path: The Joliet absolute path to the file destination on the ISO.
+            file_mode: The POSIX file_mode to apply to this file.  This only
+                applies if this is a Rock Ridge ISO.  If this is None (the
+                default), the permissions from the original file are used.
+            udf_path: The UDF name of the file destination on the ISO.
+            creation_time: Optional creation time, in seconds since the epoch.
+                Stored on Rock Ridge TF (CREATION timestamp) and on
+                UDF (forces an Extended File Entry, which has the
+                on-disk slot).  Plain ISO9660 and Joliet have no
+                creation-time field, so when supplied this value
+                requires that at least one of iso_path (with Rock
+                Ridge enabled) or udf_path is also supplied.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -4945,19 +4933,19 @@ class PyCdlib:
         Joliet path may also be provided; while it is optional to do so, it is
         highly recommended.
 
-        Parameters:
-         filename - The filename to use for the data contents for the new file.
-         iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_name - The Rock Ridge name of the file destination on the ISO.
-         joliet_path - The Joliet absolute path to the file destination on the ISO.
-         file_mode - The POSIX file_mode to apply to this file.  This only
-                     applies if this is a Rock Ridge ISO.  If this is None (the
-                     default), the permissions from the original file are used.
-         udf_path - The UDF name of the file destination on the ISO.
-         creation_time - Optional creation time, in seconds since the epoch.
-                         See add_fp for storage rules.
+        Args:
+            filename: The filename to use for the data contents for the new file.
+            iso_path: The ISO9660 absolute path to the file destination on the ISO.
+            rr_name: The Rock Ridge name of the file destination on the ISO.
+            joliet_path: The Joliet absolute path to the file destination on the ISO.
+            file_mode: The POSIX file_mode to apply to this file.  This only
+                applies if this is a Rock Ridge ISO.  If this is None (the
+                default), the permissions from the original file are used.
+            udf_path: The UDF name of the file destination on the ISO.
+            creation_time: Optional creation time, in seconds since the epoch.
+                See add_fp for storage rules.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -4987,23 +4975,23 @@ class PyCdlib:
            disk-corruption failure mode that arises when in-place edits
            are mixed with ``add_*`` / ``rm_*`` / ``write_fp``.
 
-        Parameters:
-         fp - The file object to use for the contents of the new file.
-         length - The length of the new data for the file.
-         iso_path - The ISO9660 absolute path to the file destination on the ISO.
-         rr_name - Ignored.  Earlier versions accepted this parameter but
-                   never used it; pass rr_path to address a file via its
-                   Rock Ridge path.
-         joliet_path - The Joliet absolute path to the file destination on
-                       the ISO.  Ignored when iso_path is given, for
-                       backwards compatibility.
-         udf_path - The UDF absolute path to the file destination on the
-                    ISO.  Ignored when iso_path is given, for backwards
-                    compatibility.
-         rr_path - The Rock Ridge absolute path to the file destination on
-                   the ISO.  Only valid when iso_path is not given.
+        Args:
+            fp: The file object to use for the contents of the new file.
+            length: The length of the new data for the file.
+            iso_path: The ISO9660 absolute path to the file destination on the ISO.
+            rr_name: Ignored.  Earlier versions accepted this parameter but
+                never used it; pass rr_path to address a file via its
+                Rock Ridge path.
+            joliet_path: The Joliet absolute path to the file destination on
+                the ISO.  Ignored when iso_path is given, for
+                backwards compatibility.
+            udf_path: The UDF absolute path to the file destination on the
+                ISO.  Ignored when iso_path is given, for backwards
+                compatibility.
+            rr_path: The Rock Ridge absolute path to the file destination on
+                the ISO.  Only valid when iso_path is not given.
         Returns:
-         Nothing.
+            Nothing.
         """
         warnings.warn(
             'PyCdlib.modify_file_in_place is deprecated; use '
@@ -5050,11 +5038,11 @@ class PyCdlib:
         makes an in-place edit of a large directory dominated by
         syscalls (a 4000-child directory took ~4000 of each per edit).
 
-        Parameters:
-         parent - The parent DirectoryRecord whose children should be
-                  written out to disk.
+        Args:
+            parent: The parent DirectoryRecord whose children should be
+                written out to disk.
         Returns:
-         Nothing.
+            Nothing.
         """
         lbs = self.logical_block_size
         first_extent = parent.extent_location()
@@ -5109,11 +5097,11 @@ class PyCdlib:
         Idempotent: subdirectories whose in-memory dotdot already
         matches the on-disk bytes get the same bytes written back.
 
-        Parameters:
-         parent - The DirectoryRecord whose subdirectories' dotdot
-                  records should be brought up to date on disk.
+        Args:
+            parent: The DirectoryRecord whose subdirectories' dotdot
+                records should be brought up to date on disk.
         Returns:
-         Nothing.
+            Nothing.
         """
         lbs = self.logical_block_size
         for subdir in parent._subdir_children:
@@ -5212,19 +5200,19 @@ class PyCdlib:
         lifetime of this PyCdlib object (until close() runs), the same
         way `add_fp()` requires.
 
-        Parameters:
-         fp - A file-like object containing the new contents.
-         length - The length of the new contents.
-         iso_path - The ISO9660 absolute path to the file destination on
-                    the ISO.
-         rr_path - The Rock Ridge absolute path to the file destination
-                   on the ISO.
-         joliet_path - The Joliet absolute path to the file destination
-                       on the ISO.
-         udf_path - The UDF absolute path to the file destination on the
-                    ISO.
+        Args:
+            fp: A file-like object containing the new contents.
+            length: The length of the new contents.
+            iso_path: The ISO9660 absolute path to the file destination on
+                the ISO.
+            rr_path: The Rock Ridge absolute path to the file destination
+                on the ISO.
+            joliet_path: The Joliet absolute path to the file destination
+                on the ISO.
+            udf_path: The UDF absolute path to the file destination on the
+                ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         self._update_file_contents(fp, length, False, iso_path, rr_path,
                                    joliet_path, udf_path)
@@ -5242,19 +5230,19 @@ class PyCdlib:
         way `add_file()` does relative to `add_fp()`.  The file is
         closed when the PyCdlib object is closed.
 
-        Parameters:
-         filename - The local filename whose contents replace the
-                    target file's contents.
-         iso_path - The ISO9660 absolute path to the file destination on
-                    the ISO.
-         rr_path - The Rock Ridge absolute path to the file destination
-                   on the ISO.
-         joliet_path - The Joliet absolute path to the file destination
-                       on the ISO.
-         udf_path - The UDF absolute path to the file destination on the
-                    ISO.
+        Args:
+            filename: The local filename whose contents replace the
+                target file's contents.
+            iso_path: The ISO9660 absolute path to the file destination on
+                the ISO.
+            rr_path: The Rock Ridge absolute path to the file destination
+                on the ISO.
+            joliet_path: The Joliet absolute path to the file destination
+                on the ISO.
+            udf_path: The UDF absolute path to the file destination on the
+                ISO.
         Returns:
-         Nothing.
+            Nothing.
         """
         self._update_file_contents(filename, os.stat(filename).st_size, True,
                                    iso_path, rr_path, joliet_path, udf_path)
@@ -5274,22 +5262,22 @@ class PyCdlib:
         Once this API has been used, this API and rm_hard_link() should be
         preferred over add_file() and rm_file(), respectively.
 
-        Parameters:
-         iso_old_path - The old path on the ISO9660 filesystem to link from.
-         iso_new_path - The new path on the ISO9660 filesystem to link to.
-         joliet_old_path - The old path on the Joliet filesystem to link from.
-         joliet_new_path - The new path on the Joliet filesystem to link to.
-         rr_name - The Rock Ridge name to use for the new file if this is a Rock
-                   Ridge ISO and the new path is on the ISO9660 filesystem.
-         boot_catalog_old - Use the El Torito boot catalog as the old path.
-         udf_old_path - The old path on the UDF filesystem to link from.
-         udf_new_path - The new path on the UDF filesystem to link to.
-         creation_time - Optional creation time, in seconds since the epoch,
-                         for the newly-created link.  See add_fp for storage
-                         rules: requires iso_new_path on a Rock Ridge ISO or
-                         udf_new_path.
+        Args:
+            iso_old_path: The old path on the ISO9660 filesystem to link from.
+            iso_new_path: The new path on the ISO9660 filesystem to link to.
+            joliet_old_path: The old path on the Joliet filesystem to link from.
+            joliet_new_path: The new path on the Joliet filesystem to link to.
+            rr_name: The Rock Ridge name to use for the new file if this is a Rock
+                Ridge ISO and the new path is on the ISO9660 filesystem.
+            boot_catalog_old: Use the El Torito boot catalog as the old path.
+            udf_old_path: The old path on the UDF filesystem to link from.
+            udf_new_path: The new path on the UDF filesystem to link to.
+            creation_time: Optional creation time, in seconds since the epoch,
+                for the newly-created link.  See add_fp for storage
+                rules: requires iso_new_path on a Rock Ridge ISO or
+                udf_new_path.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -5406,12 +5394,12 @@ class PyCdlib:
         been used, this API and add_hard_link() should be preferred over
         rm_file() and add_file().
 
-        Parameters:
-         iso_path - The ISO link path to remove.
-         joliet_path - The Joliet link path to remove.
-         udf_path - The UDF link path to remove.
+        Args:
+            iso_path: The ISO link path to remove.
+            joliet_path: The Joliet link path to remove.
+            udf_path: The UDF link path to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -5462,17 +5450,17 @@ class PyCdlib:
         ISO, or udf_path on a non-UDF ISO, is an error.  If the ISO contains
         Rock Ridge, then a Rock Ridge name must be provided.
 
-        Parameters:
-         iso_path - The ISO9660 absolute path to use for the directory.
-         rr_name - The Rock Ridge name to use for the directory.
-         joliet_path - The Joliet absolute path to use for the directory.
-         file_mode - The POSIX file mode to use for the directory.  This only
-                     applies for Rock Ridge ISOs.
-         udf_path - The UDF absolute path to use for the directory.
-         creation_time - Optional creation time, in seconds since the epoch.
-                         See add_fp for storage rules.
+        Args:
+            iso_path: The ISO9660 absolute path to use for the directory.
+            rr_name: The Rock Ridge name to use for the directory.
+            joliet_path: The Joliet absolute path to use for the directory.
+            file_mode: The POSIX file mode to use for the directory.  This only
+                applies for Rock Ridge ISOs.
+            udf_path: The UDF absolute path to use for the directory.
+            creation_time: Optional creation time, in seconds since the epoch.
+                See add_fp for storage rules.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -5633,10 +5621,10 @@ class PyCdlib:
         It is recommended to use the 'joliet_path' argument of the
         'add_directory' instead of this method.
 
-        Parameters:
-         joliet_path - The Joliet directory to create.
+        Args:
+            joliet_path: The Joliet directory to create.
         Returns:
-         Nothing.
+            Nothing.
         """
         warnings.warn("add_joliet_directory is deprecated; use add_directory(joliet_path=...) instead.",
                       DeprecationWarning, stacklevel=2)
@@ -5653,13 +5641,13 @@ class PyCdlib:
         contexts does not automatically happen, so this method may need to be
         called more than once for zero-byte files.
 
-        Parameters:
-         iso_path - The path to the file to remove.
-         rr_name - The Rock Ridge name of the file to remove.
-         joliet_path - The Joliet path to the file to remove.
-         udf_path - The UDF path to the file to remove.
+        Args:
+            iso_path: The path to the file to remove.
+            rr_name: The Rock Ridge name of the file to remove.
+            joliet_path: The Joliet path to the file to remove.
+            udf_path: The UDF path to the file to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
 
         if not self._initialized:
@@ -5683,13 +5671,13 @@ class PyCdlib:
         """
         Remove a directory from the ISO.  The directory must be empty.
 
-        Parameters:
-         iso_path - The path to the directory to remove.
-         rr_name - The Rock Ridge name of the directory to remove.
-         joliet_path - The Joliet path to the directory to remove.
-         udf_path - The UDF absolute path to the directory to remove.
+        Args:
+            iso_path: The path to the directory to remove.
+            rr_name: The Rock Ridge name of the directory to remove.
+            joliet_path: The Joliet path to the directory to remove.
+            udf_path: The UDF absolute path to the directory to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -5806,10 +5794,10 @@ class PyCdlib:
         (deprecated) Remove a Joliet directory from the ISO.  It is recommended
         to use the 'joliet_path' parameter to 'rm_directory' instead.
 
-        Parameters:
-         joliet_path - The Joliet path to the directory to remove.
+        Args:
+            joliet_path: The Joliet path to the directory to remove.
         Returns:
-         Nothing.
+            Nothing.
         """
         warnings.warn("rm_joliet_directory is deprecated; use rm_directory(joliet_path=...) instead.",
                       DeprecationWarning, stacklevel=2)
@@ -5826,30 +5814,30 @@ class PyCdlib:
         file that will be used as the bootfile must be passed into this function
         and must already be present on the ISO.
 
-        Parameters:
-         bootfile_path - The file to use as the boot file; it must already
-                         exist on this ISO.
-         bootcatfile - The fake file to use as the boot catalog entry; set to
-                       BOOT.CAT;1 by default.
-         rr_bootcatname - The Rock Ridge name for the fake file to use as the
-                          boot catalog entry; set to 'boot.cat' by default.
-         joliet_bootcatfile - The Joliet name for the fake file to use as the
-                              boot catalog entry; set to 'boot.cat' by default.
-         boot_load_size - The number of sectors to use for the boot entry; if
-                          set to None (the default), the number of sectors will
-                          be calculated.
-         platform_id - The platform ID to set for the El Torito entry; 0 is for
-                       x86, 1 is for Power PC, 2 is for Mac, and 0xef is for
-                       UEFI.  0 is the default.
-         boot_info_table - Whether to add a boot info table to the ISO.  The
-                           default is False.
-         efi - Whether this is an EFI entry for El Torito.  The default is False.
-         media_name - The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
-         bootable - Whether the boot media is bootable.  The default is True.
-         boot_load_seg - The load segment address of the boot image.
-         udf_bootcatfile - The name of the boot.cat file on the UDF filesystem.
+        Args:
+            bootfile_path: The file to use as the boot file; it must already
+                exist on this ISO.
+            bootcatfile: The fake file to use as the boot catalog entry; set to
+                BOOT.CAT;1 by default.
+            rr_bootcatname: The Rock Ridge name for the fake file to use as the
+                boot catalog entry; set to 'boot.cat' by default.
+            joliet_bootcatfile: The Joliet name for the fake file to use as the
+                boot catalog entry; set to 'boot.cat' by default.
+            boot_load_size: The number of sectors to use for the boot entry; if
+                set to None (the default), the number of sectors will
+                be calculated.
+            platform_id: The platform ID to set for the El Torito entry; 0 is for
+                x86, 1 is for Power PC, 2 is for Mac, and 0xef is for
+                UEFI.  0 is the default.
+            boot_info_table: Whether to add a boot info table to the ISO.  The
+                default is False.
+            efi: Whether this is an EFI entry for El Torito.  The default is False.
+            media_name: The name of the media type, one of 'noemul', 'floppy', or 'hdemul'.
+            bootable: Whether the boot media is bootable.  The default is True.
+            boot_load_seg: The load segment address of the boot image.
+            udf_bootcatfile: The name of the boot.cat file on the UDF filesystem.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -5972,10 +5960,8 @@ class PyCdlib:
         """
         Remove the El Torito boot record (and Boot Catalog) from the ISO.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6049,22 +6035,22 @@ class PyCdlib:
         Add a symlink from rr_symlink_name to the rr_path.  The ISO must have
         either Rock Ridge or UDF support (or both).
 
-        Parameters:
-         symlink_path - The ISO9660 path of the symlink itself on the ISO.
-         rr_symlink_name - The Rock Ridge name of the symlink itself on the ISO.
-         rr_path - The path that the symlink points to on the Rock Ridge part
-                   of the ISO.
-         joliet_path - The Joliet path of the symlink (if this ISO has Joliet).
-         udf_symlink_path - The UDF path of the symlink itself on the ISO.
-         udf_target - The UDF name of the entry on the ISO that the symlink
-                      points to.
-         creation_time - Optional creation time, in seconds since the epoch.
-                         See add_fp for storage rules.  At least one of a Rock
-                         Ridge symlink (rr_symlink_name + rr_path) or a UDF
-                         symlink (udf_symlink_path + udf_target) must be
-                         supplied to store it.
+        Args:
+            symlink_path: The ISO9660 path of the symlink itself on the ISO.
+            rr_symlink_name: The Rock Ridge name of the symlink itself on the ISO.
+            rr_path: The path that the symlink points to on the Rock Ridge part
+                of the ISO.
+            joliet_path: The Joliet path of the symlink (if this ISO has Joliet).
+            udf_symlink_path: The UDF path of the symlink itself on the ISO.
+            udf_target: The UDF name of the entry on the ISO that the symlink
+                points to.
+            creation_time: Optional creation time, in seconds since the epoch.
+                See add_fp for storage rules.  At least one of a Rock
+                Ridge symlink (rr_symlink_name + rr_path) or a UDF
+                symlink (udf_symlink_path + udf_target) must be
+                supplied to store it.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6239,13 +6225,13 @@ class PyCdlib:
         specified location on the ISO.  It is recommended to use the
         'list_children' API instead.
 
-        Parameters:
-         iso_path - The path on the ISO to look up information for.
-         joliet - Whether to look for the path in the Joliet portion of the ISO.
+        Args:
+            iso_path: The path on the ISO to look up information for.
+            joliet: Whether to look for the path in the Joliet portion of the ISO.
         Yields:
-         Children of this path.
+            Children of this path.
         Returns:
-         Nothing.
+            Nothing.
         """
         warnings.warn('list_dir is deprecated; use list_children instead.',
                       DeprecationWarning, stacklevel=2)
@@ -6277,18 +6263,18 @@ class PyCdlib:
         Generate a list of all of the file/directory objects in the
         specified location on the ISO.
 
-        Parameters:
-         iso_path - The absolute path on the ISO to list the children for.
-         rr_path - The absolute Rock Ridge path on the ISO to list the children for.
-         joliet_path - The absolute Joliet path on the ISO to list the children for.
-         udf_path - The absolute UDF path on the ISO to list the children for.
+        Args:
+            iso_path: The absolute path on the ISO to list the children for.
+            rr_path: The absolute Rock Ridge path on the ISO to list the children for.
+            joliet_path: The absolute Joliet path on the ISO to list the children for.
+            udf_path: The absolute UDF path on the ISO to list the children for.
         Yields:
-         Children of this path.  For iso_path, rr_path, and joliet_path these
-         are dr.DirectoryRecord objects, including the 'dot' and 'dotdot'
-         entries; for udf_path these are udf.UDFFileEntry objects, and the
-         UDF 'parent' entry (which has no File Entry) is omitted.
+            Children of this path.  For iso_path, rr_path, and joliet_path these
+            are dr.DirectoryRecord objects, including the 'dot' and 'dotdot'
+            entries; for udf_path these are udf.UDFFileEntry objects, and the
+            UDF 'parent' entry (which has no File Entry) is omitted.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6336,11 +6322,11 @@ class PyCdlib:
         (deprecated) Get the directory record for a particular path.  It is
         recommended to use the 'get_record' API instead.
 
-        Parameters:
-         iso_path - The path on the ISO to look up information for.
-         joliet - Whether to look for the path in the Joliet portion of the ISO.
+        Args:
+            iso_path: The path on the ISO to look up information for.
+            joliet: Whether to look for the path in the Joliet portion of the ISO.
         Returns:
-         A dr.DirectoryRecord object representing the path.
+            A dr.DirectoryRecord object representing the path.
         """
         warnings.warn('get_entry is deprecated; use get_record instead.',
                       DeprecationWarning, stacklevel=2)
@@ -6357,19 +6343,19 @@ class PyCdlib:
         """
         Get the directory record for a particular path.
 
-        Parameters:
-         iso_path - The absolute path on the ISO9660 filesystem to get the
-                    record for.
-         rr_path - The absolute path on the Rock Ridge filesystem to get the
-                   record for.
-         joliet_path - The absolute path on the Joliet filesystem to get the
-                       record for.
-         udf_path - The absolute path on the UDF filesystem to get the record
-                    for.
+        Args:
+            iso_path: The absolute path on the ISO9660 filesystem to get the
+                record for.
+            rr_path: The absolute path on the Rock Ridge filesystem to get the
+                record for.
+            joliet_path: The absolute path on the Joliet filesystem to get the
+                record for.
+            udf_path: The absolute path on the UDF filesystem to get the record
+                for.
         Returns:
-         An object that represents the path.  This may be a dr.DirectoryRecord
-         object (in the cases of iso_path, rr_path, or joliet_path), or a
-         udf.UDFFileEntry object (in the case of udf_path).
+            An object that represents the path.  This may be a dr.DirectoryRecord
+            object (in the cases of iso_path, rr_path, or joliet_path), or a
+            udf.UDFFileEntry object (in the case of udf_path).
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6405,21 +6391,21 @@ class PyCdlib:
         in order to work as a hybrid (if using syslinux, this generally means
         the isohdpfx.bin files).
 
-        Parameters:
-         part_entry - The partition entry to use; one by default.
-         mbr_id - The mbr_id to use.  If set to None (the default), a random one
-                  will be generated.
-         part_offset - The partition offset to use; zero by default.
-         geometry_sectors - The number of sectors to assign; thirty-two by
-                            default.
-         geometry_heads - The number of heads to assign; sixty-four by default.
-         part_type - The partition type to assign; twenty-three by default, but
-                     will automatically be set to 0 if mac or efi are True.
-         mac - Add support for Mac; False by default.
-         efi - Add support for EFI; False by default, but will automatically
-               be set to True if mac is True.
+        Args:
+            part_entry: The partition entry to use; one by default.
+            mbr_id: The mbr_id to use.  If set to None (the default), a random one
+                will be generated.
+            part_offset: The partition offset to use; zero by default.
+            geometry_sectors: The number of sectors to assign; thirty-two by
+                default.
+            geometry_heads: The number of heads to assign; sixty-four by default.
+            part_type: The partition type to assign; twenty-three by default, but
+                will automatically be set to 0 if mac or efi are True.
+            mac: Add support for Mac; False by default.
+            efi: Add support for EFI; False by default, but will automatically
+                be set to True if mac is True.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6463,10 +6449,8 @@ class PyCdlib:
         This means the ISO will no longer be able to be copied and booted off
         of traditional media (like USB sticks).
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6478,17 +6462,17 @@ class PyCdlib:
         """
         Get the absolute path of a directory record.
 
-        Parameters:
-         rec - The directory record to get the full path for.
-         rockridge - Whether to get the rock ridge full path.
-         encoding - The encoding to decode the on-disk file identifiers
-                    with.  When None, defaults to 'utf-8' for ISO9660 and
-                    Rock Ridge records, 'utf-16_be' for Joliet records,
-                    and the UDF file_ident's own encoding for UDF.  Pass
-                    a non-None value when walking an ISO whose names are
-                    in a different encoding (issue #109; e.g. shift_jis).
+        Args:
+            rec: The directory record to get the full path for.
+            rockridge: Whether to get the rock ridge full path.
+            encoding: The encoding to decode the on-disk file identifiers
+                with.  When None, defaults to 'utf-8' for ISO9660 and
+                Rock Ridge records, 'utf-16_be' for Joliet records,
+                and the UDF file_ident's own encoding for UDF.  Pass
+                a non-None value when walking an ISO whose names are
+                in a different encoding (issue #109; e.g. shift_jis).
         Returns:
-         A string representing the absolute path to the file on the ISO.
+            A string representing the absolute path to the file on the ISO.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6559,10 +6543,8 @@ class PyCdlib:
         Add a duplicate PVD to the ISO.  This is a mostly useless feature
         allowed by Ecma-119 to have duplicate PVDs to avoid possible corruption.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6580,12 +6562,12 @@ class PyCdlib:
         cause the file or directory not to show up when listing entries on the
         ISO.  Exactly one of iso_path, rr_path, or joliet_path must be specified.
 
-        Parameters:
-         iso_path - The path on the ISO to set the hidden bit on.
-         rr_path - The Rock Ridge path on the ISO to set the hidden bit on.
-         joliet_path - The Joliet path on the ISO to set the hidden bit on.
+        Args:
+            iso_path: The path on the ISO to set the hidden bit on.
+            rr_path: The Rock Ridge path on the ISO to set the hidden bit on.
+            joliet_path: The Joliet path on the ISO to set the hidden bit on.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6612,12 +6594,12 @@ class PyCdlib:
         cause the file or directory to show up when listing entries on the ISO.
         Exactly one of iso_path, rr_path, or joliet_path must be specified.
 
-        Parameters:
-         iso_path - The path on the ISO to clear the hidden bit from.
-         rr_path - The Rock Ridge path on the ISO to clear the hidden bit from.
-         joliet_path - The Joliet path on the ISO to clear the hidden bit from.
+        Args:
+            iso_path: The path on the ISO to clear the hidden bit from.
+            rr_path: The Rock Ridge path on the ISO to clear the hidden bit from.
+            joliet_path: The Joliet path on the ISO to clear the hidden bit from.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6647,10 +6629,8 @@ class PyCdlib:
         forces consistency.  This method allows the user to force a consistent
         view of this object.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6664,11 +6644,11 @@ class PyCdlib:
         must be a Rock Ridge one, and must not have previously had the relocated
         name set.
 
-        Parameters:
-         name - The name for a relocated directory.
-         rr_name - The Rock Ridge name for a relocated directory.
+        Args:
+            name: The name for a relocated directory.
+            rr_name: The Rock Ridge name for a relocated directory.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6695,16 +6675,16 @@ class PyCdlib:
         Similar to os.walk(), yield a 3-tuple of (path-to-here, dirlist, filelist)
         for each directory level.
 
-        Parameters:
-         iso_path - The absolute ISO path to the starting entry on the ISO.
-         rr_path - The absolute Rock Ridge path to the starting entry on the ISO.
-         joliet_path - The absolute Joliet path to the starting entry on the ISO.
-         udf_path - The absolute UDF path to the starting entry on the ISO.
-         encoding - The encoding to use for returned strings.
+        Args:
+            iso_path: The absolute ISO path to the starting entry on the ISO.
+            rr_path: The absolute Rock Ridge path to the starting entry on the ISO.
+            joliet_path: The absolute Joliet path to the starting entry on the ISO.
+            udf_path: The absolute UDF path to the starting entry on the ISO.
+            encoding: The encoding to use for returned strings.
         Yields:
-         3-tuples of (path-to-here, dirlist, filelist)
+            3-tuples of (path-to-here, dirlist, filelist)
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6813,13 +6793,13 @@ class PyCdlib:
         operate on the file in user-defined chunks (utilizing the read() method
         of the returned context manager).
 
-        Parameters:
-         iso_path - The absolute ISO path to the file on the ISO.
-         rr_path - The absolute Rock Ridge path to the file on the ISO.
-         joliet_path - The absolute Joliet path to the file on the ISO.
-         udf_path - The absolute UDF path to the file on the ISO.
+        Args:
+            iso_path: The absolute ISO path to the file on the ISO.
+            rr_path: The absolute Rock Ridge path to the file on the ISO.
+            joliet_path: The absolute Joliet path to the file on the ISO.
+            udf_path: The absolute UDF path to the file on the ISO.
         Returns:
-         A PyCdlibIO object allowing access to the file.
+            A PyCdlibIO object allowing access to the file.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6865,10 +6845,8 @@ class PyCdlib:
         """
         Returns whether this ISO has Rock Ridge extensions.
 
-        Parameters:
-         None.
         Returns:
-         True if this ISO has Rock Ridge extensions, False otherwise.
+            True if this ISO has Rock Ridge extensions, False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6879,10 +6857,8 @@ class PyCdlib:
         """
         Returns whether this ISO has Joliet extensions.
 
-        Parameters:
-         None.
         Returns:
-         True if this ISO has Joliet, False otherwise.
+            True if this ISO has Joliet, False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6893,10 +6869,8 @@ class PyCdlib:
         """
         Returns whether this ISO has UDF extensions.
 
-        Parameters:
-         None.
         Returns:
-         True if this ISO has UDF, False otherwise.
+            True if this ISO has UDF, False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6909,10 +6883,8 @@ class PyCdlib:
         PyCdlib class, while giving up some of the full power.  This facade
         only allows manipulation of the ISO9660 portions of the ISO.
 
-        Parameters:
-         None.
         Returns:
-         A PyCdlibISO9660 object that can be used to interact with the ISO.
+            A PyCdlibISO9660 object that can be used to interact with the ISO.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6926,10 +6898,8 @@ class PyCdlib:
         PyCdlib class, while giving up some of the full power.  This facade
         only allows manipulation of the Joliet portions of the ISO.
 
-        Parameters:
-         None.
         Returns:
-         A PyCdlibJoliet object that can be used to interact with the ISO.
+            A PyCdlibJoliet object that can be used to interact with the ISO.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6945,10 +6915,8 @@ class PyCdlib:
         PyCdlib class, while giving up some of the full power.  This facade
         only allows manipulation of the Rock Ridge portions of the ISO.
 
-        Parameters:
-         None.
         Returns:
-         A PyCdlibRockRidge object that can be used to interact with the ISO.
+            A PyCdlibRockRidge object that can be used to interact with the ISO.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6964,10 +6932,8 @@ class PyCdlib:
         PyCdlib class, while giving up some of the full power.  This facade
         only allows manipulation of the UDF portions of the ISO.
 
-        Parameters:
-         None.
         Returns:
-         A PyCdlibUDF object that can be used to interact with the ISO.
+            A PyCdlibUDF object that can be used to interact with the ISO.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -6981,14 +6947,14 @@ class PyCdlib:
         """
         Get the POSIX file mode of the file if is a Rock Ridge file.
 
-        Parameters:
-         iso_path - The absolute ISO path to the file on the ISO.
-         rr_path - The absolute Rock Ridge path to the file on the ISO.
-         joliet_path - The absolute Joliet path to the file on the ISO.
-         udf_path - The absolute UDF path to the file on the ISO.
+        Args:
+            iso_path: The absolute ISO path to the file on the ISO.
+            rr_path: The absolute Rock Ridge path to the file on the ISO.
+            joliet_path: The absolute Joliet path to the file on the ISO.
+            udf_path: The absolute UDF path to the file on the ISO.
         Returns:
-         An integer representing the POSIX file mode of the file if it is Rock
-         Ridge, or None otherwise.
+            An integer representing the POSIX file mode of the file if it is Rock
+            Ridge, or None otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
@@ -7027,10 +6993,8 @@ class PyCdlib:
         Close the PyCdlib object, and re-initialize the object to the defaults.
         The object can then be re-used for manipulation of another ISO.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')

@@ -41,10 +41,10 @@ def crc_ccitt(data):
     """
     Calculate the CRC over a range of bytes using the CCITT polynomial.
 
-    Parameters:
-     data - The array of bytes to calculate the CRC over.
+    Args:
+        data: The array of bytes to calculate the CRC over.
     Returns:
-     The CCITT CRC of the data.
+        The CCITT CRC of the data.
     """
     # The UDF CRC is CCITT-16 with polynomial 0x1021 and init value 0,
     # which is exactly what binascii.crc_hqx computes when called with
@@ -73,11 +73,11 @@ def _ostaunicode_zero_pad(src, fulllen):
     Internal function to create a zero-padded Identifier byte string from a
     source string.
 
-    Parameters:
-     src - The src string to start from.
-     fulllen - The padded out length of the result.
+    Args:
+        src: The src string to start from.
+        fulllen: The padded out length of the result.
     Returns:
-     A full identifier byte string containing the source string.
+        A full identifier byte string containing the source string.
     """
     byte_src = _ostaunicode(src)
     return byte_src + b'\x00' * (fulllen - 1 - len(byte_src)) + (struct.pack('=B', len(byte_src)))
@@ -102,11 +102,11 @@ class BEAVolumeStructure:
         """
         Parse the passed in data into a UDF BEA Volume Structure.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('BEA Volume Structure already initialized')
@@ -132,10 +132,8 @@ class BEAVolumeStructure:
         """
         Generate the string representing this UDF BEA Volume Structure.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF BEA Volume Strucutre.
+            A string representing this UDF BEA Volume Strucutre.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('BEA Volume Structure not initialized')
@@ -146,10 +144,8 @@ class BEAVolumeStructure:
         """
         Create a new UDF BEA Volume Structure.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('BEA Volume Structure already initialized')
@@ -161,10 +157,8 @@ class BEAVolumeStructure:
         """
         Get the extent location of this UDF BEA Volume Structure.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF BEA Volume Structure.
+            Integer extent location of this UDF BEA Volume Structure.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF BEA Volume Structure not initialized')
@@ -178,10 +172,10 @@ class BEAVolumeStructure:
         """
         Set the new location for this UDF BEA Volume Structure.
 
-        Parameters:
-         extent - The new extent location to set for this UDF BEA Volume Structure.
+        Args:
+            extent: The new extent location to set for this UDF BEA Volume Structure.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -205,11 +199,11 @@ class NSRVolumeStructure:
         """
         Parse the passed in data into a UDF NSR Volume Structure.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure already initialized')
@@ -235,10 +229,8 @@ class NSRVolumeStructure:
         """
         Generate the string representing this UDF NSR Volume Structure.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF BEA Volume Strucutre.
+            A string representing this UDF BEA Volume Strucutre.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure not initialized')
@@ -249,11 +241,11 @@ class NSRVolumeStructure:
         """
         Create a new UDF NSR Volume Structure.
 
-        Parameters:
-         version - The version of the NSR Volume Structure to create; only 2
-                   and 3 are supported.
+        Args:
+            version: The version of the NSR Volume Structure to create; only 2
+                and 3 are supported.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure already initialized')
@@ -272,10 +264,8 @@ class NSRVolumeStructure:
         """
         Get the extent location of this UDF NSR Volume Structure.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF NSR Volume Structure.
+            Integer extent location of this UDF NSR Volume Structure.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF NSR Volume Structure not initialized')
@@ -289,10 +279,10 @@ class NSRVolumeStructure:
         """
         Set the new location for this UDF NSR Volume Structure.
 
-        Parameters:
-         extent - The new extent location to set for this UDF NSR Volume Structure.
+        Args:
+            extent: The new extent location to set for this UDF NSR Volume Structure.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -318,11 +308,11 @@ class TEAVolumeStructure:
         """
         Parse the passed in data into a UDF TEA Volume Structure.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('TEA Volume Structure already initialized')
@@ -348,10 +338,8 @@ class TEAVolumeStructure:
         """
         Generate the string representing this UDF TEA Volume Structure.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF TEA Volume Strucutre.
+            A string representing this UDF TEA Volume Strucutre.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF TEA Volume Structure not initialized')
@@ -362,10 +350,8 @@ class TEAVolumeStructure:
         """
         Create a new UDF TEA Volume Structure.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF TEA Volume Structure already initialized')
@@ -377,10 +363,8 @@ class TEAVolumeStructure:
         """
         Get the extent location of this UDF TEA Volume Structure.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF TEA Volume Structure.
+            Integer extent location of this UDF TEA Volume Structure.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF TEA Volume Structure not initialized')
@@ -394,10 +378,10 @@ class TEAVolumeStructure:
         """
         Set the new location for this UDF TEA Volume Structure.
 
-        Parameters:
-         extent - The new extent location to set for this UDF TEA Volume Structure.
+        Args:
+            extent: The new extent location to set for this UDF TEA Volume Structure.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This Volume Descriptor is not initialized')
@@ -423,11 +407,11 @@ class UDFBootDescriptor:
         """
         Parse the passed in data into a UDF Boot Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Boot Descriptor already initialized')
@@ -474,10 +458,8 @@ class UDFBootDescriptor:
         """
         Create a new Boot Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Boot Descriptor already initialized')
@@ -508,10 +490,8 @@ class UDFBootDescriptor:
         """
         Generate the string representing this UDF Boot Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Boot Descriptor.
+            A string representing this UDF Boot Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Boot Descriptor not initialized')
@@ -529,10 +509,8 @@ class UDFBootDescriptor:
         """
         Get the extent location of this UDF Boot Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Boot Descriptor.
+            Integer extent location of this UDF Boot Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Boot Descriptor not initialized')
@@ -546,10 +524,10 @@ class UDFBootDescriptor:
         """
         Set the new location for this UDF Boot Descriptor.
 
-        Parameters:
-         extent - The new extent location to set for this UDF Boot Descriptor.
+        Args:
+            extent: The new extent location to set for this UDF Boot Descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('This UDF Boot Descriptor is not initialized')
@@ -567,10 +545,10 @@ def _compute_csum(data):
     bytes is C-implemented and a single pass is faster than building a
     pair of slice copies in Python.
 
-    Parameters:
-     data - The data to compute the checksum over.
+    Args:
+        data: The data to compute the checksum over.
     Returns:
-     The checksum.
+        The checksum.
     """
     return (sum(data) - data[4]) % 256
 
@@ -592,11 +570,11 @@ class UDFTag:
         """
         Parse the passed in data into a UDF Descriptor tag.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent to compare against for the tag location.
+        Args:
+            data: The data to parse.
+            extent: The extent to compare against for the tag location.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Tag already initialized')
@@ -637,10 +615,10 @@ class UDFTag:
         """
         Generate the string representing this UDF Descriptor Tag.
 
-        Parameters:
-         crc_bytes - The string to compute the CRC over.
+        Args:
+            crc_bytes: The string to compute the CRC over.
         Returns:
-         A string representing this UDF Descriptor Tag.
+            A string representing this UDF Descriptor Tag.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Descriptor Tag not initialized')
@@ -668,11 +646,11 @@ class UDFTag:
         """
         Create a new UDF Descriptor Tag.
 
-        Parameters:
-         tag_ident - The tag identifier number for this tag.
-         tag_serial - The tag serial number for this tag.
+        Args:
+            tag_ident: The tag identifier number for this tag.
+            tag_serial: The tag serial number for this tag.
         Returns:
-         Nothing
+            Nothing
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Tag already initialized')
@@ -712,12 +690,12 @@ class UDFAnchorVolumeStructure:
         """
         Parse the passed in data into a UDF Anchor Volume Structure.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Anchor Volume Structure already initialized')
@@ -742,10 +720,8 @@ class UDFAnchorVolumeStructure:
         """
         Generate the string representing this UDF Anchor Volume Structure.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Anchor Volume Structure.
+            A string representing this UDF Anchor Volume Structure.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Descriptor not initialized')
@@ -760,10 +736,8 @@ class UDFAnchorVolumeStructure:
         """
         Get the extent location of this UDF Anchor Volume Structure.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Anchor Volume Structure.
+            Integer extent location of this UDF Anchor Volume Structure.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Structure not initialized')
@@ -777,10 +751,8 @@ class UDFAnchorVolumeStructure:
         """
         Create a new UDF Anchor Volume Structure.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Structure already initialized')
@@ -801,12 +773,12 @@ class UDFAnchorVolumeStructure:
         """
         Set a new location for this Anchor Volume Structure.
 
-        Parameters:
-         new_location - The new extent that this Anchor Volume Structure should be located at.
-         main_vd_extent - The extent containing the main Volume Descriptors.
-         reserve_vd_extent - The extent containing the reserve Volume Descriptors.
+        Args:
+            new_location: The new extent that this Anchor Volume Structure should be located at.
+            main_vd_extent: The extent containing the main Volume Descriptors.
+            reserve_vd_extent: The extent containing the reserve Volume Descriptors.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Anchor Volume Structure not initialized')
@@ -844,12 +816,12 @@ class UDFVolumeDescriptorPointer:
         """
         Parse the passed in data into a UDF Volume Descriptor Pointer.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer already initialized')
@@ -871,10 +843,8 @@ class UDFVolumeDescriptorPointer:
         """
         Generate the string representing this UDF Volume Descriptor Pointer.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Volume Descriptor Pointer.
+            A string representing this UDF Volume Descriptor Pointer.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer not initialized')
@@ -889,10 +859,8 @@ class UDFVolumeDescriptorPointer:
         """
         Get the extent location of this UDF Volume Descriptor Pointer.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Volume Descriptor Pointer.
+            Integer extent location of this UDF Volume Descriptor Pointer.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer not initialized')
@@ -906,10 +874,8 @@ class UDFVolumeDescriptorPointer:
         """
         Create a new UDF Volume Descriptor Pointer.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer already initialized')
@@ -931,10 +897,10 @@ class UDFVolumeDescriptorPointer:
         """
         Set the new location for this UDF Volume Descriptor Pointer.
 
-        Parameters:
-         new_location - The new extent this UDF Volume Descriptor Pointer should be located at.
+        Args:
+            new_location: The new extent this UDF Volume Descriptor Pointer should be located at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Volume Descriptor Pointer not initialized')
@@ -960,10 +926,10 @@ class UDFTimestamp:
         """
         Parse the passed in data into a UDF Timestamp.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Timestamp already initialized')
@@ -1005,10 +971,8 @@ class UDFTimestamp:
         """
         Generate the string representing this UDF Timestamp.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Timestamp.
+            A string representing this UDF Timestamp.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Timestamp not initialized')
@@ -1027,11 +991,11 @@ class UDFTimestamp:
         """
         Create a new UDF Timestamp.
 
-        Parameters:
-         date_seconds - Time and date, in seconds since the epoch, to use for
-                        this time stamp record.
+        Args:
+            date_seconds: Time and date, in seconds since the epoch, to use for
+                this time stamp record.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Timestamp already initialized')
@@ -1082,10 +1046,10 @@ class UDFEntityID:
         """
         Parse the passed in data into a UDF Entity ID.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Entity ID already initialized')
@@ -1102,10 +1066,8 @@ class UDFEntityID:
         """
         Generate the string representing this UDF Entity ID.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Entity ID.
+            A string representing this UDF Entity ID.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Entity ID not initialized')
@@ -1117,12 +1079,12 @@ class UDFEntityID:
         """
         Create a new UDF Entity ID.
 
-        Parameters:
-         flags - The flags to set for this Entity ID.
-         identifier - The identifier to set for this Entity ID.
-         suffix - The suffix to set for this Entity ID.
+        Args:
+            flags: The flags to set for this Entity ID.
+            identifier: The identifier to set for this Entity ID.
+            suffix: The suffix to set for this Entity ID.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Entity ID already initialized')
@@ -1164,10 +1126,10 @@ class UDFCharspec:
         """
         Parse the passed in data into a UDF Charspec.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Charspec already initialized')
@@ -1185,12 +1147,12 @@ class UDFCharspec:
         """
         Create a new UDF Charspc.
 
-        Parameters:
-         set_type - The integer set type.  Must be between 0 and 8.
-         set_information - Additional set information.  Must be less than 64
-                           bytes.
+        Args:
+            set_type: The integer set type.  Must be between 0 and 8.
+            set_information: Additional set information.  Must be less than 64
+                bytes.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Charspec already initialized')
@@ -1212,10 +1174,8 @@ class UDFCharspec:
         """
         Generate the string representing this UDF Charspec.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Charspec.
+            A string representing this UDF Charspec.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Charspec not initialized')
@@ -1244,10 +1204,10 @@ class UDFExtentAD:
         """
         Parse the passed in data into a UDF Extent AD.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extent descriptor already initialized')
@@ -1264,10 +1224,8 @@ class UDFExtentAD:
         """
         Generate the string representing this UDF Extent AD.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Extent AD.
+            A string representing this UDF Extent AD.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extent AD not initialized')
@@ -1279,11 +1237,11 @@ class UDFExtentAD:
         """
         Create a new UDF Short AD.
 
-        Parameters:
-         length - The length of the data in the allocation.
-         blocknum - The logical block number the allocation starts at.
+        Args:
+            length: The length of the data in the allocation.
+            blocknum: The logical block number the allocation starts at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extent AD already initialized')
@@ -1325,12 +1283,12 @@ class UDFPrimaryVolumeDescriptor:
         """
         Parse the passed in data into a UDF Primary Volume Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor already initialized')
@@ -1392,10 +1350,8 @@ class UDFPrimaryVolumeDescriptor:
         """
         Generate the string representing this UDF Primary Volume Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Primary Volume Descriptor.
+            A string representing this UDF Primary Volume Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor not initialized')
@@ -1419,10 +1375,8 @@ class UDFPrimaryVolumeDescriptor:
         """
         Get the extent location of this UDF Primary Volume Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Primary Volume Descriptor.
+            Integer extent location of this UDF Primary Volume Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor not initialized')
@@ -1436,10 +1390,10 @@ class UDFPrimaryVolumeDescriptor:
         """
         Create a new UDF Primary Volume Descriptor.
 
-        Parameters:
-         vol_ident - The volume identifier string to use for this descriptor.
+        Args:
+            vol_ident: The volume identifier string to use for this descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor already initialized')
@@ -1484,10 +1438,10 @@ class UDFPrimaryVolumeDescriptor:
         """
         Set the new location for this UDF Primary Volume Descriptor.
 
-        Parameters:
-         new_location - The extent that this Primary Volume Descriptor should be located at.
+        Args:
+            new_location: The extent that this Primary Volume Descriptor should be located at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Primary Volume Descriptor not initialized')
@@ -1538,10 +1492,10 @@ class UDFImplementationUseVolumeDescriptorImplementationUse:
         Parse the passed in data into a UDF Implementation Use Volume
         Descriptor Implementation Use field.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
@@ -1564,10 +1518,8 @@ class UDFImplementationUseVolumeDescriptorImplementationUse:
         Generate the string representing this UDF Implementation Use Volume
         Descriptor Implementation Use field.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Implementation Use Volume Descriptor.
+            A string representing this UDF Implementation Use Volume Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor Implementation Use field not initialized')
@@ -1582,10 +1534,10 @@ class UDFImplementationUseVolumeDescriptorImplementationUse:
         Create a new UDF Implementation Use Volume Descriptor Implementation Use
         field.
 
-        Parameters:
-         vol_ident - The logical volume identifier string to use for this field.
+        Args:
+            vol_ident: The logical volume identifier string to use for this field.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor Implementation Use field already initialized')
@@ -1633,12 +1585,12 @@ class UDFImplementationUseVolumeDescriptor:
         Parse the passed in data into a UDF Implementation Use Volume
         Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor already initialized')
@@ -1666,10 +1618,8 @@ class UDFImplementationUseVolumeDescriptor:
         Generate the string representing this UDF Implementation Use Volume
         Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Implementation Use Volume Descriptor.
+            A string representing this UDF Implementation Use Volume Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor not initialized')
@@ -1685,11 +1635,9 @@ class UDFImplementationUseVolumeDescriptor:
         Get the extent location of this UDF Implementation Use Volume
         Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Implementation Use Volume
-         Descriptor.
+            Integer extent location of this UDF Implementation Use Volume
+            Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor not initialized')
@@ -1703,10 +1651,10 @@ class UDFImplementationUseVolumeDescriptor:
         """
         Create a new UDF Implementation Use Volume Descriptor.
 
-        Parameters:
-         vol_ident - The logical volume identifier string to use for this descriptor.
+        Args:
+            vol_ident: The logical volume identifier string to use for this descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor already initialized')
@@ -1729,10 +1677,10 @@ class UDFImplementationUseVolumeDescriptor:
         """
         Set the new location for this UDF Implementation Use Volume Descriptor.
 
-        Parameters:
-         new_location - The new extent this UDF Implementation Use Volume Descriptor should be located at.
+        Args:
+            new_location: The new extent this UDF Implementation Use Volume Descriptor should be located at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Implementation Use Volume Descriptor not initialized')
@@ -1767,10 +1715,10 @@ class UDFPartitionHeaderDescriptor:
         """
         Parse the passed in data into a UDF Partition Header Descriptor.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor already initialized')
@@ -1801,10 +1749,8 @@ class UDFPartitionHeaderDescriptor:
         """
         Generate the string representing this UDF Partition Header Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Partition Header Descriptor.
+            A string representing this UDF Partition Header Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor not initialized')
@@ -1821,10 +1767,8 @@ class UDFPartitionHeaderDescriptor:
         """
         Create a new UDF Partition Header Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Header Descriptor already initialized')
@@ -1876,12 +1820,12 @@ class UDFPartitionVolumeDescriptor:
         """
         Parse the passed in data into a UDF Partition Volume Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor already initialized')
@@ -1919,10 +1863,8 @@ class UDFPartitionVolumeDescriptor:
         """
         Generate the string representing this UDF Partition Volume Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Partition Volume Descriptor.
+            A string representing this UDF Partition Volume Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor not initialized')
@@ -1941,10 +1883,8 @@ class UDFPartitionVolumeDescriptor:
         """
         Get the extent location of this UDF Partition Volume Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Partition Volume Descriptor.
+            Integer extent location of this UDF Partition Volume Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor not initialized')
@@ -1958,10 +1898,10 @@ class UDFPartitionVolumeDescriptor:
         """
         Create a new UDF Partition Volume Descriptor.
 
-        Parameters:
-         version - The version of to make this partition; must be 2 or 3.
+        Args:
+            version: The version of to make this partition; must be 2 or 3.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor already initialized')
@@ -2000,10 +1940,10 @@ class UDFPartitionVolumeDescriptor:
         """
         Set the location of this UDF Partition Volume Descriptor.
 
-        Parameters:
-         new_location - The new extent this UDF Partition Volume Descriptor should be located at.
+        Args:
+            new_location: The new extent this UDF Partition Volume Descriptor should be located at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor not initialized')
@@ -2015,10 +1955,10 @@ class UDFPartitionVolumeDescriptor:
         """
         Set the location of the start of the UDF partition.
 
-        Parameters:
-         new_location - The new extent the UDF partition should start at.
+        Args:
+            new_location: The new extent the UDF partition should start at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Volume Descriptor not initialized')
@@ -2056,10 +1996,10 @@ class UDFType0PartitionMap:
         """
         Parse the passed in data into a UDF Type 0 Partition Map.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 0 Partition Map already initialized')
@@ -2081,10 +2021,8 @@ class UDFType0PartitionMap:
         """
         Generate the string representing this UDF Type 0 Partition Map.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Type 0 Partition Map.
+            A string representing this UDF Type 0 Partition Map.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 0 Partition Map not initialized')
@@ -2096,10 +2034,8 @@ class UDFType0PartitionMap:
         """
         Create a new UDF Type 0 Partition Map.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 0 Partition Map already initialized')
@@ -2124,10 +2060,10 @@ class UDFType1PartitionMap:
         """
         Parse the passed in data into a UDF Type 1 Partition Map.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 1 Partition Map already initialized')
@@ -2147,10 +2083,8 @@ class UDFType1PartitionMap:
         """
         Generate the string representing this UDF Type 1 Partition Map.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Type 1 Partition Map.
+            A string representing this UDF Type 1 Partition Map.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 1 Partition Map not initialized')
@@ -2162,10 +2096,8 @@ class UDFType1PartitionMap:
         """
         Create a new UDF Type 1 Partition Map.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 1 Partition Map already initialized')
@@ -2191,10 +2123,10 @@ class UDFType2PartitionMap:
         """
         Parse the passed in data into a UDF Type 2 Partition Map.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 2 Partition Map already initialized')
@@ -2213,10 +2145,8 @@ class UDFType2PartitionMap:
         """
         Generate the string representing this UDF Type 2 Partition Map.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Type 2 Partition Map.
+            A string representing this UDF Type 2 Partition Map.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 2 Partition Map not initialized')
@@ -2228,10 +2158,8 @@ class UDFType2PartitionMap:
         """
         Create a new UDF Partition Map.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Type 2 Partition Map already initialized')
@@ -2257,10 +2185,10 @@ class UDFExtendedAD:
         """
         Parsed the passed in data into a UDF Extended Allocation Descriptor.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extended Allocation descriptor already initialized')
@@ -2278,10 +2206,8 @@ class UDFExtendedAD:
         """
         Generate the string representing this UDF Extended Allocation Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Extended Allocation Descriptor.
+            A string representing this UDF Extended Allocation Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extended Allocation Descriptor not initialized')
@@ -2295,10 +2221,8 @@ class UDFExtendedAD:
         """
         Create a new UDF Extended AD.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extended Allocation Descriptor already initialized')
@@ -2330,10 +2254,10 @@ class UDFShortAD:
         """
         Parse the passed in data into a UDF Short AD.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Short Allocation descriptor already initialized')
@@ -2351,10 +2275,8 @@ class UDFShortAD:
         """
         Generate the string representing this UDF Short AD.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Short AD.
+            A string representing this UDF Short AD.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Short AD not initialized')
@@ -2367,11 +2289,11 @@ class UDFShortAD:
         """
         Create a new UDF Short AD.
 
-        Parameters:
-         length - The length of the data in the allocation.
-         blocknum - The logical block number the allocation starts at.
+        Args:
+            length: The length of the data in the allocation.
+            blocknum: The logical block number the allocation starts at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Short AD already initialized')
@@ -2390,11 +2312,11 @@ class UDFShortAD:
         """
         Set the location fields of this UDF Short AD.
 
-        Parameters:
-         new_location - The new relative extent that this UDF Short AD references.
-         tag_location - The new absolute extent that this UDF Short AD references.
+        Args:
+            new_location: The new relative extent that this UDF Short AD references.
+            tag_location: The new absolute extent that this UDF Short AD references.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Short AD not initialized')
@@ -2406,10 +2328,8 @@ class UDFShortAD:
         """
         Method to return the length of the UDF Short Allocation Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         The length of this descriptor in bytes.
+            The length of this descriptor in bytes.
         """
         return 8
 
@@ -2440,10 +2360,10 @@ class UDFLongAD:
         """
         Parse the passed in data into a UDF Long AD.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Long Allocation descriptor already initialized')
@@ -2457,10 +2377,8 @@ class UDFLongAD:
         """
         Generate the string representing this UDF Long AD.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Long AD.
+            A string representing this UDF Long AD.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Long AD not initialized')
@@ -2473,11 +2391,11 @@ class UDFLongAD:
         """
         Create a new UDF Long AD.
 
-        Parameters:
-         length - The length of the data in the allocation.
-         blocknum - The logical block number the allocation starts at.
+        Args:
+            length: The length of the data in the allocation.
+            blocknum: The logical block number the allocation starts at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Long AD already initialized')
@@ -2494,11 +2412,11 @@ class UDFLongAD:
         """
         Set the location fields of this UDF Long AD.
 
-        Parameters:
-         new_location - The new relative extent that this UDF Long AD references.
-         tag_location - The new absolute extent that this UDF Long AD references.
+        Args:
+            new_location: The new relative extent that this UDF Long AD references.
+            tag_location: The new absolute extent that this UDF Long AD references.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Long AD not initialized')
@@ -2511,10 +2429,8 @@ class UDFLongAD:
         """
         Method to return the length of the UDF Long Allocation Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         The length of this descriptor in bytes.
+            The length of this descriptor in bytes.
         """
         return 16
 
@@ -2545,10 +2461,10 @@ class UDFInlineAD:
         """
         Create a new UDF Inline AD from the given data.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Inline Allocation Descriptor already initialized')
@@ -2563,10 +2479,8 @@ class UDFInlineAD:
         """
         Generate the string representing this UDF Inline AD.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Inline AD.
+            A string representing this UDF Inline AD.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Inline AD not initialized')
@@ -2578,12 +2492,12 @@ class UDFInlineAD:
         """
         Create a new UDF Inline AD.
 
-        Parameters:
-         extent_length - The length of the data in the allocation.
-         log_block_num - The logical block number the allocation starts at.
-         offset - The offset the allocation starts at.
+        Args:
+            extent_length: The length of the data in the allocation.
+            log_block_num: The logical block number the allocation starts at.
+            offset: The offset the allocation starts at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Inline AD already initialized')
@@ -2599,11 +2513,11 @@ class UDFInlineAD:
         """
         Set the location fields of this UDF Inline AD.
 
-        Parameters:
-         new_location - The new relative extent that this UDF Inline AD references.
-         tag_location - The new absolute extent that this UDF Inline AD references.
+        Args:
+            new_location: The new relative extent that this UDF Inline AD references.
+            tag_location: The new absolute extent that this UDF Inline AD references.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Inline AD not initialized')
@@ -2615,10 +2529,8 @@ class UDFInlineAD:
         """
         Method to return the length of the UDF Inline Allocation Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         The length of this descriptor in bytes.
+            The length of this descriptor in bytes.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Inline AD not initialized')
@@ -2646,12 +2558,12 @@ class UDFLogicalVolumeDescriptor:
         """
         Parse the passed in data into a UDF Logical Volume Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor already initialized')
@@ -2725,10 +2637,8 @@ class UDFLogicalVolumeDescriptor:
         """
         Generate the string representing this UDF Logical Volume Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Logical Volume Descriptor.
+            A string representing this UDF Logical Volume Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
@@ -2757,10 +2667,8 @@ class UDFLogicalVolumeDescriptor:
         Get the extent location of this UDF Logical Volume
         Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Logical Volume Descriptor.
+            Integer extent location of this UDF Logical Volume Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
@@ -2774,10 +2682,10 @@ class UDFLogicalVolumeDescriptor:
         """
         Create a new UDF Logical Volume Descriptor.
 
-        Parameters:
-         vol_ident - The logical volume identifier string to use for this descriptor.
+        Args:
+            vol_ident: The logical volume identifier string to use for this descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor already initialized')
@@ -2812,10 +2720,10 @@ class UDFLogicalVolumeDescriptor:
         """
         Add a new partition map to this UDF Logical Volume Descriptor.
 
-        Parameters:
-         partmaptype - Must be 0, 1, or 2.
+        Args:
+            partmaptype: Must be 0, 1, or 2.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
@@ -2846,10 +2754,10 @@ class UDFLogicalVolumeDescriptor:
         """
         Set the location of this UDF Logical Volume Descriptor.
 
-        Parameters:
-         new_location - The new extent this UDF Logical Volume Descriptor should be located at.
+        Args:
+            new_location: The new extent this UDF Logical Volume Descriptor should be located at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
@@ -2863,11 +2771,11 @@ class UDFLogicalVolumeDescriptor:
         Set the location of the UDF Integrity sequence that this descriptor
         references.
 
-        Parameters:
-         integrity_extent - The new extent that the UDF Integrity sequence
-                            should start at.
+        Args:
+            integrity_extent: The new extent that the UDF Integrity sequence
+                should start at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Descriptor not initialized')
@@ -2908,12 +2816,12 @@ class UDFUnallocatedSpaceDescriptor:
         """
         Parse the passed in data into a UDF Unallocated Space Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor already initialized')
@@ -2942,10 +2850,8 @@ class UDFUnallocatedSpaceDescriptor:
         """
         Generate the string representing this UDF Unallocated Space Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Unallocated Space Descriptor.
+            A string representing this UDF Unallocated Space Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor not initialized')
@@ -2965,10 +2871,8 @@ class UDFUnallocatedSpaceDescriptor:
         """
         Get the extent location of this UDF Unallocated Space Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Unallocated Space Descriptor.
+            Integer extent location of this UDF Unallocated Space Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor not initialized')
@@ -2982,10 +2886,8 @@ class UDFUnallocatedSpaceDescriptor:
         """
         Create a new UDF Unallocated Space Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor already initialized')
@@ -3004,10 +2906,10 @@ class UDFUnallocatedSpaceDescriptor:
         """
         Set the location of this UDF Unallocated Space Descriptor.
 
-        Parameters:
-         new_location - The new extent this UDF Unallocated Space Descriptor should be located at.
+        Args:
+            new_location: The new extent this UDF Unallocated Space Descriptor should be located at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Descriptor not initialized')
@@ -3041,11 +2943,11 @@ class UDFTerminatingDescriptor:
         """
         Parse the passed in data into a UDF Terminating Descriptor.
 
-        Parameters:
-         extent - The extent that this descriptor currently lives at.
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            extent: The extent that this descriptor currently lives at.
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor already initialized')
@@ -3061,10 +2963,8 @@ class UDFTerminatingDescriptor:
         """
         Generate the string representing this UDF Terminating Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Terminating Descriptor.
+            A string representing this UDF Terminating Descriptor.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor not initialized')
@@ -3077,10 +2977,8 @@ class UDFTerminatingDescriptor:
         """
         Get the extent location of this UDF Terminating Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Terminating Descriptor.
+            Integer extent location of this UDF Terminating Descriptor.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor not initialized')
@@ -3094,10 +2992,8 @@ class UDFTerminatingDescriptor:
         """
         Create a new UDF Terminating Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor already initialized')
@@ -3112,11 +3008,11 @@ class UDFTerminatingDescriptor:
         """
         Set the location of this UDF Terminating Descriptor.
 
-        Parameters:
-         new_location - The new extent this UDF Terminating Descriptor should be located at.
-         tag_location - The tag location to set for this UDF Terminator Descriptor.
+        Args:
+            new_location: The new extent this UDF Terminating Descriptor should be located at.
+            tag_location: The tag location to set for this UDF Terminator Descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminating Descriptor not initialized')
@@ -3142,10 +3038,10 @@ class UDFLogicalVolumeHeaderDescriptor:
         """
         Parse the passed in data into a UDF Logical Volume Header Descriptor.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Header Descriptor already initialized')
@@ -3159,10 +3055,8 @@ class UDFLogicalVolumeHeaderDescriptor:
         Generate the string representing this UDF Logical Volume Header
         Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Logical Volume Header Descriptor.
+            A string representing this UDF Logical Volume Header Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Header Descriptor not initialized')
@@ -3174,10 +3068,8 @@ class UDFLogicalVolumeHeaderDescriptor:
         """
         Create a new UDF Logical Volume Header Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Header Descriptor already initialized')
@@ -3204,10 +3096,10 @@ class UDFLogicalVolumeImplementationUse:
         """
         Parse the passed in data into a UDF Logical Volume Implementation Use.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Implementation Use already initialized')
@@ -3229,10 +3121,8 @@ class UDFLogicalVolumeImplementationUse:
         Generate the string representing this UDF Logical Volume Implementation
         Use.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Logical Volume Implementation Use.
+            A string representing this UDF Logical Volume Implementation Use.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Implementation Use not initialized')
@@ -3248,10 +3138,8 @@ class UDFLogicalVolumeImplementationUse:
         """
         Create a new UDF Logical Volume Implementation Use.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Implementation Use already initialized')
@@ -3292,12 +3180,12 @@ class UDFLogicalVolumeIntegrityDescriptor:
         """
         Parse the passed in data into a UDF Logical Volume Integrity Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor already initialized')
@@ -3346,10 +3234,8 @@ class UDFLogicalVolumeIntegrityDescriptor:
         Generate the string representing this UDF Logical Volume Integrity
         Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Logical Volume Integrity Descriptor.
+            A string representing this UDF Logical Volume Integrity Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor not initialized')
@@ -3374,10 +3260,8 @@ class UDFLogicalVolumeIntegrityDescriptor:
         """
         Get the extent location of this UDF Logical Volume Integrity Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Logical Volume Integrity Descriptor.
+            Integer extent location of this UDF Logical Volume Integrity Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor not initialized')
@@ -3391,10 +3275,8 @@ class UDFLogicalVolumeIntegrityDescriptor:
         """
         Create a new UDF Logical Volume Integrity Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor already initialized')
@@ -3428,10 +3310,10 @@ class UDFLogicalVolumeIntegrityDescriptor:
         """
         Set the location of this UDF Logical Volume Integrity Descriptor.
 
-        Parameters:
-         new_location - The new extent this UDF Logical Volume Integrity Descriptor should be located at.
+        Args:
+            new_location: The new extent this UDF Logical Volume Integrity Descriptor should be located at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Logical Volume Integrity Descriptor not initialized')
@@ -3461,12 +3343,12 @@ class UDFFileSetDescriptor:
         """
         Parse the passed in data into a UDF File Set Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Set Descriptor already initialized')
@@ -3523,10 +3405,8 @@ class UDFFileSetDescriptor:
         """
         Generate the string representing this UDF File Set Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF File Set Descriptor.
+            A string representing this UDF File Set Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Set Descriptor not initialized')
@@ -3546,10 +3426,8 @@ class UDFFileSetDescriptor:
         """
         Get the extent location of this UDF File Set Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF File Set Descriptor.
+            Integer extent location of this UDF File Set Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Set Descriptor not initialized')
@@ -3563,11 +3441,11 @@ class UDFFileSetDescriptor:
         """
         Create a new UDF File Set Descriptor.
 
-        Parameters:
-         vol_ident - The logical volume / file set identifier string to use for
-                     this descriptor.
+        Args:
+            vol_ident: The logical volume / file set identifier string to use for
+                this descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Set Descriptor already initialized')
@@ -3607,10 +3485,10 @@ class UDFFileSetDescriptor:
         """
         Set the location of this UDF File Set Descriptor.
 
-        Parameters:
-         new_location - The new extent this UDF File Set Descriptor should be located at.
+        Args:
+            new_location: The new extent this UDF File Set Descriptor should be located at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Set Descriptor not initialized')
@@ -3633,10 +3511,10 @@ class UDFLBAddr:
         """
         Parse the passed in data into a UDF lb_addr.
 
-        Parameters:
-         data - The data to parse
+        Args:
+            data: The data to parse
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF LBAddr already initialized')
@@ -3651,10 +3529,8 @@ class UDFLBAddr:
         """
         Generate the string representing this UDF LBAddr.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF LBAddr.
+            A string representing this UDF LBAddr.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF LBAddr not initialized')
@@ -3665,10 +3541,10 @@ class UDFLBAddr:
         """
         Create a new UDF LBAddr.
 
-        Parameters:
-         logical_block_num - The logical block number to assign.
+        Args:
+            logical_block_num: The logical block number to assign.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF LBAddr already initialized')
@@ -3696,10 +3572,10 @@ class UDFICBTag:
         """
         Parse the passed in data into a UDF ICB Tag.
 
-        Parameters:
-         data - The data to parse.
+        Args:
+            data: The data to parse.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF ICB Tag already initialized')
@@ -3724,10 +3600,8 @@ class UDFICBTag:
         """
         Generate the string representing this UDF ICB Tag.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF ICB Tag.
+            A string representing this UDF ICB Tag.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF ICB Tag not initialized')
@@ -3742,11 +3616,11 @@ class UDFICBTag:
         """
         Create a new UDF ICB Tag.
 
-        Parameters:
-         file_type - What file type this represents, one of 'dir', 'file',
-                     or 'symlink'.
+        Args:
+            file_type: What file type this represents, one of 'dir', 'file',
+                or 'symlink'.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF ICB Tag already initialized')
@@ -3804,13 +3678,13 @@ class UDFFileEntry:
         """
         Parse the passed in data into a UDF File Entry.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         parent - The parent File Entry for this file (may be None).
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            parent: The parent File Entry for this file (may be None).
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry already initialized')
@@ -3873,10 +3747,8 @@ class UDFFileEntry:
         """
         Generate the string representing this UDF File Entry.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF File Entry.
+            A string representing this UDF File Entry.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -3905,10 +3777,8 @@ class UDFFileEntry:
         """
         Get the extent location of this UDF File Entry.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF File Entry.
+            Integer extent location of this UDF File Entry.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -3922,15 +3792,15 @@ class UDFFileEntry:
         """
         Create a new UDF File Entry.
 
-        Parameters:
-         length - The (starting) length of this UDF File Entry; this is ignored
-                  if this is a symlink.
-         file_type - The type that this UDF File entry represents; one of 'dir',
-                     'file', or 'symlink'.
-         parent - The parent UDF File Entry for this UDF File Entry.
-         log_block_size - The logical block size for extents.
+        Args:
+            length: The (starting) length of this UDF File Entry; this is ignored
+                if this is a symlink.
+            file_type: The type that this UDF File entry represents; one of 'dir',
+                'file', or 'symlink'.
+            parent: The parent UDF File Entry for this UDF File Entry.
+            log_block_size: The logical block size for extents.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry already initialized')
@@ -4006,11 +3876,11 @@ class UDFFileEntry:
         """
         Set the location of this UDF File Entry.
 
-        Parameters:
-         new_location - The new extent this UDF File Entry should be located at.
-         tag_location - The new relative extent this UDF File Entry should be located at.
+        Args:
+            new_location: The new extent this UDF File Entry should be located at.
+            tag_location: The new relative extent this UDF File Entry should be located at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4025,11 +3895,11 @@ class UDFFileEntry:
         Add a new UDF File Identifier Descriptor to this UDF File
         Entry.
 
-        Parameters:
-         new_fi_desc - The new UDF File Identifier Descriptor to add.
-         logical_block_size - The logical block size to use.
+        Args:
+            new_fi_desc: The new UDF File Identifier Descriptor to add.
+            logical_block_size: The logical block size to use.
         Returns:
-         The number of extents added due to adding this File Identifier Descriptor.
+            The number of extents added due to adding this File Identifier Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4063,11 +3933,11 @@ class UDFFileEntry:
         """
         Remove a UDF File Identifier Descriptor from this UDF File Entry.
 
-        Parameters:
-         name - The name of the UDF File Identifier Descriptor to remove.
-         logical_block_size - The logical block size to use.
+        Args:
+            name: The name of the UDF File Identifier Descriptor to remove.
+            logical_block_size: The logical block size to use.
         Returns:
-         The number of extents removed due to removing this File Identifier Descriptor.
+            The number of extents removed due to removing this File Identifier Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4097,11 +3967,11 @@ class UDFFileEntry:
         """
         Set the location of the data that this UDF File Entry points to.
 
-        Parameters:
-         current_extent - Unused
-         start_extent - The starting extent for this data location.
+        Args:
+            current_extent: Unused
+            start_extent: The starting extent for this data location.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4116,10 +3986,8 @@ class UDFFileEntry:
         """
         Get the length of the data that this UDF File Entry points to.
 
-        Parameters:
-         None.
         Returns:
-         The length of the data that this UDF File Entry points to.
+            The length of the data that this UDF File Entry points to.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4130,10 +3998,10 @@ class UDFFileEntry:
         """
         Set the length of the data that this UDF File Entry points to.
 
-        Parameters:
-         length - The new length for the data.
+        Args:
+            length: The new length for the data.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4169,10 +4037,8 @@ class UDFFileEntry:
         """
         Determine whether this UDF File Entry points to a file.
 
-        Parameters:
-         None.
         Returns:
-         True if this UDF File Entry points to a file, False otherwise.
+            True if this UDF File Entry points to a file, False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4183,10 +4049,8 @@ class UDFFileEntry:
         """
         Determine whether this UDF File Entry points to a symlink.
 
-        Parameters:
-         None.
         Returns:
-         True if this UDF File Entry points to a symlink, False otherwise.
+            True if this UDF File Entry points to a symlink, False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4197,10 +4061,8 @@ class UDFFileEntry:
         """
         Determine whether this UDF File Entry points to a directory.
 
-        Parameters:
-         None.
         Returns:
-         True if this UDF File Entry points to a directory, False otherwise.
+            True if this UDF File Entry points to a directory, False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4211,10 +4073,8 @@ class UDFFileEntry:
         """
         Get the name of this UDF File Entry as a byte string.
 
-        Parameters:
-         None.
         Returns:
-         The UDF File Entry as a byte string.
+            The UDF File Entry as a byte string.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4229,10 +4089,10 @@ class UDFFileEntry:
         """
         Find a UDF File Identifier descriptor by its name.
 
-        Parameters:
-         currpath - The UTF-8 encoded name to look up.
+        Args:
+            currpath: The UTF-8 encoded name to look up.
         Returns:
-         The UDF File Identifier descriptor corresponding to the passed in name.
+            The UDF File Identifier descriptor corresponding to the passed in name.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4273,10 +4133,10 @@ class UDFFileEntry:
         identifiers, but tracking doees not expand or otherwise modify the UDF
         File Entry.
 
-        Parameters:
-         file_ident - The UDF File Identifier Descriptor to start tracking.
+        Args:
+            file_ident: The UDF File Identifier Descriptor to start tracking.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4289,10 +4149,8 @@ class UDFFileEntry:
         A dummy method to determine whether this is a 'dot' entry.  Since this
         concept doesn't exist in UDF, it always returns False.
 
-        Parameters:
-         None.
         Returns:
-         False.
+            False.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4306,10 +4164,8 @@ class UDFFileEntry:
         pycdlib doesn't attach UDF File Entries to them, so this method always
         return False.
 
-        Parameters:
-         None.
         Returns:
-         False.
+            False.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry not initialized')
@@ -4344,11 +4200,11 @@ class UDFFileIdentifierDescriptor:
         A class method to calculate the size this UDFFileIdentifierDescriptor
         would take up.
 
-        Parameters:
-         cls - The class to use (always UDFFileIdentifierDescriptor).
-         namelen - The length of the name.
+        Args:
+            cls: The class to use (always UDFFileIdentifierDescriptor).
+            namelen: The length of the name.
         Returns:
-         The length that the UDFFileIdentifierDescriptor would take up.
+            The length that the UDFFileIdentifierDescriptor would take up.
         """
         if namelen > 0:
             namelen += 1
@@ -4362,12 +4218,12 @@ class UDFFileIdentifierDescriptor:
         A static method to calculate the amount of padding necessary for this
         UDF File Identifer Descriptor.
 
-        Parameters:
-         val - The amount of non-padded space this UDF File Identifier
-               Descriptor uses.
+        Args:
+            val: The amount of non-padded space this UDF File Identifier
+                Descriptor uses.
         Returns:
-         The amount of padding necessary to make this a compliant UDF File
-         Identifier Descriptor.
+            The amount of padding necessary to make this a compliant UDF File
+            Identifier Descriptor.
         """
         return (4 * ((val + 3) // 4)) - val
 
@@ -4376,13 +4232,13 @@ class UDFFileIdentifierDescriptor:
         """
         Parse the passed in data into a UDF File Identifier Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
-         parent - The UDF File Entry representing the parent.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
+            parent: The UDF File Entry representing the parent.
         Returns:
-         The number of bytes this descriptor consumed.
+            The number of bytes this descriptor consumed.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor already initialized')
@@ -4440,10 +4296,8 @@ class UDFFileIdentifierDescriptor:
         """
         Determine if this File Identifier represents a directory.
 
-        Parameters:
-         None.
         Returns:
-         True if this File Identifier represents a directory, False otherwise.
+            True if this File Identifier represents a directory, False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor not initialized')
@@ -4454,10 +4308,8 @@ class UDFFileIdentifierDescriptor:
         """
         Determine if this File Identifier is a 'parent' (essentially ..).
 
-        Parameters:
-         None.
         Returns:
-         True if this File Identifier is a parent, False otherwise.
+            True if this File Identifier is a parent, False otherwise.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor not initialized')
@@ -4468,10 +4320,8 @@ class UDFFileIdentifierDescriptor:
         """
         Generate the string representing this UDF File Identifier Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF File Identifier Descriptor.
+            A string representing this UDF File Identifier Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor not initialized')
@@ -4498,10 +4348,8 @@ class UDFFileIdentifierDescriptor:
         """
         Get the extent location of this UDF File Identifier.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF File Identifier.
+            Integer extent location of this UDF File Identifier.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier not initialized')
@@ -4515,13 +4363,13 @@ class UDFFileIdentifierDescriptor:
         """
         Create a new UDF File Identifier.
 
-        Parameters:
-         isdir - Whether this File Identifier is a directory.
-         isparent - Whether this File Identifier is a parent (..).
-         name - The name for this File Identifier.
-         parent - The UDF File Entry representing the parent.
+        Args:
+            isdir: Whether this File Identifier is a directory.
+            isparent: Whether this File Identifier is a parent (..).
+            name: The name for this File Identifier.
+            parent: The UDF File Entry representing the parent.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier already initialized')
@@ -4574,11 +4422,11 @@ class UDFFileIdentifierDescriptor:
         Set the location of this UDF File Identifier Descriptor.  Note that
         many UDF File Identifier Descriptors may have the same starting extent.
 
-        Parameters:
-         new_location - The new extent this UDF File Identifier Descriptor should be located at.
-         tag_location - The new relative extent this UDF File Identifier Descriptor should be located at.
+        Args:
+            new_location: The new extent this UDF File Identifier Descriptor should be located at.
+            tag_location: The new relative extent this UDF File Identifier Descriptor should be located at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier not initialized')
@@ -4592,11 +4440,11 @@ class UDFFileIdentifierDescriptor:
         Set the location of the data that this UDF File Identifier Descriptor
         points at.  The data can either be for a directory or for a file.
 
-        Parameters:
-         new_location - The new extent this UDF File Identifier Descriptor data lives at.
-         tag_location - The new relative extent this UDF File Identifier Descriptor data lives at.
+        Args:
+            new_location: The new extent this UDF File Identifier Descriptor data lives at.
+            tag_location: The new relative extent this UDF File Identifier Descriptor data lives at.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier not initialized')
@@ -4646,13 +4494,13 @@ class UDFSpaceBitmapDescriptor:
         """
         Parse the passed in data into a UDF Space Bitmap Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         extent_loc - The extent location this UDF Space Bitmap Descriptor
-                      lives at.
-         desc_tag - The UDFTag describing this UDF Space Bitmap Descriptor.
+        Args:
+            data: The data to parse.
+            extent_loc: The extent location this UDF Space Bitmap Descriptor
+                lives at.
+            desc_tag: The UDFTag describing this UDF Space Bitmap Descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor already initialized')
@@ -4671,10 +4519,8 @@ class UDFSpaceBitmapDescriptor:
         """
         Generate the string representing this UDF Space Bitmap Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Space Bitmap Descriptor.
+            A string representing this UDF Space Bitmap Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor not initialized')
@@ -4689,10 +4535,8 @@ class UDFSpaceBitmapDescriptor:
         """
         Create a new UDF Space Bitmap Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor already initialized')
@@ -4711,10 +4555,8 @@ class UDFSpaceBitmapDescriptor:
         """
         Get the extent location of this UDF Space Bitmap Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Space Bitmap Descriptor.
+            Integer extent location of this UDF Space Bitmap Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor not initialized')
@@ -4728,10 +4570,10 @@ class UDFSpaceBitmapDescriptor:
         """
         Set the new location for this UDF Space Bitmap Descriptor.
 
-        Parameters:
-         extent - The new extent location to set for this UDF Space Bitmap Descriptor.
+        Args:
+            extent: The new extent location to set for this UDF Space Bitmap Descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Space Bitmap Descriptor not initialized')
@@ -4756,14 +4598,14 @@ class UDFAllocationExtentDescriptor:
         """
         Parse the passed in data into a UDF Allocation Extent Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         extent_loc - The extent location that this UDF Allocation Extent
-                      Descriptor lives at.
-         desc_tag - The UDF Tag associated with this UDF Allocation Extent
-                    Descriptor.
+        Args:
+            data: The data to parse.
+            extent_loc: The extent location that this UDF Allocation Extent
+                Descriptor lives at.
+            desc_tag: The UDF Tag associated with this UDF Allocation Extent
+                Descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor already initialized')
@@ -4782,10 +4624,8 @@ class UDFAllocationExtentDescriptor:
         """
         Generate the string representing this UDF Allocation Extent Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Allocation Extent Descriptor.
+            A string representing this UDF Allocation Extent Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor not initialized')
@@ -4801,10 +4641,8 @@ class UDFAllocationExtentDescriptor:
         """
         Create a new UDF Allocation Extent Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor already initialized')
@@ -4822,10 +4660,8 @@ class UDFAllocationExtentDescriptor:
         """
         Get the extent location of this UDF Allocation Extent Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Integer extent location of this UDF Allocation Extent Descriptor.
+            Integer extent location of this UDF Allocation Extent Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor not initialized')
@@ -4839,10 +4675,10 @@ class UDFAllocationExtentDescriptor:
         """
         Set the new location for this UDF Allocation Extent Descriptor.
 
-        Parameters:
-         extent - The new extent location to set for this UDF Allocation Extent Descriptor.
+        Args:
+            extent: The new extent location to set for this UDF Allocation Extent Descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Allocation Extent Descriptor not initialized')
@@ -4864,12 +4700,12 @@ class UDFIndirectEntry:
         """
         Parse the passed in data into a UDF Indirect Entry.
 
-        Parameters:
-         data - The data to parse.
-         desc_tag - The UDF Tag associated with this UDF Allocation Extent
-                    Descriptor.
+        Args:
+            data: The data to parse.
+            desc_tag: The UDF Tag associated with this UDF Allocation Extent
+                Descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry already initialized')
@@ -4891,10 +4727,8 @@ class UDFIndirectEntry:
         """
         Generate the string representing this UDF Indirect Entry.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Indirect Entry.
+            A string representing this UDF Indirect Entry.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry not initialized')
@@ -4909,11 +4743,11 @@ class UDFIndirectEntry:
         """
         Create a new UDF Indirect Entry.
 
-        Parameters:
-         file_type - The type that this UDF File entry represents; one of 'dir',
-                     'file', or 'symlink'.
+        Args:
+            file_type: The type that this UDF File entry represents; one of 'dir',
+                'file', or 'symlink'.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Indirect Entry already initialized')
@@ -4945,11 +4779,11 @@ class UDFTerminalEntry:
         """
         Parse the passed in data into a UDF Terminal Entry.
 
-        Parameters:
-         data - The data to parse.
-         desc_tag - The UDF Tag associated with this UDF Terminal Entry.
+        Args:
+            data: The data to parse.
+            desc_tag: The UDF Tag associated with this UDF Terminal Entry.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry already initialized')
@@ -4968,10 +4802,8 @@ class UDFTerminalEntry:
         """
         Generate the string representing this UDF Terminal Entry.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Terminal Entry.
+            A string representing this UDF Terminal Entry.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry not initialized')
@@ -4986,11 +4818,11 @@ class UDFTerminalEntry:
         """
         Create a new UDF Terminal Entry.
 
-        Parameters:
-         file_type - The type that this UDF Terminal entry represents; one of
-                     'dir', 'file', or 'symlink'.
+        Args:
+            file_type: The type that this UDF Terminal entry represents; one of
+                'dir', 'file', or 'symlink'.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Terminal Entry already initialized')
@@ -5020,12 +4852,12 @@ class UDFExtendedAttributeHeaderDescriptor:
         """
         Parse the passed in data into a UDF Extended Attribute Header Descriptor.
 
-        Parameters:
-         data - The data to parse.
-         desc_tag - The UDF Tag associated with this UDF Extended Attribute
-                    Header Descriptor.
+        Args:
+            data: The data to parse.
+            desc_tag: The UDF Tag associated with this UDF Extended Attribute
+                Header Descriptor.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extended Attribute Header Descriptor already initialized')
@@ -5043,10 +4875,8 @@ class UDFExtendedAttributeHeaderDescriptor:
         Generate the string representing this UDF Extended Attribute Header
         Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Extended Attribute Header Descriptor.
+            A string representing this UDF Extended Attribute Header Descriptor.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extended Attribute Header Descriptor not initialized')
@@ -5061,10 +4891,8 @@ class UDFExtendedAttributeHeaderDescriptor:
         """
         Create a new UDF Extended Attribute Header Descriptor.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extended Attribute Header Descriptor already initialized')
@@ -5094,13 +4922,13 @@ class UDFUnallocatedSpaceEntry:
         """
         Parse the passed in data into a UDF Unallocated Space Entry.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent associated with this UDF Unallocated Space Entry.
-         desc_tag - The UDF Tag associated with this UDF Unallocated Space
-                    Entry.
+        Args:
+            data: The data to parse.
+            extent: The extent associated with this UDF Unallocated Space Entry.
+            desc_tag: The UDF Tag associated with this UDF Unallocated Space
+                Entry.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Entry already initialized')
@@ -5127,10 +4955,8 @@ class UDFUnallocatedSpaceEntry:
         """
         Generate the string representing this UDF Unallocated Space Entry.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Unallocated Space Entry.
+            A string representing this UDF Unallocated Space Entry.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Entry not initialized')
@@ -5152,11 +4978,11 @@ class UDFUnallocatedSpaceEntry:
         """
         Create a new UDF Unallocated Space Entry.
 
-        Parameters:
-         file_type - The type that this UDF Space Entry represents; one of
-                     'dir', 'file', or 'symlink'.
+        Args:
+            file_type: The type that this UDF Space Entry represents; one of
+                'dir', 'file', or 'symlink'.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Entry already initialized')
@@ -5186,12 +5012,12 @@ class UDFPartitionIntegrityEntry:
         """
         Parse the passed in data into a UDF Partition Integrity Entry.
 
-        Parameters:
-         data - The data to parse.
-         desc_tag - The UDF Tag associated with this UDF Partition Integrity
-                    Entry.
+        Args:
+            data: The data to parse.
+            desc_tag: The UDF Tag associated with this UDF Partition Integrity
+                Entry.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Integrity Entry already initialized')
@@ -5218,10 +5044,8 @@ class UDFPartitionIntegrityEntry:
         """
         Generate the string representing this UDF Partition Integrity Entry.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Partition Integrity Entry.
+            A string representing this UDF Partition Integrity Entry.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Integrity Entry not initialized')
@@ -5238,11 +5062,11 @@ class UDFPartitionIntegrityEntry:
         """
         Create a new UDF Partition Integrity Entry.
 
-        Parameters:
-         file_type - The type that this UDF Space Entry represents; one of
-                     'dir', 'file', or 'symlink'.
+        Args:
+            file_type: The type that this UDF Space Entry represents; one of
+                'dir', 'file', or 'symlink'.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Partition Integrity Entry already initialized')
@@ -5292,13 +5116,13 @@ class UDFExtendedFileEntry(UDFFileEntry):
         """
         Parse the passed in data into a UDF Extended File Entry.
 
-        Parameters:
-         data - The data to parse.
-         extent - The extent that this descriptor currently lives at.
-         parent - The parent File Entry for this file (may be None).
-         desc_tag - A UDFTag object that represents the Descriptor Tag.
+        Args:
+            data: The data to parse.
+            extent: The extent that this descriptor currently lives at.
+            parent: The parent File Entry for this file (may be None).
+            desc_tag: A UDFTag object that represents the Descriptor Tag.
         Returns:
-         Nothing.
+            Nothing.
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extended File Entry already initialized')
@@ -5369,10 +5193,8 @@ class UDFExtendedFileEntry(UDFFileEntry):
         """
         Generate the string representing this UDF Extended File Entry.
 
-        Parameters:
-         None.
         Returns:
-         A string representing this UDF Extended File Entry.
+            A string representing this UDF Extended File Entry.
         """
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extended File Entry not initialized')
@@ -5407,18 +5229,18 @@ class UDFExtendedFileEntry(UDFFileEntry):
         the shared fields, then overrides the descriptor tag to be 266 and
         initializes the EFE-only fields.
 
-        Parameters:
-         length - The (starting) length of this UDF File Entry; this is ignored
-                  if this is a symlink.
-         file_type - The type that this UDF File entry represents; one of 'dir',
-                     'file', or 'symlink'.
-         parent - The parent UDF File Entry for this UDF File Entry.
-         log_block_size - The logical block size for extents.
-         creation_seconds - Time and date, in seconds since the epoch, to use
-                            for the EFE creation_time field.  Defaults to the
-                            current time when omitted.
+        Args:
+            length: The (starting) length of this UDF File Entry; this is ignored
+                if this is a symlink.
+            file_type: The type that this UDF File entry represents; one of 'dir',
+                'file', or 'symlink'.
+            parent: The parent UDF File Entry for this UDF File Entry.
+            log_block_size: The logical block size for extents.
+            creation_seconds: Time and date, in seconds since the epoch, to use
+                for the EFE creation_time field.  Defaults to the
+                current time when omitted.
         Returns:
-         Nothing.
+            Nothing.
         """
         UDFFileEntry.new(self, length, file_type, parent, log_block_size)
         self.desc_tag = UDFTag()
@@ -5438,10 +5260,10 @@ def symlink_to_bytes(symlink_target):
     """
     Generate UDF symlink data from a Unix-like path.
 
-    Parameters:
-     symlink_target - The Unix-like path that is the symlink.
+    Args:
+        symlink_target: The Unix-like path that is the symlink.
     Returns:
-     The UDF data corresponding to the symlink.
+        The UDF data corresponding to the symlink.
     """
     symlink_data = bytearray()
     for comp in symlink_target.split('/'):
@@ -5469,16 +5291,16 @@ def _parse_allocation_descriptors(flags, data, length, start_offset, extent):
     """
     Generate a list of allocation descriptors from the data.
 
-    Parameters:
-     flags - The flags describing which kind of allocation descriptors are in
-             the data.
-     data - The data to parse.
-     length - The length of the data.
-     start_offset - The start offset of the allocation descriptor data in the
-                    overall data.
-     extent - The extent at which the data lives.
+    Args:
+        flags: The flags describing which kind of allocation descriptors are in
+            the data.
+        data: The data to parse.
+        length: The length of the data.
+        start_offset: The start offset of the allocation descriptor data in the
+            overall data.
+        extent: The extent at which the data lives.
     Returns:
-     The list of allocation descriptors.
+        The list of allocation descriptors.
     """
     alloc_descs = []  # type: List[Union[UDFShortAD, UDFLongAD, UDFInlineAD]]
 
@@ -5538,11 +5360,11 @@ class UDFDescriptorSequence:
         Append a descriptor to the list of descriptors, checking that
         there are no duplicates.
 
-        Parameters:
-         which - Which list to append to.
-         desc - The descriptor to check and append.
+        Args:
+            which: Which list to append to.
+            desc: The descriptor to check and append.
         Returns:
-         Nothing.
+            Nothing.
         '''
         # ECMA-167, Part 3, 8.4.2 says that all Volume Descriptors
         # with the same sequence numbers should have the same contents.
@@ -5561,10 +5383,10 @@ class UDFDescriptorSequence:
         A method to assign a consecutive sequence of extents for the UDF
         Descriptors, starting at the given extent.
 
-        Parameters:
-         start_extent - The starting extent to assign from.
+        Args:
+            start_extent: The starting extent to assign from.
         Returns:
-         Nothing.
+            Nothing.
         '''
         current_extent = start_extent
 
@@ -5602,12 +5424,12 @@ def parse_udf_vol_descs(vd_data, extent, logical_block_size):
     """
     An internal method to parse a set of UDF Volume Descriptors.
 
-    Parameters:
-     vd_data - The data to parse.
-     extent - The extent at which to start parsing.
-     logical_block_size - The logical block size for this ISO.
+    Args:
+        vd_data: The data to parse.
+        extent: The extent at which to start parsing.
+        logical_block_size: The logical block size for this ISO.
     Returns:
-     The UDFDescriptorSequence object that stores parsed objects.
+        The UDFDescriptorSequence object that stores parsed objects.
     """
 
     # Parse the data.  Since the sequence doesn't have to be in any set order,
@@ -5681,11 +5503,11 @@ def parse_anchor(anchor_data, anchor_location):
     """
     An internal method to parse data that may potentially be a UDF Anchor.
 
-    Parameters:
-     anchor_data - The data to parse.
-     anchor_location - The extent location of the data.
+    Args:
+        anchor_data: The data to parse.
+        anchor_location: The extent location of the data.
     Returns:
-     A UDFAnchorVolumeStructure if the data represents an anchor, None otherwise.
+        A UDFAnchorVolumeStructure if the data represents an anchor, None otherwise.
     """
     anchor_tag = UDFTag()
     try:
@@ -5707,13 +5529,13 @@ def parse_logical_volume_integrity(integrity_data, current_extent, logical_block
     An internal method to parse Logical Volume Integrity data, and an optional
     Logical Volume Integrity Terminator.
 
-    Parameters:
-     integrity_data - The data to parse.
-     current_extent - The extent location of the data.
-     logical_block_size - The logical block size of the ISO.
+    Args:
+        integrity_data: The data to parse.
+        current_extent: The extent location of the data.
+        logical_block_size: The logical block size of the ISO.
     Returns:
-     A tuple where the first item is a UDFLogicalVolumeIntegrityDescriptor, and
-     the second item is a optional UDFTerminatorDescriptor.
+        A tuple where the first item is a UDFLogicalVolumeIntegrityDescriptor, and
+        the second item is a optional UDFTerminatorDescriptor.
     """
     desc_tag = UDFTag()
     desc_tag.parse(integrity_data, current_extent)
@@ -5740,13 +5562,13 @@ def parse_file_set(file_set_and_term_data, current_extent, logical_block_size):
     """
     An internal method to parse File Set data, and the File Set Terminator.
 
-    Parameters:
-     file_set_and_term_data - The data to parse.
-     current_extent - The extent location of the data.
-     logical_block_size - The logical block size of the ISO.
+    Args:
+        file_set_and_term_data: The data to parse.
+        current_extent: The extent location of the data.
+        logical_block_size: The logical block size of the ISO.
     Returns:
-     A tuple where the first item is a UDFFileSetDescriptor, and the second item
-     is a UDFTerminatorDescriptor.
+        A tuple where the first item is a UDFFileSetDescriptor, and the second item
+        is a UDFTerminatorDescriptor.
     """
     desc_tag = UDFTag()
     desc_tag.parse(file_set_and_term_data[:logical_block_size], 0)
@@ -5782,14 +5604,14 @@ def parse_file_entry(icbdata, abs_file_entry_extent, icb_log_block_num, parent):
     (ECMA-167 14.9), 266 maps to UDFExtendedFileEntry (ECMA-167 14.17,
     a subclass of UDFFileEntry).
 
-    Parameters:
-     icbdata - The data to parse.
-     abs_file_entry_extent - The extent number the file entry starts at.
-     icb_log_block_num - The ICB logical block number.
-     parent - The parent of the UDF File Entry.
+    Args:
+        icbdata: The data to parse.
+        abs_file_entry_extent: The extent number the file entry starts at.
+        icb_log_block_num: The ICB logical block number.
+        parent: The parent of the UDF File Entry.
     Returns:
-     A UDFFileEntry object corresponding to the on-disk file entry, or
-     a UDFExtendedFileEntry (which is-a UDFFileEntry) for tag 266.
+        A UDFFileEntry object corresponding to the on-disk file entry, or
+        a UDFExtendedFileEntry (which is-a UDFFileEntry) for tag 266.
     """
     if all(v == 0 for v in bytearray(icbdata)):
         # We have seen ISOs in the wild (Windows 2008 Datacenter Enterprise
@@ -5817,15 +5639,15 @@ def parse_file_ident(data, current_extent, part_start, udf_file_entry):
     An internal method to parse a single UDF File Identifier and return the
     corresponding object.
 
-    Parameters:
-     data - The data to parse.
-     current_extent - The extent number the data is located at.
-     part_start - The start of the logical partition.
-     udf_file_entry - The UDF File Entry that corresponds with this File
-                      Identifier.
+    Args:
+        data: The data to parse.
+        current_extent: The extent number the data is located at.
+        part_start: The start of the logical partition.
+        udf_file_entry: The UDF File Entry that corresponds with this File
+            Identifier.
     Returns:
-     A tuple where the first item is a UDFFileIdentifierDescriptor, and the
-     second item is the number of bytes the descriptor consumed.
+        A tuple where the first item is a UDFFileIdentifierDescriptor, and the
+        second item is the number of bytes the descriptor consumed.
     """
     desc_tag = UDFTag()
     desc_tag.parse(data, current_extent - part_start)

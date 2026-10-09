@@ -66,13 +66,13 @@ class PyCdlibIO(io.RawIOBase):
         """
         Read and return up to size bytes.
 
-        Parameters:
-         size - Optional parameter to read size number of bytes; if None or
+        Args:
+            size: Optional parameter to read size number of bytes; if None or
                 negative, all remaining bytes in the file will be read
         Returns:
-         The number of bytes requested or the rest of the data left in the file,
-         whichever is smaller.  If the file is at or past EOF, returns an empty
-         bytestring.
+            The number of bytes requested or the rest of the data left in the file,
+            whichever is smaller.  If the file is at or past EOF, returns an empty
+            bytestring.
         """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
@@ -100,11 +100,9 @@ class PyCdlibIO(io.RawIOBase):
         """
         Read and return the remaining bytes in the file.
 
-        Parameters:
-         None.
         Returns:
-         The rest of the data left in the file.  If the file is at or past EOF,
-         returns an empty bytestring.
+            The rest of the data left in the file.  If the file is at or past EOF,
+            returns an empty bytestring.
         """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
@@ -152,12 +150,12 @@ class PyCdlibIO(io.RawIOBase):
         * 1 -- current stream position; offset may be negative
         * 2 -- end of stream; offset is usually negative
 
-        Parameters:
-         offset - The byte offset to seek to.
-         whence - The position in the file to start from (0 for start, 1 for
-                  current, 2 for end)
+        Args:
+            offset: The byte offset to seek to.
+            whence: The position in the file to start from (0 for start, 1 for
+                current, 2 for end)
         Returns:
-         The new absolute position.
+            The new absolute position.
         """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
@@ -202,10 +200,8 @@ class PyCdlibIO(io.RawIOBase):
         """
         Return the current stream position.
 
-        Parameters:
-         None.
         Returns:
-         The current stream position.
+            The current stream position.
         """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
@@ -216,10 +212,8 @@ class PyCdlibIO(io.RawIOBase):
         """
         Return the length of the current file.
 
-        Parameters:
-         None.
         Returns:
-         The length of the file.
+            The length of the file.
         """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
@@ -230,10 +224,8 @@ class PyCdlibIO(io.RawIOBase):
         """
         Determine whether this file is readable.
 
-        Parameters:
-         None.
         Returns:
-         True in all cases.
+            True in all cases.
         """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
@@ -244,10 +236,8 @@ class PyCdlibIO(io.RawIOBase):
         """
         Determine whether this file is seekable.
 
-        Parameters:
-         None.
         Returns:
-         True in all cases.
+            True in all cases.
         """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
@@ -258,10 +248,8 @@ class PyCdlibIO(io.RawIOBase):
         """
         Close this file stream.
 
-        Parameters:
-         None.
         Returns:
-         Nothing.
+            Nothing.
         """
         self._open = False
         self._ctxt.__exit__()
