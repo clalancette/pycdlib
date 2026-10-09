@@ -1096,6 +1096,65 @@ class PyCdlib:
         remaining = max(0, iso_file_length - self._cdfp.tell())
         return self._cdfp.read(min(length, remaining))
 
+    def _follow_rock_ridge_ce_chain(self, new_record, iso_file_length):
+        # type: (dr.DirectoryRecord, int) -> str
+        """
+        Follow a directory record's Rock Ridge Continuation Entry (CE)
+        chain, parsing each continuation area into the record's Rock Ridge
+        data.  A continuation area may itself end with a CE record pointing
+        at a further area, chaining as many times as needed to hold the
+        entries, so the whole chain is followed, remembering where we have
+        been so that an ISO whose CE records form a cycle cannot spin us
+        forever.
+
+        Parameters:
+         new_record - The directory record whose CE chain to follow.
+         iso_file_length - The size of the ISO, used to clamp reads.
+        Returns:
+         The Rock Ridge version string carried by the continuation data, or
+         the empty string if the record has no CE record.
+        """
+        if new_record.rock_ridge is None or new_record.rock_ridge.dr_entries.ce_record is None:
+            return ''
+
+        cdfp = self._cdfp
+        ce_record = new_record.rock_ridge.dr_entries.ce_record  # type: Optional[rockridge.RRCERecord]
+        orig_pos = cdfp.tell()
+        seen_ce_areas = set()  # type: Set[Tuple[int, int, int]]
+        while ce_record is not None:
+            area = (ce_record.bl_cont_area,
+                    ce_record.offset_cont_area,
+                    ce_record.len_cont_area)
+            if area in seen_ce_areas:
+                raise pycdlibexception.PyCdlibInvalidISO('Rock Ridge Continuation Entries form a loop')
+            seen_ce_areas.add(area)
+
+            self._seek_to_extent(ce_record.bl_cont_area)
+            cdfp.seek(ce_record.offset_cont_area, os.SEEK_CUR)
+            con_block = self._read_clamped(ce_record.len_cont_area,
+                                           iso_file_length)
+            new_record.rock_ridge.parse(con_block, False,
+                                        new_record.rock_ridge.bytes_to_skip,
+                                        True, new_record.file_identifier())
+            block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
+                                               ce_record.offset_cont_area,
+                                               ce_record.len_cont_area)
+            new_record.rock_ridge.add_ce_area(block,
+                                              ce_record.offset_cont_area,
+                                              ce_record.len_cont_area)
+
+            # Parsing an area stores any CE it contained in ce_entries; take
+            # it as the next link and clear it so the following area can
+            # carry one of its own, and so that no stale link is left behind
+            # at the end.
+            ce_entries = new_record.rock_ridge.ce_entries
+            ce_record = ce_entries.ce_record if ce_entries is not None else None
+            if ce_entries is not None:
+                ce_entries.ce_record = None
+        cdfp.seek(orig_pos)
+
+        return new_record.rock_ridge.rr_version if new_record.rock_ridge else ''
+
     def _walk_directories(self, vd, extent_to_ptr, extent_to_inode,
                           path_table_records):
         # type: (headervd.PrimaryOrSupplementaryVD, Dict[int, path_table_record.PathTableRecord], Dict[int, inode.Inode], List[path_table_record.PathTableRecord]) -> Tuple[int, int]
@@ -1239,54 +1298,11 @@ class PyCdlib:
                         # will eventually be used to fix the PVD size.
                         lastbyte = max(lastbyte, new_end)
 
-                rr_ce = ''
-                if new_record.rock_ridge is not None and new_record.rock_ridge.dr_entries.ce_record is not None:
-                    ce_record = new_record.rock_ridge.dr_entries.ce_record  # type: Optional[rockridge.RRCERecord]
-                    orig_pos = cdfp.tell()
-                    # A continuation area may itself end with a CE record
-                    # pointing at a further area, chaining as many times as
-                    # needed to hold the entries.  Follow the whole chain,
-                    # remembering where we have been so that an ISO whose CE
-                    # records form a cycle cannot spin us forever.
-                    seen_ce_areas = set()  # type: Set[Tuple[int, int, int]]
-                    num_ce_areas = 0
-                    while ce_record is not None:
-                        area = (ce_record.bl_cont_area,
-                                ce_record.offset_cont_area,
-                                ce_record.len_cont_area)
-                        if area in seen_ce_areas:
-                            raise pycdlibexception.PyCdlibInvalidISO('Rock Ridge Continuation Entries form a loop')
-                        seen_ce_areas.add(area)
-                        num_ce_areas += 1
-
-                        self._seek_to_extent(ce_record.bl_cont_area)
-                        cdfp.seek(ce_record.offset_cont_area, os.SEEK_CUR)
-                        con_block = self._read_clamped(ce_record.len_cont_area,
-                                                       iso_file_length)
-                        new_record.rock_ridge.parse(con_block, False,
-                                                    new_record.rock_ridge.bytes_to_skip,
-                                                    True, new_record.file_identifier())
-                        block = self.pvd.track_rr_ce_entry(ce_record.bl_cont_area,
-                                                           ce_record.offset_cont_area,
-                                                           ce_record.len_cont_area)
-                        new_record.rock_ridge.add_ce_area(block,
-                                                          ce_record.offset_cont_area,
-                                                          ce_record.len_cont_area)
-
-                        # Parsing an area stores any CE it contained in
-                        # ce_entries; take it as the next link and clear it so
-                        # the following area can carry one of its own, and so
-                        # that no stale link is left behind at the end.
-                        ce_entries = new_record.rock_ridge.ce_entries
-                        ce_record = ce_entries.ce_record if ce_entries is not None else None
-                        if ce_entries is not None:
-                            ce_entries.ce_record = None
-                    cdfp.seek(orig_pos)
-
-                    rr_ce = new_record.rock_ridge.rr_version if new_record.rock_ridge else ''
-                # The PX record could be in the continuation blob, so
-                # the continuation is relevant to determine the actual
-                # Rock Ridge version
+                # The PX record could be in the continuation blob, so the
+                # continuation is relevant to determine the actual Rock
+                # Ridge version.
+                rr_ce = self._follow_rock_ridge_ce_chain(new_record,
+                                                         iso_file_length)
                 self._set_rock_ridge(max(rr, rr_ce))
 
                 if not saw_rrip_er and new_record.rock_ridge is not None:
