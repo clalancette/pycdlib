@@ -10,7 +10,8 @@ docs:
 	groff -mandoc -Thtml man/pycdlib-explorer.1 > docs/pycdlib-explorer.html
 	groff -mandoc -Thtml man/pycdlib-extract-files.1 > docs/pycdlib-extract-files.html
 	groff -mandoc -Thtml man/pycdlib-genisoimage.1 > docs/pycdlib-genisoimage.html
-	python3 custom-pydoc.py > docs/pycdlib-api.html
+	sphinx-build -b html -d build/doctrees docs/_sphinx docs/api
+	rm -f docs/api/.buildinfo
 
 flake8:
 	-python3 -m flake8 --ignore=E501,E266 --max-complexity 80 pycdlib tools/*
