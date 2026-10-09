@@ -2312,6 +2312,11 @@ class PyCdlib:
                                                 self.udf_file_set.root_dir_icb.log_block_num,
                                                 None)
 
+        # Refuse to walk the same directory File Entry twice, so a
+        # malicious image whose directory File Identifiers form a loop
+        # cannot refill this queue forever.  Mirrors the seen_ce_areas
+        # guard used for the Rock Ridge continuation area chain.
+        seen_file_entries = set([abs_file_entry_extent])  # type: Set[int]
         udf_file_entries = collections.deque([self.udf_root])
         while udf_file_entries:
             udf_file_entry = udf_file_entries.popleft()
@@ -2365,6 +2370,9 @@ class PyCdlib:
                     next_entry.file_ident = file_ident
 
                     if file_ident.is_dir():
+                        if abs_file_entry_extent in seen_file_entries:
+                            raise pycdlibexception.PyCdlibInvalidISO('UDF File Entries form a loop')
+                        seen_file_entries.add(abs_file_entry_extent)
                         udf_file_entries.append(next_entry)
                     else:
                         if next_entry.get_data_length() > 0:
