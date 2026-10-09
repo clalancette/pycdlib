@@ -49,7 +49,7 @@ Add a file called /BOOT.;1 to the ISO.  This is the file that contains the data 
 iso.add_eltorito('/BOOT.;1')
 ```
 
-Add El Torito to the ISO, making the boot file "/BOOT.;1".  After this call, the ISO is actually bootable.  By default, the [add_eltorito](pycdlib-api.html#PyCdlib-add_eltorito) method will use so-called "no emulation" booting, which allows arbitrary data in the boot file.  "Hard drive" and "floppy" emulation is also supported, though these options are more esoteric and need specifically configured boot data to work properly.
+Add El Torito to the ISO, making the boot file "/BOOT.;1".  After this call, the ISO is actually bootable.  By default, the [add_eltorito](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.add_eltorito) method will use so-called "no emulation" booting, which allows arbitrary data in the boot file.  "Hard drive" and "floppy" emulation is also supported, though these options are more esoteric and need specifically configured boot data to work properly.
 
 ```python
 iso.write('eltorito.iso')

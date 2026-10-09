@@ -30,20 +30,20 @@ iso = pycdlib.PyCdlib()
 iso.new(rock_ridge='1.09')
 ```
 
-Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have Rock Ridge extensions, we pass the argument `rock_ridge="1.09"` to the [new](pycdlib-api.html#PyCdlib-new) method.  PyCdlib supports Rock Ridge versions 1.09, 1.10, and 1.12, though 1.09 is more common.
+Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have Rock Ridge extensions, we pass the argument `rock_ridge="1.09"` to the [new](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.new) method.  PyCdlib supports Rock Ridge versions 1.09, 1.10, and 1.12, though 1.09 is more common.
 
 ```python
 foostr = b'foo\n'
 iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', rr_name='foo')
 ```
 
-As in earlier examples, create a new file on the ISO from a string.  Because this is a Rock Ridge ISO, we have to also supply the `rr_name` argument to the [add_fp](pycdlib-api.html#PyCdlib-add_fp) method.  Forgetting the `rr_name` argument on a Rock Ridge ISO is an error and PyCdlib will throw an exception.  Note that it is called `rr_name`, and that the argument given is truly a name, not an absolute path.  This is because Rock Ridge is an extension to the original ISO9660, and this alternate name will be stored alongside the original ISO data.
+As in earlier examples, create a new file on the ISO from a string.  Because this is a Rock Ridge ISO, we have to also supply the `rr_name` argument to the [add_fp](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.add_fp) method.  Forgetting the `rr_name` argument on a Rock Ridge ISO is an error and PyCdlib will throw an exception.  Note that it is called `rr_name`, and that the argument given is truly a name, not an absolute path.  This is because Rock Ridge is an extension to the original ISO9660, and this alternate name will be stored alongside the original ISO data.
 
 ```python
 iso.add_directory('/DIR1', rr_name='dir1')
 ```
 
-Create a new directory on the ISO.  Again we must pass the `rr_name` argument to [add_directory](pycdlib-api.html#PyCdlib-add_directory), for all of the same reasons and with the same restrictions as we saw above for [add_fp](pycdlib-api.html#PyCdlib-add_fp).
+Create a new directory on the ISO.  Again we must pass the `rr_name` argument to [add_directory](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.add_directory), for all of the same reasons and with the same restrictions as we saw above for [add_fp](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.add_fp).
 
 ```python
 iso.write('new.iso')

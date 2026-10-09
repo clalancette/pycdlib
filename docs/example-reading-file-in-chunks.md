@@ -1,5 +1,5 @@
 # Example: Reading a large file in chunks
-It may be useful in some applications to be able to read a file from an ISO a bit at a time and do some processing on it.  PyCdlib provides the context manager [open_file_from_iso](pycdlib-api.html#PyCdlib-open_file_from_iso) API to allow opening a file and reading in parts of it.  Here's the complete code for this example:
+It may be useful in some applications to be able to read a file from an ISO a bit at a time and do some processing on it.  PyCdlib provides the context manager [open_file_from_iso](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.open_file_from_iso) API to allow opening a file and reading in parts of it.  Here's the complete code for this example:
 
 ```python
 from io import BytesIO
@@ -43,7 +43,7 @@ This code creates a new ISO, adds a single file to it, and writes it out.  This 
 with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
 ```
 
-Here we use the [open_file_from_iso](pycdlib-api.html#PyCdlib-open_file_from_iso) API to get a context manager to the file that we created; this will be used in the rest of the explanations below.
+Here we use the [open_file_from_iso](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.open_file_from_iso) API to get a context manager to the file that we created; this will be used in the rest of the explanations below.
 
 ```python
     all1 = infp.read()

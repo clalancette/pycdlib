@@ -30,20 +30,20 @@ iso = pycdlib.PyCdlib()
 iso.new(udf='2.60')
 ```
 
-Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have UDF, we pass the argument `udf='2.60'` to the [new](pycdlib-api.html#PyCdlib-new) method.
+Create a new PyCdlib object, and then create a new ISO with that object.  In order to make it have UDF, we pass the argument `udf='2.60'` to the [new](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.new) method.
 
 ```python
 foostr = b'foo\n'
 iso.add_fp(BytesIO(foostr), len(foostr), '/FOO.;1', udf_path='/foo')
 ```
 
-As in earlier examples, create a new file on the ISO from a string.  Because this is a UDF ISO, we have to provide the `udf_path` argument to [add_fp](pycdlib-api.html#PyCdlib-add_fp) as well.  Like Joliet, UDF is a completely different context from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the UDF file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).
+As in earlier examples, create a new file on the ISO from a string.  Because this is a UDF ISO, we have to provide the `udf_path` argument to [add_fp](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.add_fp) as well.  Like Joliet, UDF is a completely different context from the original ISO9660 structure, and so the argument to be passed here must be an absolute path, not a name.  Because of this, the UDF file can be on a completely different part of the directory structure, or be omitted completely (in which case the file will only show up on the ISO9660 portion of the ISO).
 
 ```python
 iso.add_directory('/DIR1', udf_path='/dir1')
 ```
 
-Create a new directory on the ISO.  Again we must pass the `udf_path` argument to [add_directory](pycdlib-api.html#PyCdlib-add_directory), for all of the same reasons and with the same restrictions as we saw above for [add_fp](pycdlib-api.html#PyCdlib-add_fp).
+Create a new directory on the ISO.  Again we must pass the `udf_path` argument to [add_directory](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.add_directory), for all of the same reasons and with the same restrictions as we saw above for [add_fp](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.add_fp).
 
 ```python
 iso.write('new.iso')

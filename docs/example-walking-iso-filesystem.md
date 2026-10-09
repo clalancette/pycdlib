@@ -1,5 +1,5 @@
 # Example: Walking the ISO filesystem
-In some circumstances it may be useful to walk all or some of the filesystem tree on the ISO.  For that purpose, PyCdlib provides the [walk](pycdlib-api.html#PyCdlib-walk) API.  Much like the built-in Python [os.walk](https://docs.python.org/3/library/os.html#os.walk) API, this method takes a PyCdlib full path, and iterates over the entire filesystem starting at that root.  For each directory, the method returns a 3-tuple of `(dirpath, dirnames, filenames)` that can be used by the user.  Here's the complete code for this example:
+In some circumstances it may be useful to walk all or some of the filesystem tree on the ISO.  For that purpose, PyCdlib provides the [walk](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.walk) API.  Much like the built-in Python [os.walk](https://docs.python.org/3/library/os.html#os.walk) API, this method takes a PyCdlib full path, and iterates over the entire filesystem starting at that root.  For each directory, the method returns a 3-tuple of `(dirpath, dirnames, filenames)` that can be used by the user.  Here's the complete code for this example:
 
 ```python
 from io import BytesIO
@@ -62,7 +62,7 @@ for dirname, dirlist, filelist in iso.walk(iso_path='/'):
     print("Dirname:", dirname, ", Dirlist:", dirlist, ", Filelist:", filelist)
 ```
 
-Use the [walk](pycdlib-api.html#PyCdlib-walk) API to iterate over the directories and files on the ISO, printing them out in turn.  Note that [walk](pycdlib-api.html#PyCdlib-walk) takes one and only one of `iso_path`, `rr_path`, `joliet_path`, or `udf_path`, and only accepts `rr_path`, `joliet_path`, or `udf_path` if the ISO supports those extensions.  Since we added a number of files and directories on the ISO, the above code will print out:
+Use the [walk](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.walk) API to iterate over the directories and files on the ISO, printing them out in turn.  Note that [walk](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.walk) takes one and only one of `iso_path`, `rr_path`, `joliet_path`, or `udf_path`, and only accepts `rr_path`, `joliet_path`, or `udf_path` if the ISO supports those extensions.  Since we added a number of files and directories on the ISO, the above code will print out:
 
 ```python
 Dirname: / , Dirlist: ['DIR2', 'DIR1'] , Filelist: []
@@ -77,7 +77,7 @@ for dirname, dirlist, filelist in iso.walk(iso_path='/DIR1'):
     print("Dirname:", dirname, ", Dirlist:", dirlist, ", Filelist:", filelist)
 ```
 
-The second call to [walk](pycdlib-api.html#PyCdlib-walk) starts in the `DIR1` subdirectory, so the output from this loop looks like:
+The second call to [walk](api/pycdlib.html#pycdlib.pycdlib.PyCdlib.walk) starts in the `DIR1` subdirectory, so the output from this loop looks like:
 
 ```sh
 Dirname: /DIR1 , Dirlist: [] , Filelist: ['FOO.;1', 'BAR.;1']
