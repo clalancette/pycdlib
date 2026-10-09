@@ -15,19 +15,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 
 """
-Focused in-place editing of an existing ISO.
+In-place editing of files on an existing ISO.
 
-This module hosts the implementation behind PyCdlib's older
-``modify_file_in_place`` method, together with a context-manager-shaped
-public API (:class:`InPlaceEditor`).
-
-The split exists because in-place editing is a fundamentally different
-concept from the mastering APIs on :class:`pycdlib.PyCdlib` (``add_*`` /
-``rm_*`` / ``write_fp``) and combining the two on the same PyCdlib
-object has historically produced silent disk corruption.  Keeping the
-in-place primitives on their own focused class makes the misuse
-impossible to express at the API level: the editor doesn't expose any
-of the mastering methods, so you can't accidentally interleave them.
+:class:`InPlaceEditor` changes an ISO file on disk directly, rather than
+mastering a new ISO the way the :class:`pycdlib.PyCdlib` methods do.
+The two styles of editing cannot safely be mixed on one object, so
+in-place editing lives on its own class with its own small set of
+operations.
 """
 
 import time
