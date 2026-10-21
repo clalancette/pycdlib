@@ -232,32 +232,6 @@
           <section id="module-pycdlib.facade">
 <span id="pycdlib-facade"></span><h1>pycdlib.facade<a class="headerlink" href="#module-pycdlib.facade" title="Link to this heading">¶</a></h1>
 <p>Facade classes to make the main PyCdlib object easier to use.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="pycdlib.facade.iso_path_to_rr_name">
-<span class="sig-name descname"><span class="pre">iso_path_to_rr_name</span></span><span class="sig-paren">(</span>
-
-<dl>
-<dd><em class="sig-param"><span class="n"><span class="pre">iso_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">interchange_level</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>,</dd>
-<dd><em class="sig-param"><span class="n"><span class="pre">is_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>,</dd>
-</dl>
-
-<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#pycdlib.facade.iso_path_to_rr_name" title="Link to this definition">¶</a></dt>
-<dd><p>Take an absolute ISO path and generate a corresponding Rock Ridge basename.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>iso_path</strong> – The absolute iso_path to generate a Rock Ridge name from.</p></li>
-<li><p><strong>interchange_level</strong> – The interchange level at which to operate.</p></li>
-<li><p><strong>is_dir</strong> – Whether this will be a directory or not.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The Rock Ridge name as a string.</p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="pycdlib.facade.PyCdlibISO9660">
 <em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PyCdlibISO9660</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pycdlib_obj</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="pycdlib.html#pycdlib.pycdlib.PyCdlib" title="pycdlib.pycdlib.PyCdlib"><span class="pre">pycdlib.PyCdlib</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pycdlib.facade.PyCdlibISO9660" title="Link to this definition">¶</a></dt>
@@ -1370,7 +1344,6 @@ of the returned context manager).</p>
           <div class="toc-tree">
             <ul>
 <li><a class="reference internal" href="#">pycdlib.facade</a><ul>
-<li><a class="reference internal" href="#pycdlib.facade.iso_path_to_rr_name"><code class="docutils literal notranslate"><span class="pre">iso_path_to_rr_name()</span></code></a></li>
 <li><a class="reference internal" href="#pycdlib.facade.PyCdlibISO9660"><code class="docutils literal notranslate"><span class="pre">PyCdlibISO9660</span></code></a><ul>
 <li><a class="reference internal" href="#pycdlib.facade.PyCdlibISO9660.get_file_from_iso"><code class="docutils literal notranslate"><span class="pre">get_file_from_iso()</span></code></a></li>
 <li><a class="reference internal" href="#pycdlib.facade.PyCdlibISO9660.get_file_from_iso_fp"><code class="docutils literal notranslate"><span class="pre">get_file_from_iso_fp()</span></code></a></li>
