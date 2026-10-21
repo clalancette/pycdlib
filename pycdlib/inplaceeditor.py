@@ -38,28 +38,14 @@ if TYPE_CHECKING:
     from typing import BinaryIO, Literal, Optional, Union  # noqa: F401
 
 
-def _do_modify_file_in_place(iso, fp, length, iso_path=None, rr_path=None,
-                             joliet_path=None, udf_path=None):
-    # type: (PyCdlib, BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[str]) -> None
+def _find_record(iso, iso_path=None, rr_path=None, joliet_path=None,
+                 udf_path=None):
+    # type: (PyCdlib, Optional[str], Optional[str], Optional[str], Optional[str]) -> Union[dr.DirectoryRecord, udfmod.UDFFileEntry]
     """
-    Implementation of in-place modification of a file's bytes.  Operates
-    on an open :class:`pycdlib.pycdlib.PyCdlib` object's internal state; not a
-    public API.  Used by both :class:`InPlaceEditor` and the deprecated
-    :meth:`pycdlib.pycdlib.PyCdlib.modify_file_in_place` wrapper.
-
-    The constraints documented on the public-facing wrappers apply here:
-    the path must identify an existing file, not a directory, and the new
-    content cannot occupy more extents than the old content.  Exactly one
-    of iso_path, rr_path, joliet_path, or udf_path identifies the file;
-    whichever view it is found through, every record linked to the
-    file's Inode (ISO9660, Joliet, and UDF) is updated.
+    Look up the record for a file identified through exactly one of the
+    four path namespaces.  Operates on an open :class:`pycdlib.pycdlib.PyCdlib`
+    object's internal state; not a public API.
     """
-    if not iso._initialized:  # pylint: disable=protected-access
-        raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
-
-    if hasattr(iso._cdfp, 'mode') and not iso._cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):  # pylint: disable=protected-access
-        raise pycdlibexception.PyCdlibInvalidInput('To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
-
     num_paths = sum(1 for path in (iso_path, rr_path, joliet_path, udf_path)
                     if path is not None)
     if num_paths != 1:
@@ -82,7 +68,34 @@ def _do_modify_file_in_place(iso, fp, length, iso_path=None, rr_path=None,
         child = iso._find_iso_record(utils.normpath(iso_path))  # pylint: disable=protected-access
 
     if child is None:
-        raise pycdlibexception.PyCdlibInvalidInput('Could not find path to modify in place')
+        raise pycdlibexception.PyCdlibInvalidInput('Could not find path to edit in place')
+
+    return child
+
+
+def _do_modify_file_in_place(iso, fp, length, iso_path=None, rr_path=None,
+                             joliet_path=None, udf_path=None):
+    # type: (PyCdlib, BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[str]) -> None
+    """
+    Implementation of in-place modification of a file's bytes.  Operates
+    on an open :class:`pycdlib.pycdlib.PyCdlib` object's internal state; not a
+    public API.  Used by both :class:`InPlaceEditor` and the deprecated
+    :meth:`pycdlib.pycdlib.PyCdlib.modify_file_in_place` wrapper.
+
+    The constraints documented on the public-facing wrappers apply here:
+    the path must identify an existing file, not a directory, and the new
+    content cannot occupy more extents than the old content.  Exactly one
+    of iso_path, rr_path, joliet_path, or udf_path identifies the file;
+    whichever view it is found through, every record linked to the
+    file's Inode (ISO9660, Joliet, and UDF) is updated.
+    """
+    if not iso._initialized:  # pylint: disable=protected-access
+        raise pycdlibexception.PyCdlibInvalidInput('This object is not initialized; call either open() or new() to create an ISO')
+
+    if hasattr(iso._cdfp, 'mode') and not iso._cdfp.mode.startswith(('r+', 'w', 'a', 'rb+')):  # pylint: disable=protected-access
+        raise pycdlibexception.PyCdlibInvalidInput('To modify a file in place, the original ISO must have been opened in a write mode (r+, w, or a)')
+
+    child = _find_record(iso, iso_path, rr_path, joliet_path, udf_path)
 
     old_num_extents = utils.ceiling_div(child.get_data_length(),
                                         iso.logical_block_size)
@@ -205,8 +218,9 @@ def _do_modify_file_in_place(iso, fp, length, iso_path=None, rr_path=None,
             raise pycdlibexception.PyCdlibInternalError('Invalid record type')
 
 
-def _do_rm_file(iso, iso_path):
-    # type: (PyCdlib, str) -> None
+def _do_rm_file(iso, iso_path=None, rr_path=None, joliet_path=None,
+                udf_path=None):
+    # type: (PyCdlib, Optional[str], Optional[str], Optional[str], Optional[str]) -> None
     """
     Implementation of in-place file removal.  Operates on an open
     :class:`pycdlib.pycdlib.PyCdlib` object's internal state; not a public API.
@@ -233,7 +247,11 @@ def _do_rm_file(iso, iso_path):
     if iso.udf_root is not None:
         raise pycdlibexception.PyCdlibInvalidInput('InPlaceEditor.rm_file does not support UDF ISOs yet; use PyCdlib.rm_file + write_fp() to produce a new ISO instead')
 
-    child = iso._find_iso_record(utils.normpath(iso_path))  # pylint: disable=protected-access
+    child = _find_record(iso, iso_path, rr_path, joliet_path, udf_path)
+    # UDF ISOs were rejected above, so the lookup can only have gone
+    # through an ISO9660, Rock Ridge, or Joliet directory record.
+    if not isinstance(child, dr.DirectoryRecord):
+        raise pycdlibexception.PyCdlibInternalError('Unsupported record type for in-place rm_file')
 
     if not child.is_file():
         raise pycdlibexception.PyCdlibInvalidInput('Cannot remove a directory with rm_file')
@@ -542,8 +560,9 @@ class InPlaceEditor:
                                  rr_path=rr_path, joliet_path=joliet_path,
                                  udf_path=udf_path)
 
-    def rm_file(self, iso_path):
-        # type: (str) -> None
+    def rm_file(self, iso_path=None, rr_path=None, joliet_path=None,
+                udf_path=None):
+        # type: (Optional[str], Optional[str], Optional[str], Optional[str]) -> None
         """
         Remove a file from the ISO in place.
 
@@ -554,17 +573,24 @@ class InPlaceEditor:
         on-disk size doesn't shrink.
 
         Constraints:
-         - The path must identify an existing file, not a directory.
+         - The path must identify an existing file, not a directory, and
+           exactly one of iso_path, rr_path, joliet_path, or udf_path must
+           be given to identify it.  The file is looked up through that
+           one view; every other view of the same file is removed as well.
          - The file must not be the El Torito boot catalog or a boot image.
          - The ISO must not be a UDF ISO (UDF in-place rm is not
            supported yet).
 
         Args:
             iso_path: The ISO9660 absolute path identifying the file.
+            rr_path: The Rock Ridge absolute path identifying the file.
+            joliet_path: The Joliet absolute path identifying the file.
+            udf_path: The UDF absolute path identifying the file.
         Returns:
             Nothing.
         """
-        _do_rm_file(self._iso, iso_path)
+        _do_rm_file(self._iso, iso_path=iso_path, rr_path=rr_path,
+                    joliet_path=joliet_path, udf_path=udf_path)
 
     def add_fp(self, fp, length, iso_path, rr_name=None, joliet_path=None,
                file_mode=None):

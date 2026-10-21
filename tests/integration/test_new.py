@@ -3022,6 +3022,78 @@ def test_new_in_place_editor_rm_file_joliet(tmpdir):
         iso2.get_file_from_iso_fp(io.BytesIO(), joliet_path='/b')
     iso2.close()
 
+def test_new_in_place_editor_rm_file_by_joliet_path(tmpdir):
+    # rm_file can identify the file through its Joliet path; the
+    # ISO9660 record goes away too.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    iso.add_fp(io.BytesIO(b'AAA\n'), 4, '/A.;1', joliet_path='/a')
+    iso.add_fp(io.BytesIO(b'BBB\n'), 4, '/B.;1', joliet_path='/b')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.rm_file(joliet_path='/b')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso2.get_file_from_iso_fp(io.BytesIO(), iso_path='/B.;1')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso2.get_file_from_iso_fp(io.BytesIO(), joliet_path='/b')
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, joliet_path='/a')
+    assert buf.getvalue() == b'AAA\n'
+    iso2.close()
+
+def test_new_in_place_editor_rm_file_by_rr_path(tmpdir):
+    # rm_file can identify the file through its Rock Ridge path.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'AAA\n'), 4, '/A.;1', rr_name='a')
+    iso.add_fp(io.BytesIO(b'BBB\n'), 4, '/B.;1', rr_name='b')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.rm_file(rr_path='/b')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    children = sorted(
+        ch.file_identifier()
+        for ch in iso2.pvd.root_dir_record.children
+        if ch.file_identifier() not in (b'.', b'..')
+    )
+    assert children == [b'A.;1']
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso2.get_file_from_iso_fp(io.BytesIO(), rr_path='/b')
+    iso2.close()
+
+def test_new_in_place_editor_rm_file_requires_exactly_one_path(tmpdir):
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    iso.add_fp(io.BytesIO(b'AAA\n'), 4, '/A.;1', joliet_path='/a')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.rm_file()
+        assert(str(excinfo.value) == "Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.rm_file(iso_path='/A.;1', joliet_path='/a')
+        assert(str(excinfo.value) == "Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.rm_file(rr_path='/a')
+        assert(str(excinfo.value) == 'Cannot fetch a rr_path from a non-Rock Ridge ISO')
+
 def test_new_in_place_editor_rm_file_rejects_directory(tmpdir):
     iso_path = str(tmpdir.join('test.iso'))
     iso = pycdlib.PyCdlib()
