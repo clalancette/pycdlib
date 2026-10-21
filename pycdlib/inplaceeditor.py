@@ -48,7 +48,7 @@ def _do_modify_file_in_place(iso, fp, length, iso_path=None, rr_path=None,
     :meth:`pycdlib.pycdlib.PyCdlib.modify_file_in_place` wrapper.
 
     The constraints documented on the public-facing wrappers apply here:
-    the file must exist on the ISO, must not be a directory, and the new
+    the path must identify an existing file, not a directory, and the new
     content cannot occupy more extents than the old content.  Exactly one
     of iso_path, rr_path, joliet_path, or udf_path identifies the file;
     whichever view it is found through, every record linked to the
@@ -219,7 +219,7 @@ def _do_rm_file(iso, iso_path):
     because the on-disk extent allocation doesn't change.
 
     Refuses on:
-     - UDF (out of scope for v1).
+     - UDF.
      - Directories.
      - Files referenced by El Torito (the boot catalog itself or any
        boot image entry).
@@ -324,7 +324,7 @@ def _do_add_fp(iso, data_source, length, manage_fp, iso_path,
     extent must have enough slack to hold one more record.
 
     Refuses on:
-     - UDF or El Torito ISOs (out of scope for v1).
+     - UDF or El Torito ISOs.
      - A target path whose parent's directory extent would need to
        grow to fit the new record (would require relocating the parent,
        cascading layout changes).
@@ -509,13 +509,12 @@ class InPlaceEditor:
         Replace the bytes of an existing file on the ISO with new content.
 
         Constraints:
-         - The file must already exist on the ISO, and exactly one of
-           iso_path, rr_path, joliet_path, or udf_path must be given to
-           identify it.  The file is looked up through that one view;
+         - The path must identify an existing file, not a directory, and
+           exactly one of iso_path, rr_path, joliet_path, or udf_path must
+           be given to identify it.  The file is looked up through that one view;
            every other view of the same file (ISO9660, Rock Ridge,
            Joliet, UDF) is updated as well, since they all share the
            underlying data.
-         - The file must not be a directory.
          - The new content cannot occupy more extents than the old
            content.  Within that ceiling the new length is free: a
            file currently sized to N extents may be replaced with any
@@ -549,10 +548,8 @@ class InPlaceEditor:
         on-disk size doesn't shrink.
 
         Constraints:
-         - The path must identify an existing file.
-         - The file must not be a directory.
-         - The file must not be referenced by El Torito (use
-           :meth:`pycdlib.pycdlib.PyCdlib.rm_eltorito` first).
+         - The path must identify an existing file, not a directory.
+         - The file must not be the El Torito boot catalog or a boot image.
          - The ISO must not be a UDF ISO (UDF in-place rm is not
            supported yet).
 
@@ -576,12 +573,10 @@ class InPlaceEditor:
         existing extent on disk.
 
         Constraints:
-         - The ISO must not be a UDF or El Torito ISO (out of scope
-           for v1).
-         - On a Rock Ridge ISO, ``rr_name`` must be provided.  Rock
-           Ridge SUSP fields whose serialized length would require a
-           new Continuation Entry block are refused (this typically
-           means very long ``rr_name`` values; short names are fine).
+         - The ISO must not be a UDF or El Torito ISO.
+         - ``rr_name`` must be provided on a Rock Ridge ISO and omitted
+           otherwise.  It can be at most about 130 characters; longer
+           names cannot be added in place.
          - The target's parent directory must already exist on the ISO.
          - The parent's directory extent must have enough slack to
            hold one more record; if not, this raises and you must use
@@ -612,12 +607,10 @@ class InPlaceEditor:
         # type: (str, str, Optional[str], Optional[str], Optional[int]) -> None
         """
         Add a new file to the ISO in place, reading the content from
-        a file on the local filesystem.
+        a file on the local filesystem.  PyCdlib is responsible for
+        opening and closing ``filename``.
 
-        Same semantics and constraints as :meth:`add_fp` except that
-        pycdlib opens and closes ``filename`` itself, the same way
-        :meth:`pycdlib.pycdlib.PyCdlib.add_file` does relative to
-        :meth:`pycdlib.pycdlib.PyCdlib.add_fp`.
+        The constraints listed for :meth:`add_fp` apply here as well.
 
         Args:
             filename: The local filename whose content becomes the new
