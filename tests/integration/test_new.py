@@ -3090,8 +3090,9 @@ def test_new_in_place_editor_rm_file_rejects_eltorito_boot_file(tmpdir):
     iso.close()
 
     with pycdlib.InPlaceEditor(iso_path) as ed:
-        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
             ed.rm_file('/BOOT.;1')
+        assert(str(excinfo.value) == 'Cannot remove a file that is an El Torito boot image; use PyCdlib.rm_eltorito + write_fp() to produce a new ISO instead')
 
 def test_new_in_place_editor_add_fp_basic(tmpdir):
     # add_fp appends a new file to the volume and inserts its
