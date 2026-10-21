@@ -261,13 +261,12 @@ separate output file the way <code class="docutils literal notranslate"><span cl
 <dd><p>Replace the bytes of an existing file on the ISO with new content.</p>
 <dl class="simple">
 <dt>Constraints:</dt><dd><ul class="simple">
-<li><p>The file must already exist on the ISO, and exactly one of
-iso_path, rr_path, joliet_path, or udf_path must be given to
-identify it.  The file is looked up through that one view;
+<li><p>The path must identify an existing file, not a directory, and
+exactly one of iso_path, rr_path, joliet_path, or udf_path must
+be given to identify it.  The file is looked up through that one view;
 every other view of the same file (ISO9660, Rock Ridge,
 Joliet, UDF) is updated as well, since they all share the
 underlying data.</p></li>
-<li><p>The file must not be a directory.</p></li>
 <li><p>The new content cannot occupy more extents than the old
 content.  Within that ceiling the new length is free: a
 file currently sized to N extents may be replaced with any
@@ -296,7 +295,16 @@ extents inside the file’s original on-disk allocation.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="pycdlib.inplaceeditor.InPlaceEditor.rm_file">
-<span class="sig-name descname"><span class="pre">rm_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iso_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.inplaceeditor.InPlaceEditor.rm_file" title="Link to this definition">¶</a></dt>
+<span class="sig-name descname"><span class="pre">rm_file</span></span><span class="sig-paren">(</span>
+
+<dl>
+<dd><em class="sig-param"><span class="n"><span class="pre">iso_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">rr_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">joliet_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+<dd><em class="sig-param"><span class="n"><span class="pre">udf_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>,</dd>
+</dl>
+
+<span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.inplaceeditor.InPlaceEditor.rm_file" title="Link to this definition">¶</a></dt>
 <dd><p>Remove a file from the ISO in place.</p>
 <p>The file’s directory record is removed from every tree the
 file is linked into (ISO9660 and Joliet) and the affected
@@ -305,10 +313,11 @@ stays as orphaned bytes inside the volume – the volume’s
 on-disk size doesn’t shrink.</p>
 <dl class="simple">
 <dt>Constraints:</dt><dd><ul class="simple">
-<li><p>The path must identify an existing file.</p></li>
-<li><p>The file must not be a directory.</p></li>
-<li><p>The file must not be referenced by El Torito (use
-<a class="reference internal" href="pycdlib.html#pycdlib.pycdlib.PyCdlib.rm_eltorito" title="pycdlib.pycdlib.PyCdlib.rm_eltorito"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pycdlib.pycdlib.PyCdlib.rm_eltorito()</span></code></a> first).</p></li>
+<li><p>The path must identify an existing file, not a directory, and
+exactly one of iso_path, rr_path, joliet_path, or udf_path must
+be given to identify it.  The file is looked up through that
+one view; every other view of the same file is removed as well.</p></li>
+<li><p>The file must not be the El Torito boot catalog or a boot image.</p></li>
 <li><p>The ISO must not be a UDF ISO (UDF in-place rm is not
 supported yet).</p></li>
 </ul>
@@ -316,7 +325,12 @@ supported yet).</p></li>
 </dl>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>iso_path</strong> – The ISO9660 absolute path identifying the file.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>iso_path</strong> – The ISO9660 absolute path identifying the file.</p></li>
+<li><p><strong>rr_path</strong> – The Rock Ridge absolute path identifying the file.</p></li>
+<li><p><strong>joliet_path</strong> – The Joliet absolute path identifying the file.</p></li>
+<li><p><strong>udf_path</strong> – The UDF absolute path identifying the file.</p></li>
+</ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>Nothing.</p>
@@ -346,12 +360,10 @@ length).  The directory record is inserted into the parent’s
 existing extent on disk.</p>
 <dl class="simple">
 <dt>Constraints:</dt><dd><ul class="simple">
-<li><p>The ISO must not be a UDF or El Torito ISO (out of scope
-for v1).</p></li>
-<li><p>On a Rock Ridge ISO, <code class="docutils literal notranslate"><span class="pre">rr_name</span></code> must be provided.  Rock
-Ridge SUSP fields whose serialized length would require a
-new Continuation Entry block are refused (this typically
-means very long <code class="docutils literal notranslate"><span class="pre">rr_name</span></code> values; short names are fine).</p></li>
+<li><p>The ISO must not be a UDF or El Torito ISO.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">rr_name</span></code> must be provided on a Rock Ridge ISO and omitted
+otherwise.  It can be at most about 130 characters; longer
+names cannot be added in place.</p></li>
 <li><p>The target’s parent directory must already exist on the ISO.</p></li>
 <li><p>The parent’s directory extent must have enough slack to
 hold one more record; if not, this raises and you must use
@@ -395,11 +407,9 @@ directory record is also inserted.</p></li>
 
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.inplaceeditor.InPlaceEditor.add_file" title="Link to this definition">¶</a></dt>
 <dd><p>Add a new file to the ISO in place, reading the content from
-a file on the local filesystem.</p>
-<p>Same semantics and constraints as <a class="reference internal" href="#pycdlib.inplaceeditor.InPlaceEditor.add_fp" title="pycdlib.inplaceeditor.InPlaceEditor.add_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_fp()</span></code></a> except that
-pycdlib opens and closes <code class="docutils literal notranslate"><span class="pre">filename</span></code> itself, the same way
-<a class="reference internal" href="pycdlib.html#pycdlib.pycdlib.PyCdlib.add_file" title="pycdlib.pycdlib.PyCdlib.add_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pycdlib.pycdlib.PyCdlib.add_file()</span></code></a> does relative to
-<a class="reference internal" href="pycdlib.html#pycdlib.pycdlib.PyCdlib.add_fp" title="pycdlib.pycdlib.PyCdlib.add_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pycdlib.pycdlib.PyCdlib.add_fp()</span></code></a>.</p>
+a file on the local filesystem.  PyCdlib is responsible for
+opening and closing <code class="docutils literal notranslate"><span class="pre">filename</span></code>.</p>
+<p>The constraints listed for <a class="reference internal" href="#pycdlib.inplaceeditor.InPlaceEditor.add_fp" title="pycdlib.inplaceeditor.InPlaceEditor.add_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_fp()</span></code></a> apply here as well.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
