@@ -120,6 +120,15 @@ class PyCdlibIO(io.RawIOBase):
 
     def readinto(self, b):  # type: ignore[override]
         # type: (Buffer) -> int
+        """
+        Read bytes into a pre-allocated, writable buffer.
+
+        Args:
+            b: A writable bytes-like object to read into.
+        Returns:
+            The number of bytes read and stored into the buffer.  This is 0 if
+            the file is at or past EOF.
+        """
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
 
