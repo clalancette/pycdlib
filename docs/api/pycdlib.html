@@ -344,7 +344,7 @@ of the UDF spec is used.  All other values are disallowed.</p></li>
 <dd><p>Open up an existing ISO for inspection and modification.  Note that the
 file object passed in here must stay open for the lifetime of this
 object, as the PyCdlib class uses it internally to do writing and reading
-operations.  To have PyCdlib manage this automatically, use ‘open’
+operations.  To have PyCdlib manage this automatically, use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.open" title="pycdlib.pycdlib.PyCdlib.open"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open()</span></code></a>
 instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -432,7 +432,7 @@ iso_path, rr_path, and joliet_path).</p></li>
 <dd><p>Get the byte offsets and lengths of the contiguous runs of data
 that back a file on the ISO.</p>
 <p>Most users do NOT need this method.  For ordinary file extraction,
-use get_file_from_iso() / get_file_from_iso_fp().  This method is
+use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.get_file_from_iso" title="pycdlib.pycdlib.PyCdlib.get_file_from_iso"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_file_from_iso()</span></code></a> / <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.get_file_from_iso_fp" title="pycdlib.pycdlib.PyCdlib.get_file_from_iso_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_file_from_iso_fp()</span></code></a>.  This method is
 intended for advanced callers that need to address file data
 directly inside an ISO image without extracting it – for example,
 telling a downstream tool the absolute byte ranges of a kernel or
@@ -444,10 +444,10 @@ concatenating the runs yields the file’s content.  Most files
 consist of a single contiguous run; multi-extent ISO9660 files
 (&gt;4GB) and UDF files with multiple allocation descriptors can
 return more than one entry.</p>
-<p>The offsets reflect the on-disk layout of the ISO: after open() /
-open_fp() they correspond to positions in the source ISO; for an
-ISO produced by new() they are valid only after a successful
-write_fp().</p>
+<p>The offsets reflect the on-disk layout of the ISO: after <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.open" title="pycdlib.pycdlib.PyCdlib.open"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open()</span></code></a> /
+<a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.open_fp" title="pycdlib.pycdlib.PyCdlib.open_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">open_fp()</span></code></a> they correspond to positions in the source ISO; for an
+ISO produced by <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.new" title="pycdlib.pycdlib.PyCdlib.new"><code class="xref py py-meth docutils literal notranslate"><span class="pre">new()</span></code></a> they are valid only after a successful
+<a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.write_fp" title="pycdlib.pycdlib.PyCdlib.write_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">write_fp()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -618,7 +618,7 @@ Joliet path may also be provided; while it is optional to do so, it is
 highly recommended.  Note that the caller must ensure that ‘fp’ remains
 open for the lifetime of the PyCdlib object, as the PyCdlib class uses
 the file descriptor internally when writing (mastering) the ISO.  To
-have PyCdlib manage this automatically, use ‘add_file’ instead.</p>
+have PyCdlib manage this automatically, use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_file" title="pycdlib.pycdlib.PyCdlib.add_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_file()</span></code></a> instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -757,7 +757,7 @@ content read from <cite>fp</cite>, deferring all disk writes to the next
 update propagates to every linked record (ISO9660 / Joliet /
 UDF) automatically because they share the same Inode.</p>
 <p>The caller is responsible for keeping <cite>fp</cite> open for the
-lifetime of this PyCdlib object (until close() runs), the same
+lifetime of this PyCdlib object (until <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.close" title="pycdlib.pycdlib.PyCdlib.close"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close()</span></code></a> runs), the same
 way <cite>add_fp()</cite> requires.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -796,7 +796,7 @@ ISO.</p></li>
 <dd><p>Replace the contents of an existing file on the ISO with the
 contents of <cite>filename</cite> on the local filesystem, deferring all
 disk writes to the next <cite>write_fp()</cite> call.</p>
-<p>Same semantics as <cite>update_file_contents_fp</cite> except that
+<p>Same semantics as <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.update_file_contents_fp" title="pycdlib.pycdlib.PyCdlib.update_file_contents_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">update_file_contents_fp()</span></code></a> except that
 pycdlib opens <cite>filename</cite> and manages its lifetime, the same
 way <cite>add_file()</cite> does relative to <cite>add_fp()</cite>.  The file is
 closed when the PyCdlib object is closed.</p>
@@ -832,9 +832,9 @@ between a file on the ISO9660 filesystem and the Joliet filesystem.
 In all cases, exactly one old path must be specified, and exactly one
 new path must be specified.
 Note that this is an advanced API, so using it in combination with the
-higher-level APIs (like rm_file()) may result in unexpected behavior.
-Once this API has been used, this API and rm_hard_link() should be
-preferred over add_file() and rm_file(), respectively.</p>
+higher-level APIs (like <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_file" title="pycdlib.pycdlib.PyCdlib.rm_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_file()</span></code></a>) may result in unexpected behavior.
+Once this API has been used, this API and <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_hard_link" title="pycdlib.pycdlib.PyCdlib.rm_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_hard_link()</span></code></a> should be
+preferred over <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_file" title="pycdlib.pycdlib.PyCdlib.add_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_file()</span></code></a> and <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_file" title="pycdlib.pycdlib.PyCdlib.rm_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_file()</span></code></a>, respectively.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -872,15 +872,15 @@ udf_new_path.</p></li>
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.rm_hard_link" title="Link to this definition">¶</a></dt>
 <dd><p>Remove a hard link from the ISO.  If the number of links to a piece of
 data drops to zero, then the contents will be removed from the ISO.
-This can be thought of as a lower-level interface to rm_file().  Either
+This can be thought of as a lower-level interface to <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_file" title="pycdlib.pycdlib.PyCdlib.rm_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_file()</span></code></a>.  Either
 an ISO9660 path or a Joliet path must be passed to this API, but not
 both.  Thus, this interface can be used to hide files from either the
 ISO9660 filesystem, the Joliet filesystem, or both (if there is another
 reference to the data on the ISO, such as in El Torito).  Note that this
 is an advanced API, so using it in combination with the higher-level APIs
-(like rm_file()) may result in unexpected behavior.  Once this API has
-been used, this API and add_hard_link() should be preferred over
-rm_file() and add_file().</p>
+(like <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_file" title="pycdlib.pycdlib.PyCdlib.rm_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_file()</span></code></a>) may result in unexpected behavior.  Once this API has
+been used, this API and <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_hard_link" title="pycdlib.pycdlib.PyCdlib.add_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_hard_link()</span></code></a> should be preferred over
+<a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_file" title="pycdlib.pycdlib.PyCdlib.rm_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_file()</span></code></a> and <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_file" title="pycdlib.pycdlib.PyCdlib.add_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_file()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -940,7 +940,7 @@ Joliet occupies a completely different context than ISO9660, this
 method can be invoked to create a completely different directory
 structure in the Joliet context, though that is generally not advised.
 It is recommended to use the ‘joliet_path’ argument of the
-‘add_directory’ instead of this method.</p>
+<a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_directory" title="pycdlib.pycdlib.PyCdlib.add_directory"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_directory()</span></code></a> instead of this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>joliet_path</strong> – The Joliet directory to create.</p>
@@ -965,7 +965,7 @@ It is recommended to use the ‘joliet_path’ argument of the
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.rm_file" title="Link to this definition">¶</a></dt>
 <dd><p>Remove a file from the ISO.  This removes the data and the listing of
 the file from all contexts, even when only one path is given (to only
-remove it from a single context, use rm_hard_link() instead).  Due to
+remove it from a single context, use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_hard_link" title="pycdlib.pycdlib.PyCdlib.rm_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_hard_link()</span></code></a> instead).  Due to
 some complexities of the ISO format, removal of zero-byte files from all
 contexts does not automatically happen, so this method may need to be
 called more than once for zero-byte files.</p>
@@ -1016,7 +1016,7 @@ called more than once for zero-byte files.</p>
 <dt class="sig sig-object py" id="pycdlib.pycdlib.PyCdlib.rm_joliet_directory">
 <span class="sig-name descname"><span class="pre">rm_joliet_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">joliet_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.rm_joliet_directory" title="Link to this definition">¶</a></dt>
 <dd><p>(deprecated) Remove a Joliet directory from the ISO.  It is recommended
-to use the ‘joliet_path’ parameter to ‘rm_directory’ instead.</p>
+to use the ‘joliet_path’ parameter to <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_directory" title="pycdlib.pycdlib.PyCdlib.rm_directory"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_directory()</span></code></a> instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>joliet_path</strong> – The Joliet path to the directory to remove.</p>
@@ -1146,7 +1146,7 @@ supplied to store it.</p></li>
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.list_dir" title="Link to this definition">¶</a></dt>
 <dd><p>(deprecated) Generate a list of all of the file/directory objects in the
 specified location on the ISO.  It is recommended to use the
-‘list_children’ API instead.</p>
+<a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.list_children" title="pycdlib.pycdlib.PyCdlib.list_children"><code class="xref py py-meth docutils literal notranslate"><span class="pre">list_children()</span></code></a> API instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -1200,7 +1200,7 @@ UDF ‘parent’ entry (which has no File Entry) is omitted.</p>
 
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DirectoryRecord</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.get_entry" title="Link to this definition">¶</a></dt>
 <dd><p>(deprecated) Get the directory record for a particular path.  It is
-recommended to use the ‘get_record’ API instead.</p>
+recommended to use the <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.get_record" title="pycdlib.pycdlib.PyCdlib.get_record"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_record()</span></code></a> API instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

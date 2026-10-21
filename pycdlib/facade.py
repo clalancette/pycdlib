@@ -104,12 +104,12 @@ class PyCdlibISO9660:
         added to the ISO9660 context (and by extension, the Rock Ridge
         context).  If the ISO is a Rock Ridge one, then a Rock Ridge name will
         be generated from the ISO path.  For more control over which contexts
-        a file shows up in, use the 'add_hard_link' API and/or use the regular
+        a file shows up in, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the regular
         PyCdlib object (not this facade).  Note that the caller must ensure
         that 'fp' remains open for the lifetime of the PyCdlib object, as the
         PyCdlib class uses the file descriptor internally when writing
         (mastering) the ISO.  To have PyCdlib manage this automatically, use
-        'add_file' instead.
+        :meth:`add_file` instead.
 
         Args:
             fp: The file object to use for the contents of the new file.
@@ -130,7 +130,7 @@ class PyCdlibISO9660:
         added to the ISO9660 context (and by extension, the Rock Ridge
         context).  If the ISO is a Rock Ridge one, then a Rock Ridge name will
         be generated from the ISO path.  For more control over which contexts
-        in which a file shows up, use the 'add_hard_link' API and/or use the
+        in which a file shows up, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the
         regular PyCdlib object (not this facade).
 
         Args:
@@ -300,12 +300,12 @@ class PyCdlibJoliet:
         """
         Add a file to the ISO.  While using this facade, a file will only be
         added to the Joliet context.  For more control over which contexts
-        a file shows up in, use the 'add_hard_link' API and/or use the regular
+        a file shows up in, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the regular
         PyCdlib object (not this facade).  Note that the caller must ensure
         that 'fp' remains open for the lifetime of the PyCdlib object, as the
         PyCdlib class uses the file descriptor internally when writing
         (mastering) the ISO.  To have PyCdlib manage this automatically, use
-        'add_file' instead.
+        :meth:`add_file` instead.
 
         Args:
             fp: The file object to use for the contents of the new file.
@@ -326,7 +326,7 @@ class PyCdlibJoliet:
         """
         Add a file to the ISO.  While using this facade, a file will only be
         added to the Joliet context.  For more control over which contexts
-        in which a file shows up, use the 'add_hard_link' API and/or use the
+        in which a file shows up, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the
         regular PyCdlib object (not this facade).
 
         Args:
@@ -564,11 +564,11 @@ class PyCdlibRockRidge:
         Add a file to the ISO.  While using this facade, a file will only be
         added to the Rock Ridge context (and by extension, the ISO9660
         context).  For more control over which contexts a file shows up in, use
-        the 'add_hard_link' API and/or use the regular PyCdlib object (not this
+        the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the regular PyCdlib object (not this
         facade).  Note that the caller must ensure that 'fp' remains open for the
         lifetime of the PyCdlib object, as the PyCdlib class uses the file
         descriptor internally when writing (mastering) the ISO.  To have PyCdlib
-        manage this automatically, use 'add_file' instead.
+        manage this automatically, use :meth:`add_file` instead.
 
         Args:
             fp: The file object to use for the contents of the new file.
@@ -591,7 +591,7 @@ class PyCdlibRockRidge:
         Add a file to the ISO.  While using this facade, a file will only be
         added to the Rock Ridge context (and by extension, the ISO9660
         context).  For more control over which contexts in which a file shows up,
-        use the 'add_hard_link' API and/or use the regular PyCdlib object (not
+        use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the regular PyCdlib object (not
         this facade).
 
         Args:
@@ -781,12 +781,12 @@ class PyCdlibUDF:
         """
         Add a file to the ISO.  While using this facade, a file will only be
         added to the UDF context.  For more control over which contexts
-        a file shows up in, use the 'add_hard_link' API and/or use the regular
+        a file shows up in, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the regular
         PyCdlib object (not this facade).  Note that the caller must ensure
         that 'fp' remains open for the lifetime of the PyCdlib object, as the
         PyCdlib class uses the file descriptor internally when writing
         (mastering) the ISO.  To have PyCdlib manage this automatically, use
-        'add_file' instead.
+        :meth:`add_file` instead.
 
         Args:
             fp: The file object to use for the contents of the new file.
@@ -802,7 +802,7 @@ class PyCdlibUDF:
         """
         Add a file to the ISO.  While using this facade, a file will only be
         added to the UDF context.  For more control over which contexts
-        in which a file shows up, use the 'add_hard_link' API and/or use the
+        in which a file shows up, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the
         regular PyCdlib object (not this facade).
 
         Args:
