@@ -4497,7 +4497,7 @@ class PyCdlib:
         Open up an existing ISO for inspection and modification.  Note that the
         file object passed in here must stay open for the lifetime of this
         object, as the PyCdlib class uses it internally to do writing and reading
-        operations.  To have PyCdlib manage this automatically, use 'open'
+        operations.  To have PyCdlib manage this automatically, use :meth:`open`
         instead.
 
         Args:
@@ -4656,7 +4656,7 @@ class PyCdlib:
         that back a file on the ISO.
 
         Most users do NOT need this method.  For ordinary file extraction,
-        use get_file_from_iso() / get_file_from_iso_fp().  This method is
+        use :meth:`get_file_from_iso` / :meth:`get_file_from_iso_fp`.  This method is
         intended for advanced callers that need to address file data
         directly inside an ISO image without extracting it -- for example,
         telling a downstream tool the absolute byte ranges of a kernel or
@@ -4670,10 +4670,10 @@ class PyCdlib:
         (>4GB) and UDF files with multiple allocation descriptors can
         return more than one entry.
 
-        The offsets reflect the on-disk layout of the ISO: after open() /
-        open_fp() they correspond to positions in the source ISO; for an
-        ISO produced by new() they are valid only after a successful
-        write_fp().
+        The offsets reflect the on-disk layout of the ISO: after :meth:`open` /
+        :meth:`open_fp` they correspond to positions in the source ISO; for an
+        ISO produced by :meth:`new` they are valid only after a successful
+        :meth:`write_fp`.
 
         Args:
             iso_path: The absolute ISO9660 path to lookup on the ISO (exclusive
@@ -4886,7 +4886,7 @@ class PyCdlib:
         highly recommended.  Note that the caller must ensure that 'fp' remains
         open for the lifetime of the PyCdlib object, as the PyCdlib class uses
         the file descriptor internally when writing (mastering) the ISO.  To
-        have PyCdlib manage this automatically, use 'add_file' instead.
+        have PyCdlib manage this automatically, use :meth:`add_file` instead.
 
         Args:
             fp: The file object to use for the contents of the new file.
@@ -5197,7 +5197,7 @@ class PyCdlib:
         UDF) automatically because they share the same Inode.
 
         The caller is responsible for keeping `fp` open for the
-        lifetime of this PyCdlib object (until close() runs), the same
+        lifetime of this PyCdlib object (until :meth:`close` runs), the same
         way `add_fp()` requires.
 
         Args:
@@ -5225,7 +5225,7 @@ class PyCdlib:
         contents of `filename` on the local filesystem, deferring all
         disk writes to the next `write_fp()` call.
 
-        Same semantics as `update_file_contents_fp` except that
+        Same semantics as :meth:`update_file_contents_fp` except that
         pycdlib opens `filename` and manages its lifetime, the same
         way `add_file()` does relative to `add_fp()`.  The file is
         closed when the PyCdlib object is closed.
@@ -5258,9 +5258,9 @@ class PyCdlib:
         In all cases, exactly one old path must be specified, and exactly one
         new path must be specified.
         Note that this is an advanced API, so using it in combination with the
-        higher-level APIs (like rm_file()) may result in unexpected behavior.
-        Once this API has been used, this API and rm_hard_link() should be
-        preferred over add_file() and rm_file(), respectively.
+        higher-level APIs (like :meth:`rm_file`) may result in unexpected behavior.
+        Once this API has been used, this API and :meth:`rm_hard_link` should be
+        preferred over :meth:`add_file` and :meth:`rm_file`, respectively.
 
         Args:
             iso_old_path: The old path on the ISO9660 filesystem to link from.
@@ -5384,15 +5384,15 @@ class PyCdlib:
         """
         Remove a hard link from the ISO.  If the number of links to a piece of
         data drops to zero, then the contents will be removed from the ISO.
-        This can be thought of as a lower-level interface to rm_file().  Either
+        This can be thought of as a lower-level interface to :meth:`rm_file`.  Either
         an ISO9660 path or a Joliet path must be passed to this API, but not
         both.  Thus, this interface can be used to hide files from either the
         ISO9660 filesystem, the Joliet filesystem, or both (if there is another
         reference to the data on the ISO, such as in El Torito).  Note that this
         is an advanced API, so using it in combination with the higher-level APIs
-        (like rm_file()) may result in unexpected behavior.  Once this API has
-        been used, this API and add_hard_link() should be preferred over
-        rm_file() and add_file().
+        (like :meth:`rm_file`) may result in unexpected behavior.  Once this API has
+        been used, this API and :meth:`add_hard_link` should be preferred over
+        :meth:`rm_file` and :meth:`add_file`.
 
         Args:
             iso_path: The ISO link path to remove.
@@ -5619,7 +5619,7 @@ class PyCdlib:
         method can be invoked to create a completely different directory
         structure in the Joliet context, though that is generally not advised.
         It is recommended to use the 'joliet_path' argument of the
-        'add_directory' instead of this method.
+        :meth:`add_directory` instead of this method.
 
         Args:
             joliet_path: The Joliet directory to create.
@@ -5636,7 +5636,7 @@ class PyCdlib:
         """
         Remove a file from the ISO.  This removes the data and the listing of
         the file from all contexts, even when only one path is given (to only
-        remove it from a single context, use rm_hard_link() instead).  Due to
+        remove it from a single context, use :meth:`rm_hard_link` instead).  Due to
         some complexities of the ISO format, removal of zero-byte files from all
         contexts does not automatically happen, so this method may need to be
         called more than once for zero-byte files.
@@ -5792,7 +5792,7 @@ class PyCdlib:
         # type: (str) -> None
         """
         (deprecated) Remove a Joliet directory from the ISO.  It is recommended
-        to use the 'joliet_path' parameter to 'rm_directory' instead.
+        to use the 'joliet_path' parameter to :meth:`rm_directory` instead.
 
         Args:
             joliet_path: The Joliet path to the directory to remove.
@@ -6223,7 +6223,7 @@ class PyCdlib:
         """
         (deprecated) Generate a list of all of the file/directory objects in the
         specified location on the ISO.  It is recommended to use the
-        'list_children' API instead.
+        :meth:`list_children` API instead.
 
         Args:
             iso_path: The path on the ISO to look up information for.
@@ -6320,7 +6320,7 @@ class PyCdlib:
         # type: (str, bool) -> dr.DirectoryRecord
         """
         (deprecated) Get the directory record for a particular path.  It is
-        recommended to use the 'get_record' API instead.
+        recommended to use the :meth:`get_record` API instead.
 
         Args:
             iso_path: The path on the ISO to look up information for.
