@@ -478,7 +478,10 @@ iso_path, rr_path, and joliet_path).</p></li>
 </dl>
 
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.get_and_write" title="Link to this definition">¶</a></dt>
-<dd><p>(deprecated) Fetch a single file from the ISO and write it out to the
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 1.20.0: </span>Use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.get_file_from_iso" title="pycdlib.pycdlib.PyCdlib.get_file_from_iso"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_file_from_iso()</span></code></a> instead.</p>
+</div>
+<p>Fetch a single file from the ISO and write it out to the
 specified file.  Note that this will overwrite the contents of the local
 file if it already exists.  Also note that ‘iso_path’ must be an
 absolute path to the file.  Finally, the ‘iso_path’ can be an ISO9660
@@ -511,7 +514,10 @@ API instead to resolve this ambiguity.</p>
 </dl>
 
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.get_and_write_fp" title="Link to this definition">¶</a></dt>
-<dd><p>(deprecated) Fetch a single file from the ISO and write it out to the
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 1.20.0: </span>Use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.get_file_from_iso_fp" title="pycdlib.pycdlib.PyCdlib.get_file_from_iso_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_file_from_iso_fp()</span></code></a> instead.</p>
+</div>
+<p>Fetch a single file from the ISO and write it out to the
 file object.  Note that ‘iso_path’ must be an absolute path to the file.
 Also note that the ‘iso_path’ can be an ISO9660 path, a Rock Ridge path,
 or a Joliet path.  In the case of ambiguity, the Joliet path is tried
@@ -701,15 +707,10 @@ See add_fp for storage rules.</p></li>
 </dl>
 
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.modify_file_in_place" title="Link to this definition">¶</a></dt>
-<dd><p>Modify a file in place on the ISO.</p>
-<div class="deprecated">
-<p><span class="versionmodified deprecated">Deprecated since version Use: </span><code class="xref py py-class docutils literal notranslate"><span class="pre">pycdlib.InPlaceEditor</span></code> (a context manager)
-instead.  It exposes the same in-place primitive but lives
-on a focused class that intentionally does not surface
-PyCdlib’s mastering APIs, eliminating the silent
-disk-corruption failure mode that arises when in-place edits
-are mixed with <code class="docutils literal notranslate"><span class="pre">add_*</span></code> / <code class="docutils literal notranslate"><span class="pre">rm_*</span></code> / <code class="docutils literal notranslate"><span class="pre">write_fp</span></code>.</p>
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 1.20.0: </span>Use <a class="reference internal" href="inplaceeditor.html#pycdlib.inplaceeditor.InPlaceEditor" title="pycdlib.inplaceeditor.InPlaceEditor"><code class="xref py py-class docutils literal notranslate"><span class="pre">pycdlib.inplaceeditor.InPlaceEditor</span></code></a> instead.</p>
 </div>
+<p>Modify a file in place on the ISO.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -935,7 +936,10 @@ See add_fp for storage rules.</p></li>
 <dl class="py method">
 <dt class="sig sig-object py" id="pycdlib.pycdlib.PyCdlib.add_joliet_directory">
 <span class="sig-name descname"><span class="pre">add_joliet_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">joliet_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.add_joliet_directory" title="Link to this definition">¶</a></dt>
-<dd><p>(deprecated) Add a directory to the Joliet portion of the ISO.  Since
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 1.20.0: </span>Use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_directory" title="pycdlib.pycdlib.PyCdlib.add_directory"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_directory()</span></code></a> with the <code class="docutils literal notranslate"><span class="pre">joliet_path</span></code> argument instead.</p>
+</div>
+<p>Add a directory to the Joliet portion of the ISO.  Since
 Joliet occupies a completely different context than ISO9660, this
 method can be invoked to create a completely different directory
 structure in the Joliet context, though that is generally not advised.
@@ -1015,7 +1019,10 @@ called more than once for zero-byte files.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pycdlib.pycdlib.PyCdlib.rm_joliet_directory">
 <span class="sig-name descname"><span class="pre">rm_joliet_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">joliet_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.rm_joliet_directory" title="Link to this definition">¶</a></dt>
-<dd><p>(deprecated) Remove a Joliet directory from the ISO.  It is recommended
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 1.20.0: </span>Use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_directory" title="pycdlib.pycdlib.PyCdlib.rm_directory"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_directory()</span></code></a> with the <code class="docutils literal notranslate"><span class="pre">joliet_path</span></code> argument instead.</p>
+</div>
+<p>Remove a Joliet directory from the ISO.  It is recommended
 to use the ‘joliet_path’ parameter to <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_directory" title="pycdlib.pycdlib.PyCdlib.rm_directory"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_directory()</span></code></a> instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1144,7 +1151,10 @@ supplied to store it.</p></li>
 </dl>
 
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Generator</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.list_dir" title="Link to this definition">¶</a></dt>
-<dd><p>(deprecated) Generate a list of all of the file/directory objects in the
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 1.20.0: </span>Use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.list_children" title="pycdlib.pycdlib.PyCdlib.list_children"><code class="xref py py-meth docutils literal notranslate"><span class="pre">list_children()</span></code></a> instead.</p>
+</div>
+<p>Generate a list of all of the file/directory objects in the
 specified location on the ISO.  It is recommended to use the
 <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.list_children" title="pycdlib.pycdlib.PyCdlib.list_children"><code class="xref py py-meth docutils literal notranslate"><span class="pre">list_children()</span></code></a> API instead.</p>
 <dl class="field-list simple">
@@ -1199,7 +1209,10 @@ UDF ‘parent’ entry (which has no File Entry) is omitted.</p>
 </dl>
 
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DirectoryRecord</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.get_entry" title="Link to this definition">¶</a></dt>
-<dd><p>(deprecated) Get the directory record for a particular path.  It is
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 1.20.0: </span>Use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.get_record" title="pycdlib.pycdlib.PyCdlib.get_record"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_record()</span></code></a> instead.</p>
+</div>
+<p>Get the directory record for a particular path.  It is
 recommended to use the <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.get_record" title="pycdlib.pycdlib.PyCdlib.get_record"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_record()</span></code></a> API instead.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
