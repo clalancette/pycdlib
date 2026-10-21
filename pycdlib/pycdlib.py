@@ -4778,7 +4778,10 @@ class PyCdlib:
     def get_and_write(self, iso_path, local_path, blocksize=8192):
         # type: (str, str, int) -> None
         """
-        (deprecated) Fetch a single file from the ISO and write it out to the
+        .. deprecated:: 1.20.0
+           Use :meth:`get_file_from_iso` instead.
+
+        Fetch a single file from the ISO and write it out to the
         specified file.  Note that this will overwrite the contents of the local
         file if it already exists.  Also note that 'iso_path' must be an
         absolute path to the file.  Finally, the 'iso_path' can be an ISO9660
@@ -4806,7 +4809,10 @@ class PyCdlib:
     def get_and_write_fp(self, iso_path, outfp, blocksize=8192):
         # type: (str, BinaryIO, int) -> None
         """
-        (deprecated) Fetch a single file from the ISO and write it out to the
+        .. deprecated:: 1.20.0
+           Use :meth:`get_file_from_iso_fp` instead.
+
+        Fetch a single file from the ISO and write it out to the
         file object.  Note that 'iso_path' must be an absolute path to the file.
         Also note that the 'iso_path' can be an ISO9660 path, a Rock Ridge path,
         or a Joliet path.  In the case of ambiguity, the Joliet path is tried
@@ -4965,15 +4971,10 @@ class PyCdlib:
                              joliet_path=None, udf_path=None, rr_path=None):
         # type: (BinaryIO, int, Optional[str], Optional[str], Optional[str], Optional[str], Optional[str]) -> None
         """
-        Modify a file in place on the ISO.
+        .. deprecated:: 1.20.0
+           Use :class:`pycdlib.inplaceeditor.InPlaceEditor` instead.
 
-        .. deprecated::
-           Use :class:`pycdlib.InPlaceEditor` (a context manager)
-           instead.  It exposes the same in-place primitive but lives
-           on a focused class that intentionally does not surface
-           PyCdlib's mastering APIs, eliminating the silent
-           disk-corruption failure mode that arises when in-place edits
-           are mixed with ``add_*`` / ``rm_*`` / ``write_fp``.
+        Modify a file in place on the ISO.
 
         Args:
             fp: The file object to use for the contents of the new file.
@@ -5614,7 +5615,10 @@ class PyCdlib:
     def add_joliet_directory(self, joliet_path):
         # type: (str) -> None
         """
-        (deprecated) Add a directory to the Joliet portion of the ISO.  Since
+        .. deprecated:: 1.20.0
+           Use :meth:`add_directory` with the ``joliet_path`` argument instead.
+
+        Add a directory to the Joliet portion of the ISO.  Since
         Joliet occupies a completely different context than ISO9660, this
         method can be invoked to create a completely different directory
         structure in the Joliet context, though that is generally not advised.
@@ -5791,7 +5795,10 @@ class PyCdlib:
     def rm_joliet_directory(self, joliet_path):
         # type: (str) -> None
         """
-        (deprecated) Remove a Joliet directory from the ISO.  It is recommended
+        .. deprecated:: 1.20.0
+           Use :meth:`rm_directory` with the ``joliet_path`` argument instead.
+
+        Remove a Joliet directory from the ISO.  It is recommended
         to use the 'joliet_path' parameter to :meth:`rm_directory` instead.
 
         Args:
@@ -6221,7 +6228,10 @@ class PyCdlib:
     def list_dir(self, iso_path, joliet=False):
         # type: (str, bool) -> Generator
         """
-        (deprecated) Generate a list of all of the file/directory objects in the
+        .. deprecated:: 1.20.0
+           Use :meth:`list_children` instead.
+
+        Generate a list of all of the file/directory objects in the
         specified location on the ISO.  It is recommended to use the
         :meth:`list_children` API instead.
 
@@ -6319,7 +6329,10 @@ class PyCdlib:
     def get_entry(self, iso_path, joliet=False):
         # type: (str, bool) -> dr.DirectoryRecord
         """
-        (deprecated) Get the directory record for a particular path.  It is
+        .. deprecated:: 1.20.0
+           Use :meth:`get_record` instead.
+
+        Get the directory record for a particular path.  It is
         recommended to use the :meth:`get_record` API instead.
 
         Args:
