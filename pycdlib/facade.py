@@ -30,7 +30,7 @@ if TYPE_CHECKING:
     from pycdlib import pycdlibio  # noqa: F401
 
 
-def iso_path_to_rr_name(iso_path, interchange_level, is_dir):
+def _iso_path_to_rr_name(iso_path, interchange_level, is_dir):
     # type: (str, int, bool) -> str
     """
     Take an absolute ISO path and generate a corresponding Rock Ridge basename.
@@ -120,7 +120,7 @@ class PyCdlibISO9660:
         """
         rr_name = None
         if self.pycdlib_obj.has_rock_ridge():
-            rr_name = iso_path_to_rr_name(iso_path, self.pycdlib_obj.interchange_level, False)
+            rr_name = _iso_path_to_rr_name(iso_path, self.pycdlib_obj.interchange_level, False)
         self.pycdlib_obj.add_fp(fp, length, iso_path=iso_path, rr_name=rr_name)
 
     def add_file(self, filename, iso_path):
@@ -141,7 +141,7 @@ class PyCdlibISO9660:
         """
         rr_name = None
         if self.pycdlib_obj.has_rock_ridge():
-            rr_name = iso_path_to_rr_name(iso_path, self.pycdlib_obj.interchange_level, False)
+            rr_name = _iso_path_to_rr_name(iso_path, self.pycdlib_obj.interchange_level, False)
         self.pycdlib_obj.add_file(filename, iso_path=iso_path, rr_name=rr_name)
 
     def add_directory(self, iso_path):
@@ -160,7 +160,7 @@ class PyCdlibISO9660:
         """
         rr_name = None
         if self.pycdlib_obj.has_rock_ridge():
-            rr_name = iso_path_to_rr_name(iso_path, self.pycdlib_obj.interchange_level, True)
+            rr_name = _iso_path_to_rr_name(iso_path, self.pycdlib_obj.interchange_level, True)
         self.pycdlib_obj.add_directory(iso_path=iso_path, rr_name=rr_name)
 
     def rm_file(self, iso_path):
