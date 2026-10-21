@@ -242,7 +242,13 @@ def _do_rm_file(iso, iso_path):
         if any(id(child) == id(rec) for rec in iso.eltorito_boot_catalog.dirrecords):
             raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is the El Torito boot catalog; use PyCdlib.rm_eltorito + write_fp() to produce a new ISO instead")
         if child.inode is not None:
-            iso._check_inode_against_eltorito(child.inode)  # pylint: disable=protected-access
+            # The PyCdlib check's error message recommends rm_eltorito or
+            # rm_hard_link, neither of which exists on InPlaceEditor, so
+            # re-raise with advice that applies to in-place editing.
+            try:
+                iso._check_inode_against_eltorito(child.inode)  # pylint: disable=protected-access
+            except pycdlibexception.PyCdlibInvalidInput:
+                raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is an El Torito boot image; use PyCdlib.rm_eltorito + write_fp() to produce a new ISO instead") from None
 
     # Collect each linked record's parent before removal -- after
     # _rm_dr_link runs, the record is no longer in inode.linked_records
