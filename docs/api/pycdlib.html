@@ -298,7 +298,7 @@ bibliographic file.</p></li>
 <li><p><strong>vol_expire_date</strong> – The date that this ISO will expire at.</p></li>
 <li><p><strong>app_use</strong> – Arbitrary data that the application can stuff into the primary
 volume descriptor of this ISO.</p></li>
-<li><p><strong>joliet</strong> – A integer that can have the value 1, 2, or 3 for Joliet
+<li><p><strong>joliet</strong> – An integer that can have the value 1, 2, or 3 for Joliet
 levels 1, 2, or 3 (3 is by far the most common), or None for
 no Joliet support (the default).  For legacy reasons, this
 parameter also accepts a boolean, where the value of ‘False’
@@ -487,7 +487,7 @@ file if it already exists.  Also note that ‘iso_path’ must be an
 absolute path to the file.  Finally, the ‘iso_path’ can be an ISO9660
 path, a Rock Ridge path, or a Joliet path.  In the case of ambiguity,
 the Joliet path is tried first, followed by the ISO9660 path, followed
-by the Rock Ridge path.  It is recommended to use the get_file_from_iso
+by the Rock Ridge path.  It is recommended to use the <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.get_file_from_iso" title="pycdlib.pycdlib.PyCdlib.get_file_from_iso"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_file_from_iso()</span></code></a>
 API instead to resolve this ambiguity.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -522,7 +522,7 @@ file object.  Note that ‘iso_path’ must be an absolute path to the file.
 Also note that the ‘iso_path’ can be an ISO9660 path, a Rock Ridge path,
 or a Joliet path.  In the case of ambiguity, the Joliet path is tried
 first, followed by the ISO9660 path, followed by the Rock Ridge path.
-It is recommend to use the get_file_from_iso_fp API instead to resolve
+It is recommended to use the <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.get_file_from_iso_fp" title="pycdlib.pycdlib.PyCdlib.get_file_from_iso_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">get_file_from_iso_fp()</span></code></a> API instead to resolve
 this ambiguity.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -636,7 +636,7 @@ have PyCdlib manage this automatically, use <a class="reference internal" href="
 <li><p><strong>file_mode</strong> – The POSIX file_mode to apply to this file.  This only
 applies if this is a Rock Ridge ISO.  If this is None (the
 default), the permissions from the original file are used.</p></li>
-<li><p><strong>udf_path</strong> – The UDF name of the file destination on the ISO.</p></li>
+<li><p><strong>udf_path</strong> – The UDF absolute path to the file destination on the ISO.</p></li>
 <li><p><strong>creation_time</strong> – Optional creation time, in seconds since the epoch.
 Stored on Rock Ridge TF (CREATION timestamp) and on
 UDF (forces an Extended File Entry, which has the
@@ -681,9 +681,9 @@ highly recommended.</p>
 <li><p><strong>file_mode</strong> – The POSIX file_mode to apply to this file.  This only
 applies if this is a Rock Ridge ISO.  If this is None (the
 default), the permissions from the original file are used.</p></li>
-<li><p><strong>udf_path</strong> – The UDF name of the file destination on the ISO.</p></li>
+<li><p><strong>udf_path</strong> – The UDF absolute path to the file destination on the ISO.</p></li>
 <li><p><strong>creation_time</strong> – Optional creation time, in seconds since the epoch.
-See add_fp for storage rules.</p></li>
+See <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_fp" title="pycdlib.pycdlib.PyCdlib.add_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_fp()</span></code></a> for storage rules.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -851,7 +851,7 @@ Ridge ISO and the new path is on the ISO9660 filesystem.</p></li>
 <li><p><strong>udf_old_path</strong> – The old path on the UDF filesystem to link from.</p></li>
 <li><p><strong>udf_new_path</strong> – The new path on the UDF filesystem to link to.</p></li>
 <li><p><strong>creation_time</strong> – Optional creation time, in seconds since the epoch,
-for the newly-created link.  See add_fp for storage
+for the newly-created link.  See <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_fp" title="pycdlib.pycdlib.PyCdlib.add_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_fp()</span></code></a> for storage
 rules: requires iso_new_path on a Rock Ridge ISO or
 udf_new_path.</p></li>
 </ul>
@@ -926,7 +926,7 @@ Rock Ridge, then a Rock Ridge name must be provided.</p>
 applies for Rock Ridge ISOs.</p></li>
 <li><p><strong>udf_path</strong> – The UDF absolute path to use for the directory.</p></li>
 <li><p><strong>creation_time</strong> – Optional creation time, in seconds since the epoch.
-See add_fp for storage rules.</p></li>
+See <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_fp" title="pycdlib.pycdlib.PyCdlib.add_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_fp()</span></code></a> for storage rules.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -945,7 +945,7 @@ See add_fp for storage rules.</p></li>
 Joliet occupies a completely different context than ISO9660, this
 method can be invoked to create a completely different directory
 structure in the Joliet context, though that is generally not advised.
-It is recommended to use the ‘joliet_path’ argument of the
+It is recommended to use the ‘joliet_path’ argument of
 <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_directory" title="pycdlib.pycdlib.PyCdlib.add_directory"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_directory()</span></code></a> instead of this method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -982,7 +982,9 @@ removed from every context in one call.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>iso_path</strong> – The path to the file to remove.</p></li>
-<li><p><strong>rr_name</strong> – The Rock Ridge name of the file to remove.</p></li>
+<li><p><strong>rr_name</strong> – Ignored.  Earlier versions accepted this parameter but
+never used it; the file is identified by iso_path,
+joliet_path, or udf_path.</p></li>
 <li><p><strong>joliet_path</strong> – The Joliet path to the file to remove.</p></li>
 <li><p><strong>udf_path</strong> – The UDF path to the file to remove.</p></li>
 </ul>
@@ -1010,7 +1012,9 @@ removed from every context in one call.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>iso_path</strong> – The path to the directory to remove.</p></li>
-<li><p><strong>rr_name</strong> – The Rock Ridge name of the directory to remove.</p></li>
+<li><p><strong>rr_name</strong> – Ignored.  Earlier versions accepted this parameter but
+never used it; the directory is identified by iso_path,
+joliet_path, or udf_path.</p></li>
 <li><p><strong>joliet_path</strong> – The Joliet path to the directory to remove.</p></li>
 <li><p><strong>udf_path</strong> – The UDF absolute path to the directory to remove.</p></li>
 </ul>
@@ -1134,7 +1138,7 @@ of the ISO.</p></li>
 <li><p><strong>udf_target</strong> – The UDF name of the entry on the ISO that the symlink
 points to.</p></li>
 <li><p><strong>creation_time</strong> – Optional creation time, in seconds since the epoch.
-See add_fp for storage rules.  At least one of a Rock
+See <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_fp" title="pycdlib.pycdlib.PyCdlib.add_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_fp()</span></code></a> for storage rules.  At least one of a Rock
 Ridge symlink (rr_symlink_name + rr_path) or a UDF
 symlink (udf_symlink_path + udf_target) must be
 supplied to store it.</p></li>
@@ -1596,7 +1600,7 @@ only allows manipulation of the UDF portions of the ISO.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="pycdlib.pycdlib.PyCdlib.file_mode">
 <span class="sig-name descname"><span class="pre">file_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.file_mode" title="Link to this definition">¶</a></dt>
-<dd><p>Get the POSIX file mode of the file if is a Rock Ridge file.</p>
+<dd><p>Get the POSIX file mode of the file if it is a Rock Ridge file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">

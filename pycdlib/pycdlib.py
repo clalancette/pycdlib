@@ -4218,7 +4218,7 @@ class PyCdlib:
             vol_expire_date: The date that this ISO will expire at.
             app_use: Arbitrary data that the application can stuff into the primary
                 volume descriptor of this ISO.
-            joliet: A integer that can have the value 1, 2, or 3 for Joliet
+            joliet: An integer that can have the value 1, 2, or 3 for Joliet
                 levels 1, 2, or 3 (3 is by far the most common), or None for
                 no Joliet support (the default).  For legacy reasons, this
                 parameter also accepts a boolean, where the value of 'False'
@@ -4824,7 +4824,7 @@ class PyCdlib:
         absolute path to the file.  Finally, the 'iso_path' can be an ISO9660
         path, a Rock Ridge path, or a Joliet path.  In the case of ambiguity,
         the Joliet path is tried first, followed by the ISO9660 path, followed
-        by the Rock Ridge path.  It is recommended to use the get_file_from_iso
+        by the Rock Ridge path.  It is recommended to use the :meth:`get_file_from_iso`
         API instead to resolve this ambiguity.
 
         Args:
@@ -4854,7 +4854,7 @@ class PyCdlib:
         Also note that the 'iso_path' can be an ISO9660 path, a Rock Ridge path,
         or a Joliet path.  In the case of ambiguity, the Joliet path is tried
         first, followed by the ISO9660 path, followed by the Rock Ridge path.
-        It is recommend to use the get_file_from_iso_fp API instead to resolve
+        It is recommended to use the :meth:`get_file_from_iso_fp` API instead to resolve
         this ambiguity.
 
         Args:
@@ -4940,7 +4940,7 @@ class PyCdlib:
             file_mode: The POSIX file_mode to apply to this file.  This only
                 applies if this is a Rock Ridge ISO.  If this is None (the
                 default), the permissions from the original file are used.
-            udf_path: The UDF name of the file destination on the ISO.
+            udf_path: The UDF absolute path to the file destination on the ISO.
             creation_time: Optional creation time, in seconds since the epoch.
                 Stored on Rock Ridge TF (CREATION timestamp) and on
                 UDF (forces an Extended File Entry, which has the
@@ -4984,9 +4984,9 @@ class PyCdlib:
             file_mode: The POSIX file_mode to apply to this file.  This only
                 applies if this is a Rock Ridge ISO.  If this is None (the
                 default), the permissions from the original file are used.
-            udf_path: The UDF name of the file destination on the ISO.
+            udf_path: The UDF absolute path to the file destination on the ISO.
             creation_time: Optional creation time, in seconds since the epoch.
-                See add_fp for storage rules.
+                See :meth:`add_fp` for storage rules.
         Returns:
             Nothing.
         """
@@ -5314,7 +5314,7 @@ class PyCdlib:
             udf_old_path: The old path on the UDF filesystem to link from.
             udf_new_path: The new path on the UDF filesystem to link to.
             creation_time: Optional creation time, in seconds since the epoch,
-                for the newly-created link.  See add_fp for storage
+                for the newly-created link.  See :meth:`add_fp` for storage
                 rules: requires iso_new_path on a Rock Ridge ISO or
                 udf_new_path.
         Returns:
@@ -5500,7 +5500,7 @@ class PyCdlib:
                 applies for Rock Ridge ISOs.
             udf_path: The UDF absolute path to use for the directory.
             creation_time: Optional creation time, in seconds since the epoch.
-                See add_fp for storage rules.
+                See :meth:`add_fp` for storage rules.
         Returns:
             Nothing.
         """
@@ -5663,7 +5663,7 @@ class PyCdlib:
         Joliet occupies a completely different context than ISO9660, this
         method can be invoked to create a completely different directory
         structure in the Joliet context, though that is generally not advised.
-        It is recommended to use the 'joliet_path' argument of the
+        It is recommended to use the 'joliet_path' argument of
         :meth:`add_directory` instead of this method.
 
         Args:
@@ -5692,7 +5692,9 @@ class PyCdlib:
 
         Args:
             iso_path: The path to the file to remove.
-            rr_name: The Rock Ridge name of the file to remove.
+            rr_name: Ignored.  Earlier versions accepted this parameter but
+                never used it; the file is identified by iso_path,
+                joliet_path, or udf_path.
             joliet_path: The Joliet path to the file to remove.
             udf_path: The UDF path to the file to remove.
         Returns:
@@ -5722,7 +5724,9 @@ class PyCdlib:
 
         Args:
             iso_path: The path to the directory to remove.
-            rr_name: The Rock Ridge name of the directory to remove.
+            rr_name: Ignored.  Earlier versions accepted this parameter but
+                never used it; the directory is identified by iso_path,
+                joliet_path, or udf_path.
             joliet_path: The Joliet path to the directory to remove.
             udf_path: The UDF absolute path to the directory to remove.
         Returns:
@@ -6112,7 +6116,7 @@ class PyCdlib:
             udf_target: The UDF name of the entry on the ISO that the symlink
                 points to.
             creation_time: Optional creation time, in seconds since the epoch.
-                See add_fp for storage rules.  At least one of a Rock
+                See :meth:`add_fp` for storage rules.  At least one of a Rock
                 Ridge symlink (rr_symlink_name + rr_path) or a UDF
                 symlink (udf_symlink_path + udf_target) must be
                 supplied to store it.
@@ -7018,7 +7022,7 @@ class PyCdlib:
     def file_mode(self, **kwargs):
         # type: (str) -> Optional[int]
         """
-        Get the POSIX file mode of the file if is a Rock Ridge file.
+        Get the POSIX file mode of the file if it is a Rock Ridge file.
 
         Args:
             iso_path: The absolute ISO path to the file on the ISO.

@@ -130,7 +130,7 @@ class PyCdlibISO9660:
         added to the ISO9660 context (and by extension, the Rock Ridge
         context).  If the ISO is a Rock Ridge one, then a Rock Ridge name will
         be generated from the ISO path.  For more control over which contexts
-        in which a file shows up, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the
+        a file shows up in, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the
         regular PyCdlib object (not this facade).
 
         Args:
@@ -150,7 +150,7 @@ class PyCdlibISO9660:
         Add a directory to the ISO9660 context (and by extension, the Rock
         Ridge context).  If the ISO is a Rock Ridge one, then a Rock Ridge name
         will be generated from the ISO path.  For more control over which
-        contexts in which a directory shows up, use the regular PyCdlib object
+        contexts a directory shows up in, use the regular PyCdlib object
         (not this facade).
 
         Args:
@@ -274,8 +274,7 @@ class PyCdlibJoliet:
 
         Args:
             local_path: The local file to write to.
-            joliet_path: The absolute Joliet path to lookup on the ISO (exclusive
-                with iso_path, rr_path, and udf_path).
+            joliet_path: The absolute Joliet path to lookup on the ISO.
         Returns:
             Nothing.
         """
@@ -326,7 +325,7 @@ class PyCdlibJoliet:
         """
         Add a file to the ISO.  While using this facade, a file will only be
         added to the Joliet context.  For more control over which contexts
-        in which a file shows up, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the
+        a file shows up in, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the
         regular PyCdlib object (not this facade).
 
         Args:
@@ -346,7 +345,7 @@ class PyCdlibJoliet:
         # type: (str) -> None
         """
         Add a directory to the Joliet context.  For more control over which
-        contexts in which a directory shows up, use the regular PyCdlib object
+        contexts a directory shows up in, use the regular PyCdlib object
         (not this facade).
 
         Args:
@@ -590,7 +589,7 @@ class PyCdlibRockRidge:
         """
         Add a file to the ISO.  While using this facade, a file will only be
         added to the Rock Ridge context (and by extension, the ISO9660
-        context).  For more control over which contexts in which a file shows up,
+        context).  For more control over which contexts a file shows up in,
         use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the regular PyCdlib object (not
         this facade).
 
@@ -611,14 +610,13 @@ class PyCdlibRockRidge:
         # type: (str, int) -> None
         """
         Add a directory to the Rock Ridge context (and by extension, the ISO9660
-        context).  For more control over which contexts in which a directory
-        shows up, use the regular PyCdlib object (not this facade).
+        context).  For more control over which contexts a directory
+        shows up in, use the regular PyCdlib object (not this facade).
 
         Args:
             rr_path: The Rock Ridge absolute path to use for the directory.
-            file_mode: The POSIX file_mode to apply to this file.  If this is None
-                (the default), the permissions from the original file are
-                used.
+            file_mode: The POSIX file mode to apply to this directory.  If
+                this is None, the directory is given mode 0o555.
         Returns:
             Nothing.
         """
@@ -802,7 +800,7 @@ class PyCdlibUDF:
         """
         Add a file to the ISO.  While using this facade, a file will only be
         added to the UDF context.  For more control over which contexts
-        in which a file shows up, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the
+        a file shows up in, use the :meth:`pycdlib.pycdlib.PyCdlib.add_hard_link` API and/or use the
         regular PyCdlib object (not this facade).
 
         Args:
@@ -817,7 +815,7 @@ class PyCdlibUDF:
         # type: (str) -> None
         """
         Add a directory to the UDF context.  For more control over which
-        contexts in which a directory shows up, use the regular PyCdlib object
+        contexts a directory shows up in, use the regular PyCdlib object
         (not this facade).
 
         Args:
