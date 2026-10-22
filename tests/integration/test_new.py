@@ -9834,3 +9834,117 @@ def test_new_eltorito_hidden_boot_reopen_then_rm_eltorito():
     do_a_test(iso, check_nofiles)
 
     iso.close()
+
+def test_new_hard_link_above_multi_extent_threshold(tmpdir):
+    # Regression test: add_hard_link to an ISO9660 or Joliet path on a file
+    # above the multi-extent boundary (0xfffff800) used to try to describe
+    # the whole file with a single directory record and fail with
+    # 'Maximum supported file length is 2^32-1', while add_fp split the
+    # same file into chunks.  Both must now produce the same chunk layout.
+    # Use a sparse input and verify the in-memory state without writing
+    # the (~5 GiB) ISO out.
+    indir = tmpdir.mkdir('hardlinkabovemulti')
+    largefile = os.path.join(str(indir), 'big')
+
+    SIZE = 5*1024*1024*1024
+    with open(largefile, 'wb') as outfp:
+        outfp.truncate(SIZE)
+
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=3, joliet=3, rock_ridge='1.09', udf='2.60')
+    iso.add_file(largefile, '/BIG.;1', rr_name='big')
+
+    iso.add_hard_link(iso_old_path='/BIG.;1', iso_new_path='/BIG2.;1', rr_name='big2')
+    iso.add_hard_link(iso_old_path='/BIG.;1', joliet_new_path='/big')
+    iso.add_hard_link(iso_old_path='/BIG.;1', udf_new_path='/big')
+
+    def chunks(rec):
+        out = []
+        while rec is not None:
+            out.append((rec.data_length, rec.data_extent_offset))
+            rec = rec.data_continuation
+        return out
+
+    expected = [(0xfffff800, 0), (SIZE - 0xfffff800, 0xfffff800 // 2048)]
+    orig = iso.get_record(iso_path='/BIG.;1')
+    assert(chunks(orig) == expected)
+    assert(chunks(iso.get_record(iso_path='/BIG2.;1')) == expected)
+    assert(chunks(iso.get_record(joliet_path='/big')) == expected)
+
+    udf_rec = iso.get_record(udf_path='/big')
+    assert(udf_rec.get_data_length() == SIZE)
+    assert(udf_rec.inode is orig.inode)
+
+    # One inode, linked from every chunk of every view plus the UDF entry.
+    assert(len(iso.inodes) == 1)
+    assert(len(orig.inode.linked_records) == 3 * 2 + 1)
+
+    # A hard link made from the UDF view (whose record carries the full
+    # length) must be chunked the same way.
+    iso.add_hard_link(udf_old_path='/big', iso_new_path='/BIG3.;1', rr_name='big3')
+    assert(chunks(iso.get_record(iso_path='/BIG3.;1')) == expected)
+
+    # Removing a chunked hard link drops every chunk of just that link.
+    iso.rm_hard_link(iso_path='/BIG2.;1')
+    assert(len(orig.inode.linked_records) == 4 * 2 + 1 - 2)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        iso.get_record(iso_path='/BIG2.;1')
+    assert(chunks(iso.get_record(iso_path='/BIG.;1')) == expected)
+
+    # rm_file through any view removes all of them and the data.
+    iso.rm_file(joliet_path='/big')
+    assert(len(iso.inodes) == 0)
+    for kw in ({'iso_path': '/BIG.;1'}, {'iso_path': '/BIG3.;1'},
+               {'joliet_path': '/big'}, {'udf_path': '/big'}):
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+            iso.get_record(**kw)
+
+    iso.close()
+
+@pytest.mark.slow
+def test_new_hard_link_above_multi_extent_threshold_roundtrip(tmpdir):
+    # Round-trip companion to test_new_hard_link_above_multi_extent_threshold:
+    # write an ISO with a >4 GiB file and chunked hard links to it on the
+    # ISO9660 and Joliet sides, then read every view back across the
+    # multi-extent boundary.
+    indir = tmpdir.mkdir('hardlinkabovemultirt')
+    largefile = os.path.join(str(indir), 'big')
+    output_iso = os.path.join(str(indir), 'hardlink.iso')
+
+    SIZE = 0xfffff800 + 4096
+    boundary = 0xfffff800
+    with open(largefile, 'wb') as outfp:
+        outfp.truncate(SIZE)
+        outfp.seek(0)
+        outfp.write(b'\xaa' * 16)
+        outfp.seek(boundary - 8)
+        outfp.write(b'\xbb' * 16)
+        outfp.seek(SIZE - 16)
+        outfp.write(b'\xcc' * 16)
+
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=3, joliet=3)
+    iso.add_file(largefile, '/BIG.;1')
+    iso.add_hard_link(iso_old_path='/BIG.;1', iso_new_path='/BIG2.;1')
+    iso.add_hard_link(iso_old_path='/BIG.;1', joliet_new_path='/big')
+    iso.write(output_iso)
+    iso.close()
+
+    # One copy of the data on disc, plus the metadata.
+    assert(os.stat(output_iso).st_size < SIZE + 1024*1024)
+
+    newiso = pycdlib.PyCdlib()
+    newiso.open(output_iso)
+    for kw in ({'iso_path': '/BIG.;1'}, {'iso_path': '/BIG2.;1'},
+               {'joliet_path': '/big'}):
+        extracted = os.path.join(str(indir), 'extracted')
+        newiso.get_file_from_iso(extracted, **kw)
+        assert(os.stat(extracted).st_size == SIZE)
+        with open(extracted, 'rb') as fp:
+            assert(fp.read(16) == b'\xaa' * 16)
+            fp.seek(boundary - 8)
+            assert(fp.read(16) == b'\xbb' * 16)
+            fp.seek(SIZE - 16)
+            assert(fp.read(16) == b'\xcc' * 16)
+        os.unlink(extracted)
+    newiso.close()
