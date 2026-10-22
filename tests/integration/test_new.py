@@ -9750,3 +9750,87 @@ def test_new_isohybrid_gpt_parts_before_start_of_iso(tmpdir):
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         iso.open(outfile)
     assert(str(excinfo.value) == 'Secondary GPT partition entries start before the start of the ISO')
+
+def test_new_eltorito_hide_boot_then_rm_eltorito():
+    # Regression test: hiding every directory record view of the boot image
+    # with rm_hard_link and then calling rm_eltorito left the boot image's
+    # Inode with no links but still tracked, so the next write failed with
+    # an internal error about an Inode with no extent.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    bootstr = b'boot\n'
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+
+    iso.rm_hard_link(iso_path='/BOOT.;1')
+    iso.rm_eltorito()
+
+    assert(len(iso.inodes) == 0)
+
+    do_a_test(iso, check_nofiles)
+
+    iso.close()
+
+def test_new_eltorito_hide_boot_joliet_then_rm_eltorito():
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    bootstr = b'boot\n'
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', joliet_path='/boot')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+
+    iso.rm_hard_link(iso_path='/BOOT.;1')
+    iso.rm_hard_link(joliet_path='/boot')
+    iso.rm_eltorito()
+
+    assert(len(iso.inodes) == 0)
+
+    do_a_test(iso, check_joliet_nofiles)
+
+    iso.close()
+
+def test_new_eltorito_hide_boot_udf_then_rm_eltorito():
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    bootstr = b'boot\n'
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1', udf_path='/boot')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+
+    iso.rm_hard_link(iso_path='/BOOT.;1')
+    iso.rm_hard_link(udf_path='/boot')
+    iso.rm_eltorito()
+
+    assert(len(iso.inodes) == 0)
+
+    do_a_test(iso, check_udf_nofiles)
+
+    iso.close()
+
+def test_new_eltorito_hidden_boot_reopen_then_rm_eltorito():
+    # The same sequence across a write/reopen: the hidden boot image is
+    # re-created at parse time as an Inode linked only from the El Torito
+    # entry, so rm_eltorito must reap it there too, instead of silently
+    # writing the orphaned data back out.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    bootstr = b'boot\n'
+    iso.add_fp(io.BytesIO(bootstr), len(bootstr), '/BOOT.;1')
+    iso.add_eltorito('/BOOT.;1', '/BOOT.CAT;1')
+    iso.rm_hard_link(iso_path='/BOOT.;1')
+
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(out)
+    iso.rm_eltorito()
+
+    assert(len(iso.inodes) == 0)
+
+    do_a_test(iso, check_nofiles)
+
+    iso.close()
