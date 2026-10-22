@@ -6043,6 +6043,21 @@ class PyCdlib:
                         new_list.append((linkrec, is_pvd))
                 entry.inode.linked_records = new_list
 
+                # If the El Torito entry was the last reference to the boot
+                # image (every directory record view was hidden with
+                # rm_hard_link), the data has no owner left; reap the Inode
+                # and give its space back, just as removing the last
+                # directory record link would.  The boot image occupies its
+                # own whole extents, separate from the Boot Catalog's, so
+                # round it up here rather than letting _finish_remove round
+                # the two together.
+                if not entry.inode.linked_records:
+                    for index, ino in enumerate(self.inodes):
+                        if id(ino) == id(entry.inode):
+                            del self.inodes[index]
+                            num_bytes_to_remove += utils.ceiling_div(entry.inode.get_data_length(), self.logical_block_size) * self.logical_block_size
+                            break
+
         num_bytes_to_remove += len(self.eltorito_boot_catalog.record())
 
         self.eltorito_boot_catalog = None
