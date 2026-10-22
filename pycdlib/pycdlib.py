@@ -5227,7 +5227,7 @@ class PyCdlib:
         """
         Replace the contents of an existing file on the ISO with new
         content read from `fp`, deferring all disk writes to the next
-        `write_fp()` call.
+        :meth:`write_fp` call.
 
         Exactly one of `iso_path`, `rr_path`, `joliet_path`, or
         `udf_path` must be provided to identify the target file.  The
@@ -5236,7 +5236,7 @@ class PyCdlib:
 
         The caller is responsible for keeping `fp` open for the
         lifetime of this PyCdlib object (until :meth:`close` runs), the same
-        way `add_fp()` requires.
+        way :meth:`add_fp` requires.
 
         Args:
             fp: A file-like object containing the new contents.
@@ -5261,12 +5261,12 @@ class PyCdlib:
         """
         Replace the contents of an existing file on the ISO with the
         contents of `filename` on the local filesystem, deferring all
-        disk writes to the next `write_fp()` call.
+        disk writes to the next :meth:`write_fp` call.
 
-        Same semantics as :meth:`update_file_contents_fp` except that
-        pycdlib opens `filename` and manages its lifetime, the same
-        way `add_file()` does relative to `add_fp()`.  The file is
-        closed when the PyCdlib object is closed.
+        This method has the same semantics as :meth:`update_file_contents_fp`,
+        except that pycdlib opens `filename` and manages its lifetime, the
+        same way :meth:`add_file` does relative to :meth:`add_fp`.  The file
+        is closed when :meth:`close` is called on the PyCdlib object.
 
         Args:
             filename: The local filename whose contents replace the

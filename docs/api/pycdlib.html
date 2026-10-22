@@ -752,14 +752,14 @@ the ISO.  Only valid when iso_path is not given.</p></li>
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.update_file_contents_fp" title="Link to this definition">¶</a></dt>
 <dd><p>Replace the contents of an existing file on the ISO with new
 content read from <cite>fp</cite>, deferring all disk writes to the next
-<cite>write_fp()</cite> call.</p>
+<a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.write_fp" title="pycdlib.pycdlib.PyCdlib.write_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">write_fp()</span></code></a> call.</p>
 <p>Exactly one of <cite>iso_path</cite>, <cite>rr_path</cite>, <cite>joliet_path</cite>, or
 <cite>udf_path</cite> must be provided to identify the target file.  The
 update propagates to every linked record (ISO9660 / Joliet /
 UDF) automatically because they share the same Inode.</p>
 <p>The caller is responsible for keeping <cite>fp</cite> open for the
 lifetime of this PyCdlib object (until <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.close" title="pycdlib.pycdlib.PyCdlib.close"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close()</span></code></a> runs), the same
-way <cite>add_fp()</cite> requires.</p>
+way <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_fp" title="pycdlib.pycdlib.PyCdlib.add_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_fp()</span></code></a> requires.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -796,11 +796,11 @@ ISO.</p></li>
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.update_file_contents" title="Link to this definition">¶</a></dt>
 <dd><p>Replace the contents of an existing file on the ISO with the
 contents of <cite>filename</cite> on the local filesystem, deferring all
-disk writes to the next <cite>write_fp()</cite> call.</p>
-<p>Same semantics as <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.update_file_contents_fp" title="pycdlib.pycdlib.PyCdlib.update_file_contents_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">update_file_contents_fp()</span></code></a> except that
-pycdlib opens <cite>filename</cite> and manages its lifetime, the same
-way <cite>add_file()</cite> does relative to <cite>add_fp()</cite>.  The file is
-closed when the PyCdlib object is closed.</p>
+disk writes to the next <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.write_fp" title="pycdlib.pycdlib.PyCdlib.write_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">write_fp()</span></code></a> call.</p>
+<p>This method has the same semantics as <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.update_file_contents_fp" title="pycdlib.pycdlib.PyCdlib.update_file_contents_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">update_file_contents_fp()</span></code></a>,
+except that pycdlib opens <cite>filename</cite> and manages its lifetime, the
+same way <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_file" title="pycdlib.pycdlib.PyCdlib.add_file"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_file()</span></code></a> does relative to <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.add_fp" title="pycdlib.pycdlib.PyCdlib.add_fp"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_fp()</span></code></a>.  The file
+is closed when <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.close" title="pycdlib.pycdlib.PyCdlib.close"><code class="xref py py-meth docutils literal notranslate"><span class="pre">close()</span></code></a> is called on the PyCdlib object.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
