@@ -372,10 +372,10 @@ contexts in which a directory shows up, use the regular PyCdlib object
 <dt class="sig sig-object py" id="pycdlib.facade.PyCdlibISO9660.rm_file">
 <span class="sig-name descname"><span class="pre">rm_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iso_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.facade.PyCdlibISO9660.rm_file" title="Link to this definition">¶</a></dt>
 <dd><p>Remove a file from the ISO.  This removes the data and the listing of
-the file from all contexts.  Due to some complexities of the ISO format,
-removal of zero-byte files from all contexts does not automatically
-happen, so this method may need to be called on more than one facade for
-zero-byte files.</p>
+the file from all contexts.  The contexts are tied together by the
+file’s data extent, and a zero-byte file has none, so for an ISO opened
+from disk a zero-byte file only has its entry in this facade’s context
+removed; call this method on each facade to remove it completely.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>iso_path</strong> – The path to the file to remove.</p>
@@ -619,10 +619,10 @@ contexts in which a directory shows up, use the regular PyCdlib object
 <dt class="sig sig-object py" id="pycdlib.facade.PyCdlibJoliet.rm_file">
 <span class="sig-name descname"><span class="pre">rm_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">joliet_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.facade.PyCdlibJoliet.rm_file" title="Link to this definition">¶</a></dt>
 <dd><p>Remove a file from the ISO.  This removes the data and the listing of
-the file from all contexts.  Due to some complexities of the ISO format,
-removal of zero-byte files from all contexts does not automatically
-happen, so this method may need to be called on more than one facade for
-zero-byte files.</p>
+the file from all contexts.  The contexts are tied together by the
+file’s data extent, and a zero-byte file has none, so for an ISO opened
+from disk a zero-byte file only has its entry in this facade’s context
+removed; call this method on each facade to remove it completely.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>joliet_path</strong> – The path to the file to remove.</p>
@@ -886,10 +886,10 @@ used.</p></li>
 <dt class="sig sig-object py" id="pycdlib.facade.PyCdlibRockRidge.rm_file">
 <span class="sig-name descname"><span class="pre">rm_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rr_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.facade.PyCdlibRockRidge.rm_file" title="Link to this definition">¶</a></dt>
 <dd><p>Remove a file from the ISO.  This removes the data and the listing of
-the file from all contexts.  Due to some complexities of the ISO format,
-removal of zero-byte files from all contexts does not automatically
-happen, so this method may need to be called on more than one facade for
-zero-byte files.</p>
+the file from all contexts.  The contexts are tied together by the
+file’s data extent, and a zero-byte file has none, so for an ISO opened
+from disk a zero-byte file only has its entry in this facade’s context
+removed; call this method on each facade to remove it completely.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>rr_path</strong> – The path to the file to remove.</p>
@@ -1151,10 +1151,10 @@ contexts in which a directory shows up, use the regular PyCdlib object
 <dt class="sig sig-object py" id="pycdlib.facade.PyCdlibUDF.rm_file">
 <span class="sig-name descname"><span class="pre">rm_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">udf_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.facade.PyCdlibUDF.rm_file" title="Link to this definition">¶</a></dt>
 <dd><p>Remove a file from the ISO.  This removes the data and the listing of
-the file from all contexts.  Due to some complexities of the ISO format,
-removal of zero-byte files from all contexts does not automatically
-happen, so this method may need to be called on more than one facade for
-zero-byte files.</p>
+the file from all contexts.  The contexts are tied together by the
+file’s data extent, and a zero-byte file has none, so for an ISO opened
+from disk a zero-byte file only has its entry in this facade’s context
+removed; call this method on each facade to remove it completely.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>udf_path</strong> – The path to the file to remove.</p>

@@ -3214,3 +3214,68 @@ def test_hybrid_udf_add_hard_link_zero_udf_file_entry(tmpdir):
     assert(str(excinfo.value) == 'Cannot make hard link to a UDF file with an empty UDF File Entry')
 
     iso.close()
+
+def _names(iso, **kwargs):
+    return sorted(c.file_identifier() for c in iso.list_children(**kwargs)
+                  if not c.is_dot() and not c.is_dotdot())
+
+def test_hybrid_rm_file_zero_byte_only_removes_named_file(tmpdir):
+    # Regression test: zero-byte files have no data extent, so the parser
+    # used to key them all to one shared Inode, and rm_file on one of them
+    # removed every zero-byte file in every context.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, udf='2.60', rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b''), 0, '/A.;1', rr_name='a', joliet_path='/a', udf_path='/a')
+    iso.add_fp(io.BytesIO(b''), 0, '/B.;1', rr_name='b', joliet_path='/b', udf_path='/b')
+    iso.add_fp(io.BytesIO(b'hello'), 5, '/C.;1', rr_name='c', joliet_path='/c', udf_path='/c')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(out)
+
+    iso.rm_file(iso_path='/A.;1')
+    assert _names(iso, iso_path='/') == [b'B.;1', b'C.;1']
+    assert _names(iso, joliet_path='/') == [b'\x00a', b'\x00b', b'\x00c']
+    assert _names(iso, udf_path='/') == [b'a', b'b', b'c']
+
+    iso.rm_file(joliet_path='/a')
+    iso.rm_file(udf_path='/a')
+    assert _names(iso, joliet_path='/') == [b'\x00b', b'\x00c']
+    assert _names(iso, udf_path='/') == [b'b', b'c']
+
+    # The real file is untouched and the result round-trips.
+    out2 = io.BytesIO()
+    iso.write_fp(out2)
+    iso.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(out2)
+    assert _names(iso, iso_path='/') == [b'B.;1', b'C.;1']
+    assert _names(iso, joliet_path='/') == [b'\x00b', b'\x00c']
+    assert _names(iso, udf_path='/') == [b'b', b'c']
+    with iso.open_file_from_iso(iso_path='/C.;1') as infp:
+        assert infp.read() == b'hello'
+    iso.close()
+
+def test_hybrid_rm_file_zero_byte_keeps_symlink(tmpdir):
+    # Regression test: symlinks were keyed to the same shared Inode as
+    # zero-byte files, so removing a zero-byte file also removed symlinks.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b''), 0, '/A.;1', rr_name='a')
+    iso.add_fp(io.BytesIO(b'hello'), 5, '/C.;1', rr_name='c')
+    iso.add_symlink('/SYM.;1', 'sym', 'c')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(out)
+    iso.rm_file(iso_path='/A.;1')
+    assert _names(iso, iso_path='/') == [b'C.;1', b'SYM.;1']
+
+    iso.rm_file(iso_path='/SYM.;1')
+    assert _names(iso, iso_path='/') == [b'C.;1']
+    iso.close()

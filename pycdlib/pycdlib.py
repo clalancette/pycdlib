@@ -1210,9 +1210,10 @@ class PyCdlib:
         """
         An internal method to link a non-directory record to the Inode
         describing its on-disk data, creating the Inode if necessary.
-        Zero-length files and symlinks are deliberately linked to a
-        length-0, location-0 Inode that is never written out, so that
-        everything can be linked through an Inode.
+        Zero-length files and symlinks each get their own length-0,
+        location-0 Inode that is never written out; they are never shared
+        with any other record, since there is no data extent to tie them
+        together.
 
         Args:
             new_record: The file directory record to link.
@@ -1241,14 +1242,19 @@ class PyCdlib:
         if self.eltorito_boot_catalog is not None and extent_to_use == self.eltorito_boot_catalog.extent_location():
             self.eltorito_boot_catalog.add_dirrecord(new_record)
         else:
-            # For real files create an inode that points to the on-disk location
-            if extent_to_use in extent_to_inode:
+            # For real files create an inode that points to the on-disk
+            # location.  Zero-length files and symlinks have no data extent
+            # to correlate on, so each gets a private Inode rather than
+            # sharing one keyed on extent 0; otherwise removing one of them
+            # would remove every zero-length file and symlink on the ISO.
+            if len_to_use > 0 and extent_to_use in extent_to_inode:
                 ino = extent_to_inode[extent_to_use]
             else:
                 ino = inode.Inode()
                 ino.parse(extent_to_use, len_to_use, self._cdfp,
                           self.logical_block_size)
-                extent_to_inode[extent_to_use] = ino
+                if len_to_use > 0:
+                    extent_to_inode[extent_to_use] = ino
                 self.inodes.append(ino)
 
             ino.linked_records.append((new_record, vd == self.pvd))
@@ -2427,14 +2433,18 @@ class PyCdlib:
                         seen_file_entries.add(abs_file_entry_extent)
                         udf_file_entries.append(next_entry)
                     else:
-                        if next_entry.get_data_length() > 0:
+                        udf_data_length = next_entry.get_data_length()
+                        if udf_data_length > 0:
                             abs_file_data_extent = part_start + next_entry.alloc_descs[0].log_block_num
                         else:
                             abs_file_data_extent = 0
                         if self.eltorito_boot_catalog is not None and abs_file_data_extent == self.eltorito_boot_catalog.extent_location():
                             self.eltorito_boot_catalog.add_dirrecord(next_entry)
                         else:
-                            if abs_file_data_extent in extent_to_inode:
+                            # As on the ISO9660 side, zero-length files have no
+                            # data extent to correlate on, so they never share
+                            # an Inode with any other record.
+                            if udf_data_length > 0 and abs_file_data_extent in extent_to_inode:
                                 ino = extent_to_inode[abs_file_data_extent]
                                 # In a UDF Bridge ISO, the UDF File Entry
                                 # describes the whole file in one Inode while
@@ -2449,9 +2459,10 @@ class PyCdlib:
                             else:
                                 ino = inode.Inode()
                                 ino.parse(abs_file_data_extent,
-                                          next_entry.get_data_length(),
+                                          udf_data_length,
                                           self._cdfp, self.logical_block_size)
-                                extent_to_inode[abs_file_data_extent] = ino
+                                if udf_data_length > 0:
+                                    extent_to_inode[abs_file_data_extent] = ino
                                 self.inodes.append(ino)
 
                             ino.linked_records.append((next_entry, False))
@@ -5640,10 +5651,14 @@ class PyCdlib:
         """
         Remove a file from the ISO.  This removes the data and the listing of
         the file from all contexts, even when only one path is given (to only
-        remove it from a single context, use :meth:`rm_hard_link` instead).  Due to
-        some complexities of the ISO format, removal of zero-byte files from all
-        contexts does not automatically happen, so this method may need to be
-        called more than once for zero-byte files.
+        remove it from a single context, use :meth:`rm_hard_link` instead).
+
+        The contexts are tied together by the file's data extent, and a
+        zero-byte file has none.  For an ISO opened from disk, a zero-byte
+        file therefore only has its entry in the given context removed, so
+        this method must be called once per context (ISO9660, Joliet, UDF) to
+        remove it completely.  Zero-byte files added during this session are
+        removed from every context in one call.
 
         Args:
             iso_path: The path to the file to remove.
