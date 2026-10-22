@@ -167,10 +167,10 @@ class PyCdlibISO9660:
         # type: (str) -> None
         """
         Remove a file from the ISO.  This removes the data and the listing of
-        the file from all contexts.  Due to some complexities of the ISO format,
-        removal of zero-byte files from all contexts does not automatically
-        happen, so this method may need to be called on more than one facade for
-        zero-byte files.
+        the file from all contexts.  The contexts are tied together by the
+        file's data extent, and a zero-byte file has none, so for an ISO opened
+        from disk a zero-byte file only has its entry in this facade's context
+        removed; call this method on each facade to remove it completely.
 
         Args:
             iso_path: The path to the file to remove.
@@ -360,10 +360,10 @@ class PyCdlibJoliet:
         # type: (str) -> None
         """
         Remove a file from the ISO.  This removes the data and the listing of
-        the file from all contexts.  Due to some complexities of the ISO format,
-        removal of zero-byte files from all contexts does not automatically
-        happen, so this method may need to be called on more than one facade for
-        zero-byte files.
+        the file from all contexts.  The contexts are tied together by the
+        file's data extent, and a zero-byte file has none, so for an ISO opened
+        from disk a zero-byte file only has its entry in this facade's context
+        removed; call this method on each facade to remove it completely.
 
         Args:
             joliet_path: The path to the file to remove.
@@ -630,10 +630,10 @@ class PyCdlibRockRidge:
         # type: (str) -> None
         """
         Remove a file from the ISO.  This removes the data and the listing of
-        the file from all contexts.  Due to some complexities of the ISO format,
-        removal of zero-byte files from all contexts does not automatically
-        happen, so this method may need to be called on more than one facade for
-        zero-byte files.
+        the file from all contexts.  The contexts are tied together by the
+        file's data extent, and a zero-byte file has none, so for an ISO opened
+        from disk a zero-byte file only has its entry in this facade's context
+        removed; call this method on each facade to remove it completely.
 
         Args:
             rr_path: The path to the file to remove.
@@ -831,10 +831,10 @@ class PyCdlibUDF:
         # type: (str) -> None
         """
         Remove a file from the ISO.  This removes the data and the listing of
-        the file from all contexts.  Due to some complexities of the ISO format,
-        removal of zero-byte files from all contexts does not automatically
-        happen, so this method may need to be called on more than one facade for
-        zero-byte files.
+        the file from all contexts.  The contexts are tied together by the
+        file's data extent, and a zero-byte file has none, so for an ISO opened
+        from disk a zero-byte file only has its entry in this facade's context
+        removed; call this method on each facade to remove it completely.
 
         Args:
             udf_path: The path to the file to remove.

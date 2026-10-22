@@ -969,10 +969,13 @@ It is recommended to use the ‘joliet_path’ argument of the
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.pycdlib.PyCdlib.rm_file" title="Link to this definition">¶</a></dt>
 <dd><p>Remove a file from the ISO.  This removes the data and the listing of
 the file from all contexts, even when only one path is given (to only
-remove it from a single context, use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_hard_link" title="pycdlib.pycdlib.PyCdlib.rm_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_hard_link()</span></code></a> instead).  Due to
-some complexities of the ISO format, removal of zero-byte files from all
-contexts does not automatically happen, so this method may need to be
-called more than once for zero-byte files.</p>
+remove it from a single context, use <a class="reference internal" href="#pycdlib.pycdlib.PyCdlib.rm_hard_link" title="pycdlib.pycdlib.PyCdlib.rm_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">rm_hard_link()</span></code></a> instead).</p>
+<p>The contexts are tied together by the file’s data extent, and a
+zero-byte file has none.  For an ISO opened from disk, a zero-byte
+file therefore only has its entry in the given context removed, so
+this method must be called once per context (ISO9660, Joliet, UDF) to
+remove it completely.  Zero-byte files added during this session are
+removed from every context in one call.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
