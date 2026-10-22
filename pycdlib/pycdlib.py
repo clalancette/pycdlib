@@ -5289,16 +5289,19 @@ class PyCdlib:
         # type: (...) -> None
         """
         Add a hard link to the ISO.  Hard links are alternate names for the
-        same file contents that don't take up any additional space on the the
+        same file contents that don't take up any additional space on the
         ISO.  This API can be used to create hard links between two files on
-        the ISO9660 filesystem, between two files on the Joliet filesystem, or
-        between a file on the ISO9660 filesystem and the Joliet filesystem.
-        In all cases, exactly one old path must be specified, and exactly one
-        new path must be specified.
-        Note that this is an advanced API, so using it in combination with the
-        higher-level APIs (like :meth:`rm_file`) may result in unexpected behavior.
-        Once this API has been used, this API and :meth:`rm_hard_link` should be
-        preferred over :meth:`add_file` and :meth:`rm_file`, respectively.
+        the ISO9660 filesystem, between two files on the Joliet filesystem,
+        between two files on the UDF filesystem, or between any two of those
+        filesystems.  In all cases, exactly one old path must be specified,
+        and exactly one new path must be specified.
+
+        A file's identity is its data: every path to it, in every context, is
+        a link to that data.  :meth:`add_fp` and :meth:`add_file` create one
+        link per path they are given, this method adds one more, and the
+        links can be removed one at a time with :meth:`rm_hard_link` or all at
+        once with :meth:`rm_file`.  The data is dropped when its last link goes.
+        These APIs may be mixed freely.
 
         Args:
             iso_old_path: The old path on the ISO9660 filesystem to link from.
@@ -5422,15 +5425,16 @@ class PyCdlib:
         """
         Remove a hard link from the ISO.  If the number of links to a piece of
         data drops to zero, then the contents will be removed from the ISO.
-        This can be thought of as a lower-level interface to :meth:`rm_file`.  Either
-        an ISO9660 path or a Joliet path must be passed to this API, but not
-        both.  Thus, this interface can be used to hide files from either the
-        ISO9660 filesystem, the Joliet filesystem, or both (if there is another
-        reference to the data on the ISO, such as in El Torito).  Note that this
-        is an advanced API, so using it in combination with the higher-level APIs
-        (like :meth:`rm_file`) may result in unexpected behavior.  Once this API has
-        been used, this API and :meth:`add_hard_link` should be preferred over
-        :meth:`rm_file` and :meth:`add_file`.
+        Exactly one of an ISO9660 path, a Joliet path, or a UDF path must be
+        passed to this API.  Thus, this interface can be used to hide a file
+        from one filesystem while leaving it visible in the others, or to hide
+        it from all of them while another reference to the data remains, such
+        as an El Torito boot entry.
+
+        A file's identity is its data: every path to it, in every context, is
+        a link to that data.  This method removes one link, while
+        :meth:`rm_file` removes every link to the same data at once, including
+        any added with :meth:`add_hard_link`.  These APIs may be mixed freely.
 
         Args:
             iso_path: The ISO link path to remove.
