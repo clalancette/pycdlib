@@ -335,7 +335,7 @@ PyCdlib class uses the file descriptor internally when writing
 added to the ISO9660 context (and by extension, the Rock Ridge
 context).  If the ISO is a Rock Ridge one, then a Rock Ridge name will
 be generated from the ISO path.  For more control over which contexts
-in which a file shows up, use the <a class="reference internal" href="pycdlib.html#pycdlib.pycdlib.PyCdlib.add_hard_link" title="pycdlib.pycdlib.PyCdlib.add_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pycdlib.pycdlib.PyCdlib.add_hard_link()</span></code></a> API and/or use the
+a file shows up in, use the <a class="reference internal" href="pycdlib.html#pycdlib.pycdlib.PyCdlib.add_hard_link" title="pycdlib.pycdlib.PyCdlib.add_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pycdlib.pycdlib.PyCdlib.add_hard_link()</span></code></a> API and/or use the
 regular PyCdlib object (not this facade).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -356,7 +356,7 @@ regular PyCdlib object (not this facade).</p>
 <dd><p>Add a directory to the ISO9660 context (and by extension, the Rock
 Ridge context).  If the ISO is a Rock Ridge one, then a Rock Ridge name
 will be generated from the ISO path.  For more control over which
-contexts in which a directory shows up, use the regular PyCdlib object
+contexts a directory shows up in, use the regular PyCdlib object
 (not this facade).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -504,8 +504,7 @@ it out to a local file.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>local_path</strong> – The local file to write to.</p></li>
-<li><p><strong>joliet_path</strong> – The absolute Joliet path to lookup on the ISO (exclusive
-with iso_path, rr_path, and udf_path).</p></li>
+<li><p><strong>joliet_path</strong> – The absolute Joliet path to lookup on the ISO.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -584,7 +583,7 @@ PyCdlib class uses the file descriptor internally when writing
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.facade.PyCdlibJoliet.add_file" title="Link to this definition">¶</a></dt>
 <dd><p>Add a file to the ISO.  While using this facade, a file will only be
 added to the Joliet context.  For more control over which contexts
-in which a file shows up, use the <a class="reference internal" href="pycdlib.html#pycdlib.pycdlib.PyCdlib.add_hard_link" title="pycdlib.pycdlib.PyCdlib.add_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pycdlib.pycdlib.PyCdlib.add_hard_link()</span></code></a> API and/or use the
+a file shows up in, use the <a class="reference internal" href="pycdlib.html#pycdlib.pycdlib.PyCdlib.add_hard_link" title="pycdlib.pycdlib.PyCdlib.add_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pycdlib.pycdlib.PyCdlib.add_hard_link()</span></code></a> API and/or use the
 regular PyCdlib object (not this facade).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -603,7 +602,7 @@ regular PyCdlib object (not this facade).</p>
 <dt class="sig sig-object py" id="pycdlib.facade.PyCdlibJoliet.add_directory">
 <span class="sig-name descname"><span class="pre">add_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">joliet_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.facade.PyCdlibJoliet.add_directory" title="Link to this definition">¶</a></dt>
 <dd><p>Add a directory to the Joliet context.  For more control over which
-contexts in which a directory shows up, use the regular PyCdlib object
+contexts a directory shows up in, use the regular PyCdlib object
 (not this facade).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -835,7 +834,7 @@ used.</p></li>
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.facade.PyCdlibRockRidge.add_file" title="Link to this definition">¶</a></dt>
 <dd><p>Add a file to the ISO.  While using this facade, a file will only be
 added to the Rock Ridge context (and by extension, the ISO9660
-context).  For more control over which contexts in which a file shows up,
+context).  For more control over which contexts a file shows up in,
 use the <a class="reference internal" href="pycdlib.html#pycdlib.pycdlib.PyCdlib.add_hard_link" title="pycdlib.pycdlib.PyCdlib.add_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pycdlib.pycdlib.PyCdlib.add_hard_link()</span></code></a> API and/or use the regular PyCdlib object (not
 this facade).</p>
 <dl class="field-list simple">
@@ -865,15 +864,14 @@ used.</p></li>
 
 <span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.facade.PyCdlibRockRidge.add_directory" title="Link to this definition">¶</a></dt>
 <dd><p>Add a directory to the Rock Ridge context (and by extension, the ISO9660
-context).  For more control over which contexts in which a directory
-shows up, use the regular PyCdlib object (not this facade).</p>
+context).  For more control over which contexts a directory
+shows up in, use the regular PyCdlib object (not this facade).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>rr_path</strong> – The Rock Ridge absolute path to use for the directory.</p></li>
-<li><p><strong>file_mode</strong> – The POSIX file_mode to apply to this file.  If this is None
-(the default), the permissions from the original file are
-used.</p></li>
+<li><p><strong>file_mode</strong> – The POSIX file mode to apply to this directory.  If
+this is None, the directory is given mode 0o555.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
@@ -1116,7 +1114,7 @@ PyCdlib class uses the file descriptor internally when writing
 <span class="sig-name descname"><span class="pre">add_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">udf_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.facade.PyCdlibUDF.add_file" title="Link to this definition">¶</a></dt>
 <dd><p>Add a file to the ISO.  While using this facade, a file will only be
 added to the UDF context.  For more control over which contexts
-in which a file shows up, use the <a class="reference internal" href="pycdlib.html#pycdlib.pycdlib.PyCdlib.add_hard_link" title="pycdlib.pycdlib.PyCdlib.add_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pycdlib.pycdlib.PyCdlib.add_hard_link()</span></code></a> API and/or use the
+a file shows up in, use the <a class="reference internal" href="pycdlib.html#pycdlib.pycdlib.PyCdlib.add_hard_link" title="pycdlib.pycdlib.PyCdlib.add_hard_link"><code class="xref py py-meth docutils literal notranslate"><span class="pre">pycdlib.pycdlib.PyCdlib.add_hard_link()</span></code></a> API and/or use the
 regular PyCdlib object (not this facade).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1135,7 +1133,7 @@ regular PyCdlib object (not this facade).</p>
 <dt class="sig sig-object py" id="pycdlib.facade.PyCdlibUDF.add_directory">
 <span class="sig-name descname"><span class="pre">add_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">udf_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#pycdlib.facade.PyCdlibUDF.add_directory" title="Link to this definition">¶</a></dt>
 <dd><p>Add a directory to the UDF context.  For more control over which
-contexts in which a directory shows up, use the regular PyCdlib object
+contexts a directory shows up in, use the regular PyCdlib object
 (not this facade).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
