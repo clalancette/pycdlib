@@ -6498,7 +6498,7 @@ class PyCdlib:
                 Rock Ridge records, 'utf-16_be' for Joliet records,
                 and the UDF file_ident's own encoding for UDF.  Pass
                 a non-None value when walking an ISO whose names are
-                in a different encoding (issue #109; e.g. shift_jis).
+                in a different encoding, such as shift_jis.
         Returns:
             A string representing the absolute path to the file on the ISO.
         """
@@ -6770,7 +6770,7 @@ class PyCdlib:
             # Iterate dir_record's children directly instead of going
             # through list_children(<path>) -- the latter would re-encode
             # relpath for path lookup with a hardcoded encoding, which
-            # fails on ISOs whose on-disk names aren't UTF-8 (issue #109).
+            # fails on ISOs whose on-disk names aren't UTF-8.
             if path_type == 'udf_path':
                 if not isinstance(dir_record, udfmod.UDFFileEntry):
                     raise pycdlibexception.PyCdlibInternalError('Internal error: expected UDF File Entry while walking UDF path')
