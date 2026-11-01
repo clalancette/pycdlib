@@ -79,6 +79,12 @@ def test_dr_bad_record_length():
         dr.parse(None, b'\x00' * 256, None)
     assert(str(excinfo.value) == 'Directory record longer than 255 bytes!')
 
+def test_dr_parse_too_short():
+    dr = pycdlib.dr.DirectoryRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        dr.parse(None, b'\x00' * 20, None)
+    assert(str(excinfo.value) == 'Invalid directory record')
+
 def test_dr_bad_extent_location():
     dr = pycdlib.dr.DirectoryRecord()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:

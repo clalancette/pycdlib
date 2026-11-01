@@ -224,6 +224,9 @@ class DirectoryRecord:
         if self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record already initialized')
 
+        if len(record) < self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Invalid directory record')
+
         if len(record) > 255:
             # Since the length is supposed to be 8 bits, this should never
             # happen.
