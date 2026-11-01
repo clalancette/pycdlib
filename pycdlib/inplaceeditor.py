@@ -51,26 +51,23 @@ def _find_record(iso, iso_path=None, rr_path=None, joliet_path=None,
     if num_paths != 1:
         raise pycdlibexception.PyCdlibInvalidInput("Exactly one of 'iso_path', 'rr_path', 'joliet_path', or 'udf_path' must be passed")
 
-    child = None  # type: Optional[Union[dr.DirectoryRecord, udfmod.UDFFileEntry]]
     if udf_path is not None:
         if iso.udf_root is None:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a udf_path from a non-UDF ISO')
-        (ident_unused, child) = iso._find_udf_record(utils.normpath(udf_path))  # pylint: disable=protected-access
-    elif joliet_path is not None:
+        (ident_unused, udf_child) = iso._find_udf_record(utils.normpath(udf_path))  # pylint: disable=protected-access
+        return udf_child
+    if joliet_path is not None:
         if iso.joliet_vd is None:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a joliet_path from a non-Joliet ISO')
-        child = iso._find_joliet_record(iso._normalize_joliet_path(joliet_path))  # pylint: disable=protected-access
-    elif rr_path is not None:
+        return iso._find_joliet_record(iso._normalize_joliet_path(joliet_path))  # pylint: disable=protected-access
+    if rr_path is not None:
         if not iso.rock_ridge:
             raise pycdlibexception.PyCdlibInvalidInput('Cannot fetch a rr_path from a non-Rock Ridge ISO')
-        child = iso._find_rr_record(utils.normpath(rr_path))  # pylint: disable=protected-access
-    elif iso_path is not None:
-        child = iso._find_iso_record(utils.normpath(iso_path))  # pylint: disable=protected-access
+        return iso._find_rr_record(utils.normpath(rr_path))  # pylint: disable=protected-access
 
-    if child is None:
-        raise pycdlibexception.PyCdlibInvalidInput('Could not find path to edit in place')
-
-    return child
+    # num_paths == 1 and the other three are None, so iso_path is set;
+    # mypy can't see that through the counting check above.
+    return iso._find_iso_record(utils.normpath(iso_path))  # type: ignore[arg-type]  # pylint: disable=protected-access
 
 
 def _do_modify_file_in_place(iso, fp, length, iso_path=None, rr_path=None,
@@ -268,20 +265,22 @@ def _do_rm_file(iso, iso_path=None, rr_path=None, joliet_path=None,
             except pycdlibexception.PyCdlibInvalidInput:
                 raise pycdlibexception.PyCdlibInvalidInput("Cannot remove a file that is an El Torito boot image; use PyCdlib.rm_eltorito + write_fp() to produce a new ISO instead") from None
 
-    # Collect each linked record's parent before removal -- after
-    # _rm_dr_link runs, the record is no longer in inode.linked_records
-    # so we'd lose track of which parents got affected.
+    # Collect each linked record and its parent before removal --
+    # _rm_dr_link removes the record from inode.linked_records as it
+    # goes, so we snapshot the list up front and track which parents
+    # are affected.
     affected_parents = []
     seen_parents = set()  # type: set
+    linked_records = []  # type: list
     if child.inode is not None:
         for record, _is_pvd in child.inode.linked_records:
-            if isinstance(record, dr.DirectoryRecord):
-                parent = record.parent
-                if id(parent) not in seen_parents:
-                    seen_parents.add(id(parent))
-                    affected_parents.append(parent)
-            else:
+            if not isinstance(record, dr.DirectoryRecord):
                 raise pycdlibexception.PyCdlibInternalError('Unsupported linked record type for in-place rm_file')
+            linked_records.append(record)
+            parent = record.parent
+            if id(parent) not in seen_parents:
+                seen_parents.add(id(parent))
+                affected_parents.append(parent)
 
     # Remove from the in-memory tree.  _rm_dr_link does the per-record
     # bookkeeping (removes from parent.children, removes from
@@ -293,12 +292,8 @@ def _do_rm_file(iso, iso_path=None, rr_path=None, joliet_path=None,
             seen_parents.add(id(child.parent))
             affected_parents.append(child.parent)
     else:
-        while child.inode.linked_records:
-            rec = child.inode.linked_records[0][0]
-            if isinstance(rec, dr.DirectoryRecord):
-                iso._rm_dr_link(rec)  # pylint: disable=protected-access
-            else:
-                raise pycdlibexception.PyCdlibInternalError('Unsupported linked record type for in-place rm_file')
+        for rec in linked_records:
+            iso._rm_dr_link(rec)  # pylint: disable=protected-access
 
     # Commit the change to disk.  Rewrite each affected parent's
     # directory extent (the existing _rewrite_dir_record_extent

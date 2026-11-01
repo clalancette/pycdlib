@@ -3166,6 +3166,167 @@ def test_new_in_place_editor_rm_file_rejects_eltorito_boot_file(tmpdir):
             ed.rm_file('/BOOT.;1')
         assert(str(excinfo.value) == 'Cannot remove a file that is an El Torito boot image; use PyCdlib.rm_eltorito + write_fp() to produce a new ISO instead')
 
+def test_new_in_place_editor_modify_file_udf_path_not_udf(tmpdir):
+    # Looking a file up through udf_path on an ISO without UDF is an
+    # input error, not a crash.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.modify_file(io.BytesIO(b'bar\n'), 4, udf_path='/foo')
+        assert(str(excinfo.value) == 'Cannot fetch a udf_path from a non-UDF ISO')
+
+def test_new_in_place_editor_modify_file_joliet_path_not_joliet(tmpdir):
+    # Looking a file up through joliet_path on an ISO without Joliet is
+    # an input error, not a crash.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            ed.modify_file(io.BytesIO(b'bar\n'), 4, joliet_path='/foo')
+        assert(str(excinfo.value) == 'Cannot fetch a joliet_path from a non-Joliet ISO')
+
+def test_new_in_place_editor_modify_file_rejects_unknown_linked_record(tmpdir):
+    # Every record linked to a file's Inode must be an ISO9660/Joliet
+    # DirectoryRecord or a UDF File Entry; anything else is an internal
+    # inconsistency that the editor refuses to write out.  Inject a
+    # bogus linked record to exercise that guard.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        rec = ed._iso._find_iso_record(b'/FOO.;1')
+        rec.inode.linked_records.append((object(), False))
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+            ed.modify_file(io.BytesIO(b'bar\n'), 4, iso_path='/FOO.;1')
+        assert(str(excinfo.value) == 'Invalid record type')
+
+def test_new_in_place_editor_modify_file_rejects_parentless_record(tmpdir):
+    # A DirectoryRecord linked to a file's Inode must have a parent so
+    # the editor knows which directory extent to rewrite.  Detach the
+    # record from its parent to exercise that guard.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        rec = ed._iso._find_iso_record(b'/FOO.;1')
+        rec.parent = None
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+            ed.modify_file(io.BytesIO(b'bar\n'), 4, iso_path='/FOO.;1')
+        assert(str(excinfo.value) == 'Modifying file with empty parent')
+
+def test_new_in_place_editor_rm_file_zero_byte(tmpdir):
+    # A zero-byte file has no data extent; make sure removing one only
+    # drops the named record and leaves the other zero-byte file alone.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'AAA\n'), 4, '/A.;1')
+    iso.add_fp(io.BytesIO(b''), 0, '/EMPTY.;1')
+    iso.add_fp(io.BytesIO(b''), 0, '/EMPTY2.;1')
+    iso.add_fp(io.BytesIO(b'CCC\n'), 4, '/C.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        ed.rm_file('/EMPTY.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    children = sorted(
+        ch.file_identifier()
+        for ch in iso2.pvd.root_dir_record.children
+        if ch.file_identifier() not in (b'.', b'..')
+    )
+    # Only the named zero-byte file is gone; the other zero-byte file
+    # and the real files survive.
+    assert children == [b'A.;1', b'C.;1', b'EMPTY2.;1']
+    for path, expected in [('/A.;1', b'AAA\n'), ('/C.;1', b'CCC\n'),
+                           ('/EMPTY2.;1', b'')]:
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, iso_path=path)
+        assert buf.getvalue() == expected
+    iso2.close()
+
+def test_new_in_place_editor_rm_file_record_without_inode(tmpdir):
+    # rm_file has a dedicated path for a directory record that carries
+    # no Inode (the parser always attaches one today, but the in-memory
+    # model allows it).  Detach the Inode to exercise that path, and
+    # put the file in a subdirectory so the rewrite has to walk up to
+    # root.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_directory('/DIR')
+    iso.add_fp(io.BytesIO(b''), 0, '/DIR/EMPTY.;1')
+    iso.add_fp(io.BytesIO(b'BBB\n'), 4, '/DIR/B.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        rec = ed._iso._find_iso_record(b'/DIR/EMPTY.;1')
+        rec.inode = None
+        ed.rm_file('/DIR/EMPTY.;1')
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    assert [c.file_identifier() for c in iso2.list_children(iso_path='/DIR')] == [b'.', b'..', b'B.;1']
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/DIR/B.;1')
+    assert buf.getvalue() == b'BBB\n'
+    iso2.close()
+
+def test_new_in_place_editor_rm_file_rejects_unknown_linked_record(tmpdir):
+    # rm_file only knows how to unlink DirectoryRecords; a foreign
+    # object in the Inode's linked_records is an internal inconsistency
+    # that must be caught before any on-disk change is made.
+    iso_path = str(tmpdir.join('test.iso'))
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1')
+    with open(iso_path, 'wb') as f:
+        iso.write_fp(f)
+    iso.close()
+
+    with pycdlib.InPlaceEditor(iso_path) as ed:
+        rec = ed._iso._find_iso_record(b'/FOO.;1')
+        rec.inode.linked_records.append((object(), False))
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+            ed.rm_file('/FOO.;1')
+        assert(str(excinfo.value) == 'Unsupported linked record type for in-place rm_file')
+
+    # Nothing was written: the file is still there and intact.
+    iso2 = pycdlib.PyCdlib()
+    iso2.open(iso_path)
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/FOO.;1')
+    assert buf.getvalue() == b'foo\n'
+    iso2.close()
+
 def test_new_in_place_editor_add_fp_basic(tmpdir):
     # add_fp appends a new file to the volume and inserts its
     # directory record into the parent's extent on disk.  The file
