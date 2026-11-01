@@ -216,7 +216,7 @@ def restore_tz(oldtz):
     time.tzset()
 
 def test_volumedescdate_new_nonzero():
-    oldtz = save_and_set_tz('US/Eastern')
+    oldtz = save_and_set_tz('America/New_York')
 
     test_seconds_since_epoch = 1546914300.0
     voldate = pycdlib.dates.VolumeDescriptorDate()

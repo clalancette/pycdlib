@@ -116,9 +116,9 @@ def restore_tz(oldtz):
     time.tzset()
 
 def test_gmtoffset_from_tm():
-    oldtz = save_and_set_tz('US/Eastern')
+    oldtz = save_and_set_tz('America/New_York')
     now = 1546914300
-    # US/Eastern is GMT-5 hours, which is 5*60 = 300 minutes behind.  Since
+    # America/New_York is GMT-5 hours, which is 5*60 = 300 minutes behind.  Since
     # the gmtoffset in ISO 9660 is in 15 minute intervals, this is 300/15 = 20
     # behind.
     assert(pycdlib.utils.gmtoffset_from_tm(now, time.localtime(now)) == -20)
