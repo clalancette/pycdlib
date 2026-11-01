@@ -20,13 +20,15 @@ jobs:
     - name: Install apt dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y python3-flake8 python3-mypy
+        sudo apt-get install -y flake8 mypy
 
     - name: Run flake8
       run: flake8 --ignore=E501,E266 pycdlib tools/*
 
     - name: Run mypy
-      run: mypy --ignore-missing-imports -p pycdlib
+      # Check against the oldest supported Python so newer-only stdlib and
+      # typing features get flagged.
+      run: mypy --ignore-missing-imports --python-version 3.10 -p pycdlib
 
   unit_tests:
     name: Unit Tests
