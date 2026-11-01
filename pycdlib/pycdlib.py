@@ -67,6 +67,10 @@ _ALLOWED_D1_BYTES = bytes(range(65, 91)) + bytes(range(48, 58)) + b'_'
 # with one descriptor per sector.
 _LOGICAL_SECTOR_SIZE = 2048
 _VOLUME_DESCRIPTOR_SET_START_SECTOR = 16
+# ECMA-167 Part 3 8.4.2.1 records UDF anchors at extents 256, N-256 and N,
+# where N is the last extent of the volume.  The middle and last anchors
+# therefore always have exactly this many extents between them.
+_UDF_MIDDLE_ANCHOR_GAP = 255
 
 
 def _check_d1_characters(name):
@@ -268,6 +272,53 @@ def _interchange_level_from_directory(name):
         interchange_level = 3
 
     return interchange_level
+
+
+def _pick_inodes_to_fill(inodes, capacity, logical_block_size):
+    # type: (List[inode.Inode], int, int) -> List[inode.Inode]
+    """
+    Choose a subset of Inodes whose data, laid out back to back, comes as
+    close as possible to filling `capacity` extents without exceeding it.
+    This is a subset-sum over the Inodes' extent counts, which is cheap
+    because the capacity is tiny.
+
+    Args:
+        inodes: The candidate Inodes, in layout order.
+        capacity: The number of extents to fill.
+        logical_block_size: The logical block size of the ISO.
+    Returns:
+        The chosen Inodes, in their original relative order.
+    """
+    # best[s] is the index of the last inode used to reach a total of
+    # exactly s extents, or -1 if s is not reachable; prev[s] is the total
+    # before that inode was added.  Only the first way of reaching each
+    # total is kept, which is all we need to reconstruct one subset.
+    best = [-1] * (capacity + 1)
+    prev = [0] * (capacity + 1)
+    reachable = [False] * (capacity + 1)
+    reachable[0] = True
+    for index, ino in enumerate(inodes):
+        blocks = utils.ceiling_div(ino.get_data_length(), logical_block_size)
+        if blocks == 0 or blocks > capacity:
+            continue
+        for total in range(capacity, blocks - 1, -1):
+            if not reachable[total] and reachable[total - blocks]:
+                reachable[total] = True
+                best[total] = index
+                prev[total] = total - blocks
+        if reachable[capacity]:
+            break
+
+    total = capacity
+    while total > 0 and not reachable[total]:
+        total -= 1
+
+    chosen = set()
+    while total > 0:
+        chosen.add(best[total])
+        total = prev[total]
+
+    return [ino for index, ino in enumerate(inodes) if index in chosen]
 
 
 def _reassign_vd_dirrecord_extents(vd, current_extent, blocks_per_sector):
@@ -574,7 +625,8 @@ class PyCdlib:
                  'udf_reserve_descs', 'udf_logical_volume_integrity',
                  'udf_boots', 'udf_logical_volume_integrity_terminator',
                  'udf_root', 'udf_file_set', 'udf_file_set_terminator',
-                 'logical_block_size', '_dir_alignment_blocks')
+                 'logical_block_size', '_dir_alignment_blocks',
+                 '_udf_middle_anchor_blocks')
 
     def _initialize(self):
         # type: () -> None
@@ -627,6 +679,7 @@ class PyCdlib:
         self.logical_block_size = 2048
         # Padding blocks the last reshuffle added for directory alignment.
         self._dir_alignment_blocks = 0
+        self._udf_middle_anchor_blocks = 0
         self.interchange_level = 1  # type: int
 
     def _parse_volume_descriptors(self):
@@ -1579,11 +1632,13 @@ class PyCdlib:
             self.udf_logical_volume_integrity_terminator.set_extent_location(current_extent)
             current_extent += 1
 
-        if len(self.udf_anchors) != 2:
-            raise pycdlibexception.PyCdlibInternalError('Expected 2 UDF anchors')
+        if len(self.udf_anchors) < 2:
+            raise pycdlibexception.PyCdlibInternalError('Expected at least 2 UDF anchors')
 
         # The first UDF anchor is hard-coded at extent 256.  We assign the
-        # other anchor later, since it needs to be the last extent.
+        # others later: the last one needs to be the last extent, and a
+        # middle one (if the ISO we parsed had it) needs to be exactly 256
+        # extents before that, in the middle of the file data.
         current_extent = 256
         self.udf_anchors[0].set_extent_location(current_extent,
                                                 self.udf_main_descs.pvds[0].extent_location(),
@@ -1713,9 +1768,6 @@ class PyCdlib:
         Returns:
             The new extent location.
         """
-        if len(self.udf_anchors) > 2 and current_extent == self.pvd.space_size - 256:
-            current_extent += 1
-
         ino.set_extent_location(current_extent)
         for rec, pvd_unused in ino.linked_records:
             # ISO9660 multi-extent chunks share a single Inode; each
@@ -1850,11 +1902,6 @@ class PyCdlib:
             rr.dr_entries.ce_record.update_extent(current_extent)
             current_extent += 1
 
-        if len(self.udf_anchors) > 2:
-            self.udf_anchors[1].set_extent_location(self.pvd.space_size - 256,
-                                                    self.udf_main_descs.pvds[0].extent_location(),
-                                                    self.udf_reserve_descs.pvds[0].extent_location())
-
         linked_inodes = set()
         if self.eltorito_boot_catalog is not None:
             self.eltorito_boot_catalog.update_catalog_extent(current_extent)
@@ -1938,15 +1985,65 @@ class PyCdlib:
                                                  part_start)
                 linked_inodes.add(id(enc.entry.inode))
 
+        # pycdlib itself writes two anchors, at 256 and at the last extent.
+        # An ISO we parsed may also carry the middle one at N-256, which
+        # has to end up exactly _UDF_MIDDLE_ANCHOR_GAP extents before the
+        # last anchor, i.e. inside the file data.  A file cannot be split
+        # around it, so choose files whose data fills that gap as closely
+        # as possible: lay out every other file first, then the middle
+        # anchor, then the chosen files, then zero padding up to the last
+        # anchor.  Anchors beyond the third have nowhere to go (the parser
+        # only keeps identical copies), so drop them.
+        middle_anchor_files = []  # type: List[inode.Inode]
+        if len(self.udf_anchors) > 2:
+            del self.udf_anchors[2:-1]
+            seen = set(linked_inodes)
+            candidates = []  # type: List[inode.Inode]
+            for ino in pvd_files + joliet_files + udf_files:
+                if id(ino) not in seen:
+                    seen.add(id(ino))
+                    candidates.append(ino)
+            middle_anchor_files = _pick_inodes_to_fill(candidates,
+                                                       _UDF_MIDDLE_ANCHOR_GAP,
+                                                       self.logical_block_size)
+        deferred_inodes = set(id(ino) for ino in middle_anchor_files)
+
         for ino in pvd_files + joliet_files + udf_files:
-            if id(ino) in linked_inodes:
+            if id(ino) in linked_inodes or id(ino) in deferred_inodes:
                 # We've already assigned an extent because it was linked to an
-                # earlier entry.
+                # earlier entry, or it goes after the middle anchor.
                 continue
 
             current_extent = self._set_inode(ino, current_extent, part_start)
 
             linked_inodes.add(id(ino))
+
+        middle_anchor_blocks = 0
+        if len(self.udf_anchors) > 2:
+            middle_extent = current_extent
+            self.udf_anchors[1].set_extent_location(middle_extent,
+                                                    self.udf_main_descs.pvds[0].extent_location(),
+                                                    self.udf_reserve_descs.pvds[0].extent_location())
+            current_extent += 1
+            for ino in middle_anchor_files:
+                current_extent = self._set_inode(ino, current_extent, part_start)
+                linked_inodes.add(id(ino))
+            # Whatever the chosen files did not fill is padding; together
+            # with the anchor's own extent, that is the space this costs.
+            end_extent = middle_extent + 1 + _UDF_MIDDLE_ANCHOR_GAP
+            middle_anchor_blocks = 1 + (end_extent - current_extent)
+            current_extent = end_extent
+
+        # The anchor and padding extents are inside the UDF partition, so
+        # keep the partition length (tracked incrementally as files are
+        # added and removed) in step with them across reshuffles.
+        middle_anchor_delta = middle_anchor_blocks - self._udf_middle_anchor_blocks
+        if middle_anchor_delta != 0:
+            self.udf_main_descs.partitions[0].part_length += middle_anchor_delta
+            self.udf_reserve_descs.partitions[0].part_length += middle_anchor_delta
+            if self.udf_logical_volume_integrity is not None:
+                self.udf_logical_volume_integrity.size_tables[0] += middle_anchor_delta
+        self._udf_middle_anchor_blocks = middle_anchor_blocks
 
         if self.enhanced_vd is not None:
             loc = self.pvd.root_directory_record().extent_location()

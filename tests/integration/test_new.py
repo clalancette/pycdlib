@@ -10272,16 +10272,18 @@ def test_new_udf_volume_descriptor_pointer_round_trip():
     assert(buf.getvalue() == b'a')
     iso3.close()
 
-def test_new_udf_three_anchors_round_trip():
-    # ECMA-167 allows anchors at 256, N-256, and N; pycdlib writes the
-    # first and last.  Add the middle one and check that the writer
-    # keeps all three.
+def _three_anchor_udf_iso():
+    # Build a UDF ISO carrying the optional middle anchor at N-256 (ECMA-167
+    # Part 3 8.4.2.1), which pycdlib never generates itself.  The ISO is tiny
+    # enough that N-256 falls in the unused space before the first anchor,
+    # so the extra anchor overwrites nothing.
     iso = pycdlib.PyCdlib()
     iso.new(udf='2.60')
     iso.add_fp(io.BytesIO(b'a'), 1, '/A.;1', udf_path='/a')
     out = io.BytesIO()
     iso.write_fp(out)
     middle = iso.pvd.space_size - 1 - 256
+    assert(middle < 256)
     main_extent = iso.udf_main_descs.pvds[0].extent_location()
     reserve_extent = iso.udf_reserve_descs.pvds[0].extent_location()
     iso.close()
@@ -10292,25 +10294,112 @@ def test_new_udf_three_anchors_round_trip():
     anchor.set_extent_location(middle, main_extent, reserve_extent)
     rec = anchor.record()
     data[middle * 2048:middle * 2048 + len(rec)] = rec
+    return bytes(data)
+
+def _anchor_extents(iso):
+    return sorted(a.extent_location() for a in iso.udf_anchors)
+
+def test_new_udf_three_anchors_round_trip():
+    # An unmodified write keeps all three anchors where they were.
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(io.BytesIO(_three_anchor_udf_iso()))
+    assert(len(iso.udf_anchors) == 3)
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
 
     iso2 = pycdlib.PyCdlib()
-    iso2.open_fp(io.BytesIO(bytes(data)))
-    assert(len(iso2.udf_anchors) == 3)
-    # Write the volume back out unchanged.  (Changing the layout of a
-    # three-anchor ISO is not supported: _udf_assign_extents insists on
-    # exactly two anchors.)
-    out2 = io.BytesIO()
-    iso2.write_fp(out2)
+    iso2.open_fp(out)
+    n = iso2.pvd.space_size
+    assert(_anchor_extents(iso2) == sorted([256, n - 1 - 256, n - 1]))
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, udf_path='/a')
+    assert(buf.getvalue() == b'a')
     iso2.close()
 
-    iso3 = pycdlib.PyCdlib()
-    iso3.open_fp(out2)
-    assert(len(iso3.udf_anchors) == 3)
-    assert(sorted(a.extent_location() for a in iso3.udf_anchors) == sorted([256, iso3.pvd.space_size - 1 - 256, iso3.pvd.space_size - 1]))
-    buf = io.BytesIO()
-    iso3.get_file_from_iso_fp(buf, udf_path='/a')
-    assert(buf.getvalue() == b'a')
-    iso3.close()
+def test_new_udf_three_anchors_relayout_exact_fill():
+    # Changing the layout has to re-place the middle anchor exactly 256
+    # extents before the last one.  Files cannot straddle it, so the
+    # writer picks files whose data exactly fills the 255 extents between
+    # the two anchors when it can: here 100 + 155 blocks.
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(io.BytesIO(_three_anchor_udf_iso()))
+    big = b'\xaa' * (1024 * 1024)
+    f100 = b'1' * (100 * 2048)
+    f155 = b'2' * (155 * 2048)
+    iso.add_fp(io.BytesIO(big), len(big), '/BIG.;1', udf_path='/big')
+    iso.add_fp(io.BytesIO(f100), len(f100), '/F100.;1', udf_path='/f100')
+    iso.add_fp(io.BytesIO(f155), len(f155), '/F155.;1', udf_path='/f155')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    n = iso.pvd.space_size
+    assert(_anchor_extents(iso) == [256, n - 1 - 256, n - 1])
+    # Nothing but the anchor's own extent was spent on it.
+    assert(n * 2048 == len(out.getvalue()))
+    middle = n - 1 - 256
+    data_blocks = sum((ino.get_data_length() + 2047) // 2048 for ino in iso.inodes)
+    first_data = min(ino.extent_location() for ino in iso.inodes)
+    assert(n - 1 == first_data + data_blocks + 1)
+    for ino in iso.inodes:
+        start = ino.extent_location()
+        end = start + (ino.get_data_length() + 2047) // 2048
+        assert(not start <= middle < end)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    assert(len(iso2.udf_anchors) == 3)
+    for path, expected in (('/a', b'a'), ('/big', big), ('/f100', f100), ('/f155', f155)):
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, udf_path=path)
+        assert(buf.getvalue() == expected)
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, iso_path='/' + path[1:].upper() + '.;1')
+        assert(buf.getvalue() == expected)
+    iso2.close()
+
+def test_new_udf_three_anchors_relayout_padding():
+    # When no combination of files fills the gap, the rest is zero padding
+    # and the partition length grows to match.  Reshuffling again must not
+    # grow it a second time.
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(io.BytesIO(_three_anchor_udf_iso()))
+    part_len_before = iso.udf_main_descs.partitions[0].part_length
+    big = b'\xbb' * (1024 * 1024)
+    iso.add_fp(io.BytesIO(big), len(big), '/BIG.;1', udf_path='/big')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    n = iso.pvd.space_size
+    assert(_anchor_extents(iso) == [256, n - 1 - 256, n - 1])
+    assert(n * 2048 == len(out.getvalue()))
+    # Only the one-block file fits after the anchor: 1 anchor + 254 padding.
+    assert(iso._udf_middle_anchor_blocks == 255)
+    # The new file costs 512 data blocks plus one for its UDF File Entry.
+    part_len_after_big = part_len_before + 512 + 1 + 255
+    assert(iso.udf_main_descs.partitions[0].part_length == part_len_after_big)
+    assert(iso.udf_reserve_descs.partitions[0].part_length == part_len_after_big)
+
+    iso.add_fp(io.BytesIO(b'z'), 1, '/Z.;1', udf_path='/z')
+    out2 = io.BytesIO()
+    iso.write_fp(out2)
+    n2 = iso.pvd.space_size
+    assert(_anchor_extents(iso) == [256, n2 - 1 - 256, n2 - 1])
+    # Now both one-block files fit: 1 anchor + 253 padding.  The second
+    # file costs one data block plus one for its File Entry, and the
+    # padding shrinks by one; the first reshuffle's padding is not
+    # counted again.
+    assert(iso._udf_middle_anchor_blocks == 254)
+    assert(iso.udf_main_descs.partitions[0].part_length == part_len_after_big + 1 + 1 - 1)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out2)
+    assert(len(iso2.udf_anchors) == 3)
+    for path, expected in (('/a', b'a'), ('/big', big), ('/z', b'z')):
+        buf = io.BytesIO()
+        iso2.get_file_from_iso_fp(buf, udf_path=path)
+        assert(buf.getvalue() == expected)
+    iso2.close()
 
 def test_new_interchange_level4_udf_space_size():
     # On a UDF ISO the final space size is set after the last anchor is
