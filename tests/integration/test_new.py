@@ -10109,3 +10109,367 @@ def test_new_hard_link_above_multi_extent_threshold_roundtrip(tmpdir):
             assert(fp.read(16) == b'\xcc' * 16)
         os.unlink(extracted)
     newiso.close()
+
+def test_new_parse_invalid_logical_block_size():
+    # The PVD's logical block size must be 512, 1024, or 2048; anything
+    # else is rejected before any descriptor is parsed.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'a'), 1, '/A.;1')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    data = bytearray(out.getvalue())
+    pvd_offset = 16 * 2048
+    data[pvd_offset + 128:pvd_offset + 130] = (4096).to_bytes(2, 'little')
+
+    iso2 = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso2.open_fp(io.BytesIO(bytes(data)))
+    assert(str(excinfo.value) == 'Invalid logical block size 4096; must be 512, 1024, or 2048')
+
+class _NoSeekEndBytesIO(io.BytesIO):
+    """A file object that cannot seek relative to the end, like a raw
+    Windows device; forces the slow path in PyCdlib._get_iso_size."""
+    def seek(self, offset, whence=os.SEEK_SET):
+        if whence == os.SEEK_END:
+            raise OSError('seek from end not supported')
+        return super().seek(offset, whence)
+
+def test_new_open_fp_without_seek_end():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    # Make the ISO bigger than 1MB so the coarse 1MB probe in
+    # _get_iso_size actually advances before the fine 2048-byte probe.
+    big = b'\xaa' * (1024 * 1024 + 4096)
+    iso.add_fp(io.BytesIO(big), len(big), '/BIG.;1')
+    iso.add_fp(io.BytesIO(b'small\n'), 6, '/SMALL.;1')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(_NoSeekEndBytesIO(out.getvalue()))
+    assert(iso2.pvd.space_size * 2048 == len(out.getvalue()))
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/SMALL.;1')
+    assert(buf.getvalue() == b'small\n')
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/BIG.;1')
+    assert(buf.getvalue() == big)
+    iso2.close()
+
+def test_new_open_fp_without_seek_end_small():
+    # An ISO under 1MB never advances the coarse probe, so the fine probe
+    # starts at extent 0.
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.add_fp(io.BytesIO(b'a'), 1, '/A.;1')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(_NoSeekEndBytesIO(out.getvalue()))
+    assert(iso2.pvd.space_size * 2048 == len(out.getvalue()))
+    iso2.close()
+
+def test_new_parse_inconsistent_rock_ridge_versions():
+    # Rewrite the ER record's extension identifier from the 1.09 string
+    # to the 1.12 string.  The root dot record (which carries the ER)
+    # then parses as 1.12 while every other record still parses as
+    # 1.09, and the parser refuses the mix.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    iso.add_fp(io.BytesIO(b'a'), 1, '/A.;1', rr_name='a')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    data = bytearray(out.getvalue())
+    idx = data.find(b'RRIP_1991A')
+    assert(idx > 0)
+    data[idx:idx + 10] = b'IEEE_P1282'
+
+    iso2 = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso2.open_fp(io.BytesIO(bytes(data)))
+    assert(str(excinfo.value) == 'Inconsistent Rock Ridge versions on the ISO! (established 1.12, new record reports 1.09)')
+
+def test_new_udf_boot_descriptor_round_trip():
+    # pycdlib never generates a UDF Boot Descriptor, but it must preserve
+    # one it parses.  Splice a BOOT2 descriptor into the volume
+    # recognition sequence ahead of the TEA, then write and re-parse.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_fp(io.BytesIO(b'a'), 1, '/A.;1', udf_path='/a')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    tea_extent = iso.udf_teas[0].extent_location()
+    iso.close()
+
+    data = bytearray(out.getvalue())
+    boot = pycdlib.udf.UDFBootDescriptor()
+    boot.new()
+    tea = pycdlib.udf.TEAVolumeStructure()
+    tea.new()
+    data[tea_extent * 2048:(tea_extent + 1) * 2048] = boot.record()
+    data[(tea_extent + 1) * 2048:(tea_extent + 2) * 2048] = tea.record()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(bytes(data)))
+    assert(len(iso2.udf_boots) == 1)
+    # Add a file so the writer has to re-lay out the volume, which
+    # reassigns the boot descriptor's extent along with everything else.
+    iso2.add_fp(io.BytesIO(b'b'), 1, '/B.;1', udf_path='/b')
+    out2 = io.BytesIO()
+    iso2.write_fp(out2)
+    iso2.close()
+
+    iso3 = pycdlib.PyCdlib()
+    iso3.open_fp(out2)
+    assert(len(iso3.udf_boots) == 1)
+    # The boot descriptor stays inside the extended area, between the
+    # BEA and the TEA.
+    assert(iso3.udf_beas[0].extent_location() < iso3.udf_boots[0].extent_location() < iso3.udf_teas[0].extent_location())
+    buf = io.BytesIO()
+    iso3.get_file_from_iso_fp(buf, udf_path='/a')
+    assert(buf.getvalue() == b'a')
+    iso3.close()
+
+def test_new_udf_volume_descriptor_pointer_round_trip():
+    # A Volume Descriptor Pointer ends a descriptor sequence in place of
+    # the terminator.  Overwrite the main sequence's terminator with one
+    # and check that it survives a write.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_fp(io.BytesIO(b'a'), 1, '/A.;1', udf_path='/a')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    term_extent = iso.udf_main_descs.terminator.extent_location()
+    iso.close()
+
+    data = bytearray(out.getvalue())
+    vdp = pycdlib.udf.UDFVolumeDescriptorPointer()
+    vdp.new()
+    vdp.set_extent_location(term_extent)
+    rec = vdp.record()
+    data[term_extent * 2048:term_extent * 2048 + len(rec)] = rec
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(bytes(data)))
+    assert(iso2.udf_main_descs.desc_pointer.initialized)
+    out2 = io.BytesIO()
+    iso2.write_fp(out2)
+    iso2.close()
+
+    iso3 = pycdlib.PyCdlib()
+    iso3.open_fp(out2)
+    assert(iso3.udf_main_descs.desc_pointer.initialized)
+    buf = io.BytesIO()
+    iso3.get_file_from_iso_fp(buf, udf_path='/a')
+    assert(buf.getvalue() == b'a')
+    iso3.close()
+
+def test_new_udf_three_anchors_round_trip():
+    # ECMA-167 allows anchors at 256, N-256, and N; pycdlib writes the
+    # first and last.  Add the middle one and check that the writer
+    # keeps all three.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_fp(io.BytesIO(b'a'), 1, '/A.;1', udf_path='/a')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    middle = iso.pvd.space_size - 1 - 256
+    main_extent = iso.udf_main_descs.pvds[0].extent_location()
+    reserve_extent = iso.udf_reserve_descs.pvds[0].extent_location()
+    iso.close()
+
+    data = bytearray(out.getvalue())
+    anchor = pycdlib.udf.UDFAnchorVolumeStructure()
+    anchor.new()
+    anchor.set_extent_location(middle, main_extent, reserve_extent)
+    rec = anchor.record()
+    data[middle * 2048:middle * 2048 + len(rec)] = rec
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(io.BytesIO(bytes(data)))
+    assert(len(iso2.udf_anchors) == 3)
+    # Write the volume back out unchanged.  (Changing the layout of a
+    # three-anchor ISO is not supported: _udf_assign_extents insists on
+    # exactly two anchors.)
+    out2 = io.BytesIO()
+    iso2.write_fp(out2)
+    iso2.close()
+
+    iso3 = pycdlib.PyCdlib()
+    iso3.open_fp(out2)
+    assert(len(iso3.udf_anchors) == 3)
+    assert(sorted(a.extent_location() for a in iso3.udf_anchors) == sorted([256, iso3.pvd.space_size - 1 - 256, iso3.pvd.space_size - 1]))
+    buf = io.BytesIO()
+    iso3.get_file_from_iso_fp(buf, udf_path='/a')
+    assert(buf.getvalue() == b'a')
+    iso3.close()
+
+def test_new_interchange_level4_udf_space_size():
+    # On a UDF ISO the final space size is set after the last anchor is
+    # placed; the Enhanced VD must pick up that size too.
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4, udf='2.60')
+    iso.add_fp(io.BytesIO(b'a'), 1, '/a', udf_path='/a')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    assert(iso2.enhanced_vd is not None)
+    assert(iso2.enhanced_vd.space_size == iso2.pvd.space_size)
+    assert(iso2.pvd.space_size * 2048 == len(out.getvalue()))
+    iso2.close()
+
+def test_new_interchange_level4_dir_alignment_padding():
+    # With 512-byte blocks, directories are aligned to 2048-byte sectors
+    # and the padding is added to every volume descriptor's space size,
+    # including the Enhanced VD.
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=4, log_block_size=512)
+    iso.add_directory('/dir')
+    iso.add_fp(io.BytesIO(b'a'), 1, '/dir/a')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    assert(iso.enhanced_vd.space_size == iso.pvd.space_size)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    assert(iso2.enhanced_vd.space_size == iso2.pvd.space_size)
+    assert(iso2.pvd.space_size * 512 == len(out.getvalue()))
+    buf = io.BytesIO()
+    iso2.get_file_from_iso_fp(buf, iso_path='/dir/a')
+    assert(buf.getvalue() == b'a')
+    iso2.close()
+
+def test_new_file_mode_px_in_ce_block():
+    # A long Rock Ridge name fills the directory record, so the PX
+    # record spills into the Continuation Entry block; file_mode must
+    # look for it there.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    name = 'a' * 240
+    iso.add_fp(io.BytesIO(b'a'), 1, '/A.;1', rr_name=name, file_mode=0o0100755)
+
+    rec = iso._find_rr_record(('/' + name).encode('utf-8'))
+    assert(rec.rock_ridge.dr_entries.px_record is None)
+    assert(rec.rock_ridge.ce_entries.px_record is not None)
+    assert(iso.file_mode(rr_path='/' + name) == 0o0100755)
+    iso.close()
+
+@uses_deprecated("get_and_write_fp")
+def test_new_get_and_write_fp_symlink_on_joliet_iso():
+    # On a Joliet ISO, get_and_write_fp tries the path as Joliet first and
+    # only swallows a not-found error; any other error propagates.
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09', joliet=3)
+    iso.add_fp(io.BytesIO(b'a'), 1, '/A.;1', rr_name='a', joliet_path='/a')
+    iso.add_symlink('/SYM.;1', 'sym', 'a')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_and_write_fp('/SYM.;1', io.BytesIO())
+    assert(str(excinfo.value) == 'Symlinks have no data associated with them')
+    iso.close()
+
+@uses_deprecated("get_and_write_fp")
+def test_new_get_and_write_fp_joliet_directory():
+    # When the Joliet lookup itself fails for a reason other than
+    # not-found (here: the path is a directory), that error propagates
+    # instead of falling through to the ISO9660 lookup.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    iso.add_directory('/DIR', joliet_path='/dir')
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.get_and_write_fp('/dir', io.BytesIO())
+    assert(str(excinfo.value) == 'Cannot write out a directory')
+    iso.close()
+
+def test_new_vol_expire_date():
+    iso = pycdlib.PyCdlib()
+    iso.new(vol_expire_date=1234567890.0)
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    assert(iso2.pvd.volume_expiration_date.year == 2009)
+    assert(iso2.pvd.volume_expiration_date.month == 2)
+    assert(iso2.pvd.volume_expiration_date.dayofmonth == 13)
+    iso2.close()
+
+def test_new_add_fp_real_file_takes_mode_from_fstat(tmpdir):
+    # On a Rock Ridge ISO, add_fp with a real file object and no explicit
+    # file_mode takes the mode from the file itself.
+    path = str(tmpdir.join('mode.txt'))
+    with open(path, 'wb') as fp:
+        fp.write(b'hello\n')
+    os.chmod(path, 0o640)
+
+    iso = pycdlib.PyCdlib()
+    iso.new(rock_ridge='1.09')
+    with open(path, 'rb') as fp:
+        iso.add_fp(fp, 6, '/MODE.;1', rr_name='mode.txt')
+        assert(iso.file_mode(rr_path='/mode.txt') == 0o0100640)
+        out = io.BytesIO()
+        iso.write_fp(out)
+    iso.close()
+
+    iso2 = pycdlib.PyCdlib()
+    iso2.open_fp(out)
+    assert(iso2.file_mode(rr_path='/mode.txt') == 0o0100640)
+    iso2.close()
+
+def test_new_get_file_from_iso_blocksize_kwarg(tmpdir):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    data = b'x' * 5000
+    iso.add_fp(io.BytesIO(data), len(data), '/X.;1')
+
+    path = str(tmpdir.join('x.out'))
+    iso.get_file_from_iso(path, iso_path='/X.;1', blocksize=1024)
+    with open(path, 'rb') as fp:
+        assert(fp.read() == data)
+    iso.close()
+
+def test_new_write_fp_without_write_tracking():
+    # The test suite runs with PYCDLIB_TRACK_WRITES set; make sure the
+    # plain write path produces the same output.
+    def make():
+        iso = pycdlib.PyCdlib()
+        iso.new(joliet=3, rock_ridge='1.09')
+        iso.add_directory('/DIR', rr_name='dir', joliet_path='/dir')
+        iso.add_fp(io.BytesIO(b'a\n'), 2, '/DIR/A.;1', rr_name='a', joliet_path='/dir/a')
+        return iso
+
+    iso = make()
+    tracked = io.BytesIO()
+    iso.write_fp(tracked)
+    iso.close()
+
+    iso = make()
+    iso._track_writes = False
+    untracked = io.BytesIO()
+    iso.write_fp(untracked)
+    iso.close()
+
+    assert(tracked.getvalue() == untracked.getvalue())
+
+def test_new_write_range_overlap_detection():
+    WriteRange = pycdlib.PyCdlib._WriteRange
+    assert(repr(WriteRange(0, 10)) == 'WriteRange: 0 10')
+    assert(WriteRange(0, 10) < WriteRange(20, 30))
+    assert(not WriteRange(20, 30) < WriteRange(0, 10))
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        WriteRange(0, 10) < WriteRange(5, 30)
+    assert(str(excinfo.value) == 'Overlapping write WriteRange: 0 10, WriteRange: 5 30')
