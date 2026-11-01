@@ -86,6 +86,7 @@ class RRSPRecord:
     __slots__ = ('_initialized', 'bytes_to_skip')
 
     FMT = '=BBBBB'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -103,6 +104,10 @@ class RRSPRecord:
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SP record already initialized')
+
+        # Two signature bytes precede the fields described by FMT.
+        if len(rrstr) < 2 + self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge SP record')
 
         (su_len, su_entry_version_unused, check_byte1, check_byte2,
          self.bytes_to_skip) = struct.unpack_from(self.FMT, rrstr, 2)
@@ -169,6 +174,7 @@ class RRRRRecord:
     __slots__ = ('_initialized', 'rr_flags')
 
     FMT = '=BBB'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -187,6 +193,10 @@ class RRRRRecord:
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('RR record already initialized')
+
+        # Two signature bytes precede the fields described by FMT.
+        if len(rrstr) < 2 + self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge RR record')
 
         (su_len, su_entry_version_unused,
          self.rr_flags) = struct.unpack_from(self.FMT, rrstr, 2)
@@ -280,6 +290,7 @@ class RRCERecord:
                  'len_cont_area')
 
     FMT = '<BBLLLLLL'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -297,6 +308,10 @@ class RRCERecord:
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CE record already initialized')
+
+        # Two signature bytes precede the fields described by FMT.
+        if len(rrstr) < 2 + self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge CE record')
 
         (su_len, su_entry_version_unused, bl_cont_area_le, bl_cont_area_be,
          offset_cont_area_le, offset_cont_area_be,
@@ -445,6 +460,7 @@ class RRPXRecord:
                  'posix_user_id', 'posix_group_id', 'posix_serial_number')
 
     FMT = '<BBLLLLLLLL'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -468,6 +484,10 @@ class RRPXRecord:
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PX record already initialized')
+
+        # Two signature bytes precede the fields described by FMT.
+        if len(rrstr) < 2 + self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge PX record')
 
         (su_len, su_entry_version_unused, posix_file_mode_le, posix_file_mode_be,
          posix_file_links_le, posix_file_links_be, posix_file_user_id_le,
@@ -593,6 +613,7 @@ class RRERRecord:
     __slots__ = ('_initialized', 'ext_id', 'ext_des', 'ext_src', 'ext_ver')
 
     FMT = '=BBBBBB'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -614,6 +635,10 @@ class RRERRecord:
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('ER record already initialized')
 
+        # Two signature bytes precede the fields described by FMT.
+        if len(rrstr) < 2 + self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge ER record')
+
         (su_len, su_entry_version_unused, len_id, len_des, len_src,
          self.ext_ver) = struct.unpack_from(self.FMT, rrstr, 2)
 
@@ -628,7 +653,7 @@ class RRERRecord:
         # doesn't overrun su_len; because of the check above, this means it
         # can't overrun len(rrstr) either
         total_length = len_id + len_des + len_src
-        if total_length > su_len:
+        if 8 + total_length > su_len:
             raise pycdlibexception.PyCdlibInvalidISO('Combined length of ER ID, des, and src longer than record')
 
         fmtstr = '=%ds%ds%ds' % (len_id, len_des, len_src)
@@ -701,6 +726,7 @@ class RRESRecord:
     __slots__ = ('_initialized', 'extension_sequence')
 
     FMT = '=BBB'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -719,6 +745,10 @@ class RRESRecord:
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('ES record already initialized')
+
+        # Two signature bytes precede the fields described by FMT.
+        if len(rrstr) < 2 + self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge ES record')
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -783,6 +813,7 @@ class RRPNRecord:
     __slots__ = ('_initialized', 'dev_t_high', 'dev_t_low')
 
     FMT = '<BBLLLL'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -802,6 +833,10 @@ class RRPNRecord:
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PN record already initialized')
+
+        # Two signature bytes precede the fields described by FMT.
+        if len(rrstr) < 2 + self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge PN record')
 
         (su_len, su_entry_version_unused, dev_t_high_le, dev_t_high_be,
          dev_t_low_le, dev_t_low_be) = struct.unpack_from(self.FMT, rrstr, 2)
@@ -1044,6 +1079,9 @@ class RRSLRecord:
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('SL record already initialized')
 
+        if len(rrstr) < 5:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge SL record')
+
         (su_len, su_entry_version_unused,
          self.flags) = struct.unpack_from('=BBB', rrstr, 2)
 
@@ -1053,6 +1091,8 @@ class RRSLRecord:
         cr_offset = 5
         data_len = su_len - 5
         while data_len > 0:
+            if data_len < 2:
+                raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge component header')
             (cr_flags, len_cp) = struct.unpack_from('=BB',
                                                     rrstr[:cr_offset + 2],
                                                     cr_offset)
@@ -1357,6 +1397,9 @@ class RRALRecord:
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('AL record already initialized')
 
+        if len(rrstr) < 5:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge AL record')
+
         (su_len, su_entry_version_unused,
          self.flags) = struct.unpack_from('=BBB', rrstr, 2)
 
@@ -1366,6 +1409,8 @@ class RRALRecord:
         cr_offset = 5
         data_len = su_len - 5
         while data_len > 0:
+            if data_len < 2:
+                raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge component header')
             (cr_flags, len_cp) = struct.unpack_from('=BB',
                                                     rrstr[:cr_offset + 2],
                                                     cr_offset)
@@ -1527,6 +1572,7 @@ class RRNMRecord:
     __slots__ = ('_initialized', 'posix_name_flags', 'posix_name')
 
     FMT = '=BBB'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -1546,6 +1592,10 @@ class RRNMRecord:
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('NM record already initialized')
+
+        # Two signature bytes precede the fields described by FMT.
+        if len(rrstr) < 2 + self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge NM record')
 
         (su_len, su_entry_version_unused,
          self.posix_name_flags) = struct.unpack_from(self.FMT, rrstr, 2)
@@ -1639,6 +1689,7 @@ class RRCLRecord:
     __slots__ = ('_initialized', 'child_log_block_num')
 
     FMT = '<BBLL'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -1657,6 +1708,10 @@ class RRCLRecord:
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('CL record already initialized')
+
+        # Two signature bytes precede the fields described by FMT.
+        if len(rrstr) < 2 + self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge CL record')
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -1741,6 +1796,7 @@ class RRPLRecord:
     __slots__ = ('_initialized', 'parent_log_block_num')
 
     FMT = '<BBLL'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -1759,6 +1815,10 @@ class RRPLRecord:
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('PL record already initialized')
+
+        # Two signature bytes precede the fields described by FMT.
+        if len(rrstr) < 2 + self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge PL record')
 
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
@@ -1885,6 +1945,9 @@ class RRTFRecord:
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('TF record already initialized')
 
+        if len(rrstr) < 5:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Rock Ridge TF record')
+
         # We assume that the caller has already checked the su_entry_version,
         # so we don't bother.
 
@@ -1894,6 +1957,9 @@ class RRTFRecord:
             raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes in the TF record')
 
         flags = self.time_flags
+        tf_size = 17 if flags & (1 << 7) else 7
+        if su_len < 5 + _TF_FLAG_POPCOUNT[flags & 0x7F] * tf_size:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes in the TF record')
         # Bit 7 of time_flags selects long-form (VD-style, 17 bytes per
         # timestamp) vs short-form (DR-style, 7 bytes).  The short-form is
         # the overwhelming common case and is parsed via a single batched
@@ -2627,6 +2693,8 @@ class RockRidge:
                 raise pycdlibexception.PyCdlibInvalidISO('Invalid RR version %d!' % su_entry_version)
             if su_len == 0:
                 raise pycdlibexception.PyCdlibInvalidISO('Zero size for Rock Ridge entry length')
+            if su_len > left:
+                raise pycdlibexception.PyCdlibInvalidISO('Rock Ridge entry length exceeds the System Use field')
 
             recslice = record[offset:]
 
@@ -2639,10 +2707,8 @@ class RockRidge:
                 # Record of the root, but ISOs in the wild (e.g. VirtualBox
                 # Guest Additions) put one in every dot/dotdot DR.  Accept
                 # the record wherever it appears as long as there's room
-                # for one; RRSPRecord.parse() validates the magic bytes.
-                if left < 7:
-                    raise pycdlibexception.PyCdlibInvalidISO('Invalid SUSP SP record')
-
+                # for one (the su_len checks above guarantee that);
+                # RRSPRecord.parse() validates the magic bytes.
                 entry_list.sp_record = RRSPRecord()
                 entry_list.sp_record.parse(recslice)
             elif rtype == b'RR':

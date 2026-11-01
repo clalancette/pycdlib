@@ -1990,6 +1990,88 @@ def test_parse_dirrecord_too_short(tmpdir):
         iso.open(str(outfile))
     assert(str(excinfo.value) == 'Invalid directory record')
 
+def test_parse_dirrecord_past_end_of_directory(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('pastend')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    # Shrink the root directory's data length (in the PVD root directory
+    # record) to 100 bytes.  The FOO.;1 record starts at offset 68 and is 40
+    # bytes long, so it now runs past the end of the directory data.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(16*2048 + 156 + 10)
+        fp.write(b'\x64\x00\x00\x00\x00\x00\x00\x64')
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Invalid directory record')
+
+def test_parse_ptr_past_end_of_path_table(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('ptrpastend')
+    outfile = str(indir)+'.iso'
+    subprocess.call(['genisoimage', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    # Set the directory identifier length of the (only) big-endian path
+    # table record to 0xF4, which makes the record longer than the table.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(21*2048)
+        fp.write(b'\xF4')
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Path table record extends past the end of the path table')
+
+def test_parse_dir_extent_not_in_path_table(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('direxent')
+    outfile = str(indir)+'.iso'
+    indir.mkdir('dir1')
+    subprocess.call(['genisoimage', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    # Point the DIR1 directory record (at offset 68 in the root directory,
+    # extent 23) at extent 9999, which no path table record refers to.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(23*2048 + 68 + 2)
+        fp.write(b'\x0f\x27\x00\x00\x00\x00\x27\x0f')
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Directory record extent 9999 is not in the path table')
+
+@pytest.mark.parametrize('bad', [b'x', b'\x00'])
+def test_parse_version_not_a_number(tmpdir, bad):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('badversion')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-o', str(outfile), str(indir)])
+
+    # Replace the '1' in the FOO.;1 file identifier (offset 68 in the root
+    # directory, identifier at +33) with something that is not a digit.  A
+    # non-conforming version is tolerated as an interchange level 3 name.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(23*2048 + 68 + 33 + 5)
+        fp.write(bad)
+
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+    names = [c.file_identifier() for c in iso.list_children(iso_path='/')]
+    assert(b'FOO.;' + bad in names)
+    assert(iso.interchange_level == 3)
+    iso.close()
+
 def test_parse_eltorito_hide_boot(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('eltoritohideboot')
@@ -2319,7 +2401,10 @@ def test_parse_ptr_le_and_be_disagree(tmpdir):
     # Now that we've made a valid ISO, we open it up and perturb the first
     # byte of the Big Endian PTR.  This should make open_fp() fail.
     with open(str(outfile), 'r+b') as fp:
-        fp.seek(21*2048)
+        # Perturb the extended attribute length byte rather than the
+        # directory identifier length, which a bounds check now catches
+        # before the records are compared.
+        fp.seek(21*2048 + 1)
         fp.write(b'\xF4')
 
     iso = pycdlib.PyCdlib()
@@ -2338,7 +2423,10 @@ def test_parse_joliet_ptr_le_and_be_disagree(tmpdir):
     # Now that we've made a valid ISO, we open it up and perturb the first
     # byte of the Joliet Big Endian PTR.  This should make open_fp() fail.
     with open(str(outfile), 'r+b') as fp:
-        fp.seek(24*2048)
+        # Perturb the extended attribute length byte rather than the
+        # directory identifier length, which a bounds check now catches
+        # before the records are compared.
+        fp.seek(24*2048 + 1)
         fp.write(b'\xF4')
 
     iso = pycdlib.PyCdlib()

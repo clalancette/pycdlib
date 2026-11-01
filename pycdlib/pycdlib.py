@@ -225,7 +225,10 @@ def _interchange_level_from_filename(fullname):
 
     interchange_level = 1
 
-    if version != b'' and (int(version) < 1 or int(version) > 32767):
+    # Ecma-119 7.5.1 says the version is one to five digits.  A malformed
+    # ISO can put anything after the semicolon; treat that as a
+    # non-conforming (interchange level 3) name.
+    if version != b'' and (not version.isdigit() or int(version) < 1 or int(version) > 32767):
         interchange_level = 3
 
     if b';' in name or b';' in extension:
@@ -1197,6 +1200,12 @@ class PyCdlib:
                 offset = offset + pad_check
                 continue
 
+            # A record that runs past the end of the directory data cannot
+            # be parsed; DirectoryRecord.parse() checks that what remains
+            # covers at least the fixed-size header.
+            if offset + lenbyte > len(data):
+                raise pycdlibexception.PyCdlibInvalidISO('Invalid directory record')
+
             new_record = dr.DirectoryRecord()
             rr = new_record.parse(vd, data[offset:offset + lenbyte],
                                   dir_record, self.xa)
@@ -1391,7 +1400,10 @@ class PyCdlib:
                         raise pycdlibexception.PyCdlibInvalidISO('ISO Directory Records form a loop')
                     seen_dir_extents.add(new_extent_loc)
                     dirs.append(new_record)
-                    new_record.set_ptr(extent_to_ptr[new_extent_loc])
+                    ptr = extent_to_ptr.get(new_extent_loc)
+                    if ptr is None:
+                        raise pycdlibexception.PyCdlibInvalidISO('Directory record extent %d is not in the path table' % new_extent_loc)
+                    new_record.set_ptr(ptr)
 
                 if is_pvd:
                     if new_record.is_dir():
@@ -1451,6 +1463,8 @@ class PyCdlib:
             ptr = path_table_record.PathTableRecord()
             len_di_byte = data[offset]
             read_len = path_table_record.PathTableRecord.record_length(len_di_byte)
+            if offset + read_len > ptr_size:
+                raise pycdlibexception.PyCdlibInvalidISO('Path table record extends past the end of the path table')
 
             ptr.parse(data[offset:offset + read_len])
             out.append(ptr)

@@ -1269,14 +1269,20 @@ def test_rr_parse_invalid_rr_version():
 def test_rr_parse_invalid_rtype():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
-        rr.parse(b'\x00\x00\x01\x01', False, 0, False, b'')
+        rr.parse(b'\x00\x00\x04\x01', False, 0, False, b'')
     assert(str(excinfo.value) == 'Unknown SUSP record')
 
 def test_rr_parse_invalid_sp_record():
     rr = pycdlib.rockridge.RockRidge()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         rr.parse(b'SP\x01\x01', False, 0, False, b'')
-    assert(str(excinfo.value) == 'Invalid SUSP SP record')
+    assert(str(excinfo.value) == 'Not enough bytes for Rock Ridge SP record')
+
+def test_rr_parse_sp_record_past_end():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'SP\x07\x01', False, 0, False, b'')
+    assert(str(excinfo.value) == 'Rock Ridge entry length exceeds the System Use field')
 
 def test_rr_parse_sp_record_in_non_root_dr():
     # Regression test for issue #130: VirtualBox Guest Additions ISOs put
@@ -1329,6 +1335,41 @@ def test_rr_parse_invalid_size():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         rr.parse(b'PD\x00\x01', False, 0, False, b'')
     assert(str(excinfo.value) == 'Zero size for Rock Ridge entry length')
+
+def test_rr_parse_px_record_too_short():
+    # su_len fits in the field, but the buffer is shorter than the PX fields.
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'PX\x0a\x01' + b'\x00' * 6, False, 0, False, b'')
+    assert(str(excinfo.value) == 'Not enough bytes for Rock Ridge PX record')
+
+def test_rr_parse_tf_record_timestamps_do_not_fit():
+    # Three timestamps flagged, but su_len only covers the header.
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'TF\x05\x01\x0e', False, 0, False, b'')
+    assert(str(excinfo.value) == 'Not enough bytes in the TF record')
+
+def test_rr_parse_sl_record_odd_trailing_byte():
+    # One byte after the SL header is not enough for a component header.
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'SL\x06\x01\x00\x00', False, 0, False, b'')
+    assert(str(excinfo.value) == 'Not enough bytes for Rock Ridge component header')
+
+def test_rr_parse_al_record_odd_trailing_byte():
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'AL\x06\x01\x00\x00', False, 0, False, b'')
+    assert(str(excinfo.value) == 'Not enough bytes for Rock Ridge component header')
+
+def test_rr_parse_er_record_strings_overrun():
+    # len_id of 3 fits in su_len of 10 by itself, but not after the 8-byte
+    # ER header.
+    rr = pycdlib.rockridge.RockRidge()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        rr.parse(b'ER\x0a\x01\x03\x00\x00\x01\x00\x00', False, 0, False, b'')
+    assert(str(excinfo.value) == 'Combined length of ER ID, des, and src longer than record')
 
 def test_rr_record_dr_entries_not_initialized():
     rr = pycdlib.rockridge.RockRidge()
