@@ -294,6 +294,12 @@ def test_tag_parse_initialized_twice():
         tag.parse(b'\x00\x00\x02\x00\x02\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', 0)
     assert(str(excinfo.value) == 'UDF Tag already initialized')
 
+def test_tag_parse_too_short():
+    tag = pycdlib.udf.UDFTag()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        tag.parse(b'\x00\x00\x02\x00\x02\x00\x00\x00', 0)
+    assert(str(excinfo.value) == 'Not enough bytes for UDF Descriptor Tag')
+
 def test_tag_parse_bad_csum():
     tag = pycdlib.udf.UDFTag()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:

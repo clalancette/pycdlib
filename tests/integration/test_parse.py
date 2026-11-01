@@ -3260,6 +3260,70 @@ def test_parse_udf_open_invalid_file_set_terminator(caplog, tmpdir):
 
     do_a_test(tmpdir, outfile, check_udf_onefile)
 
+@pytest.mark.parametrize('extra', [0, 8])
+def test_parse_udf_truncated_before_second_anchor(tmpdir, extra):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('udftruncatedanchor')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-udf', '-o', str(outfile), str(indir)])
+
+    # The second UDF Anchor lives in the last block of the image (block 268).
+    # Truncate the image so that reading that block returns fewer bytes than
+    # a UDF Descriptor Tag; this must be reported as an invalid ISO rather
+    # than escaping as a struct.error.
+    with open(str(outfile), 'r+b') as fp:
+        fp.truncate(268*2048 + extra)
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Expected at least 2 UDF Anchors')
+
+def test_parse_udf_bea_without_tea(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('udfbeawithouttea')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-udf', '-o', str(outfile), str(indir)])
+
+    # Replace the TEA01 descriptor (block 20) with a second Volume Descriptor
+    # Set Terminator, so the Volume Recognition Sequence has a BEA01 but no
+    # TEA01.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(20*2048)
+        fp.write(b'\xffCD001\x01' + b'\x00'*2041)
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso.open(str(outfile))
+    assert(str(excinfo.value) == 'UDF Beginning Extended Area Descriptor without a Terminating Extended Area Descriptor')
+
+def test_parse_udf_empty_root_file_entry(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('udfemptyrootfe')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-udf', '-o', str(outfile), str(indir)])
+
+    # Zero out the root directory File Entry (block 259).  An all-zero File
+    # Entry is tolerated for regular files (seen on some Windows media), but
+    # the root directory must have one.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(259*2048)
+        fp.write(b'\x00'*2048)
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Empty UDF File Entry for the root directory is not allowed')
+
 def test_parse_and_walk_rr_moved_iso_path(tmpdir):
     indir = tmpdir.mkdir('walkrrmovedisopath')
     outfile = str(indir) + '.iso'
