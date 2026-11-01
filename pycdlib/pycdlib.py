@@ -5359,8 +5359,6 @@ class PyCdlib:
                 if value:
                     num_old += 1
                     boot_catalog_old = True
-                    if self.eltorito_boot_catalog is None:
-                        raise pycdlibexception.PyCdlibInvalidInput('Attempting to make link to non-existent El Torito boot catalog')
                 keys_to_remove.append(key)
             elif key == 'udf_old_path':
                 if value is not None:
@@ -6203,13 +6201,6 @@ class PyCdlib:
             # Rule 9
             raise pycdlibexception.PyCdlibInvalidInput('A Joliet path can only be specified for a Joliet ISO')
 
-        if creation_time is not None and rr_vars_provided != 2 and udf_vars_provided != 2:
-            # Both ends of an RR symlink must be present for the TF record
-            # to apply; either rr-symlink or udf-symlink can store
-            # creation_time.
-            raise pycdlibexception.PyCdlibInvalidInput(
-                'creation_time on add_symlink requires either a Rock Ridge symlink (rr_symlink_name + rr_path) or a UDF symlink (udf_symlink_path + udf_target)')
-
         # Checks complete, we can go on to make the symlink.
 
         num_bytes_to_add = 0
@@ -6670,11 +6661,11 @@ class PyCdlib:
             rec = self._find_iso_record(utils.normpath(iso_path))
         elif rr_path is not None:
             rec = self._find_rr_record(utils.normpath(rr_path))
-        elif joliet_path is not None:
-            joliet_path_bytes = self._normalize_joliet_path(joliet_path)
-            rec = self._find_joliet_record(joliet_path_bytes)
         else:
-            raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, rr_path, or joliet_path')
+            # Exactly one path was passed and the other two are None, so
+            # joliet_path is set; mypy can't see that through the count.
+            joliet_path_bytes = self._normalize_joliet_path(joliet_path)  # type: ignore[arg-type]
+            rec = self._find_joliet_record(joliet_path_bytes)
 
         rec.change_existence(True)
 
@@ -6702,11 +6693,11 @@ class PyCdlib:
             rec = self._find_iso_record(utils.normpath(iso_path))
         elif rr_path is not None:
             rec = self._find_rr_record(utils.normpath(rr_path))
-        elif joliet_path is not None:
-            joliet_path_bytes = self._normalize_joliet_path(joliet_path)
-            rec = self._find_joliet_record(joliet_path_bytes)
         else:
-            raise pycdlibexception.PyCdlibInvalidInput('Must provide exactly one of iso_path, rr_path, or joliet_path')
+            # Exactly one path was passed and the other two are None, so
+            # joliet_path is set; mypy can't see that through the count.
+            joliet_path_bytes = self._normalize_joliet_path(joliet_path)  # type: ignore[arg-type]
+            rec = self._find_joliet_record(joliet_path_bytes)
 
         rec.change_existence(False)
 
