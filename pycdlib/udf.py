@@ -559,6 +559,7 @@ class UDFTag:
                  'tag_serial_number', 'tag_location', 'desc_crc_length')
 
     FMT = '<HHBBHHHL'
+    _FMT_SIZE = struct.calcsize(FMT)
 
     def __init__(self):
         # type: () -> None
@@ -578,6 +579,9 @@ class UDFTag:
         """
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Tag already initialized')
+
+        if len(data) < self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF Descriptor Tag')
 
         (self.tag_ident, self.desc_version, tag_checksum, reserved,
          self.tag_serial_number, desc_crc, self.desc_crc_length,

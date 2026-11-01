@@ -791,6 +791,12 @@ class PyCdlib:
         if not self.vdsts:
             raise pycdlibexception.PyCdlibInvalidISO('Valid ISO9660 filesystems must have at least one Volume Descriptor Set Terminator')
 
+        # ECMA-167 2/9.1: a Volume Recognition Sequence that starts with a
+        # Beginning Extended Area Descriptor must end with a Terminating
+        # Extended Area Descriptor.  Later code relies on this.
+        if self.udf_beas and not self.udf_teas:
+            raise pycdlibexception.PyCdlibInvalidISO('UDF Beginning Extended Area Descriptor without a Terminating Extended Area Descriptor')
+
     def _seek_to_extent(self, extent):
         # type: (int) -> None
         """
@@ -2480,6 +2486,8 @@ class PyCdlib:
                                                 abs_file_entry_extent,
                                                 self.udf_file_set.root_dir_icb.log_block_num,
                                                 None)
+        if self.udf_root is None:
+            raise pycdlibexception.PyCdlibInvalidISO('Empty UDF File Entry for the root directory is not allowed')
 
         # Refuse to walk the same directory File Entry twice, so a
         # malicious image whose directory File Identifiers form a loop
