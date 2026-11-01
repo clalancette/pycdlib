@@ -9,32 +9,18 @@ on:
     - master
 
 jobs:
-  unit_tests:
-    name: Unit Tests
-    runs-on: ubuntu-24.04
-    strategy:
-      matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+  lint:
+    name: Lint
+    runs-on: ubuntu-26.04
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
-      with:
-        lfs: 'true'
-
-    - name: Setup python
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-        architecture: x64
+      uses: actions/checkout@v7
 
     - name: Install apt dependencies
       run: |
-       sudo apt-get update
-       sudo apt-get install -y cmake git-lfs libbz2-dev libcap-dev libcdio-utils util-linux zlib1g-dev
-
-    - name: Install pip dependencies
-      run: python -m pip install flake8==6.1.0 mypy==1.18.2 pytest==8.3.5
+        sudo apt-get update
+        sudo apt-get install -y python3-flake8 python3-mypy
 
     - name: Run flake8
       run: flake8 --ignore=E501,E266 pycdlib tools/*
@@ -42,24 +28,48 @@ jobs:
     - name: Run mypy
       run: mypy --ignore-missing-imports -p pycdlib
 
+  unit_tests:
+    name: Unit Tests
+    runs-on: ubuntu-26.04
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+      with:
+        lfs: 'true'
+
+    - name: Setup python
+      uses: actions/setup-python@v7
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install apt dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake libbz2-dev libcap-dev libcdio-utils util-linux zlib1g-dev
+
+    # pytest has to come from pip rather than apt because it must be installed
+    # into the matrix interpreter, not the system python.
+    - name: Install pip dependencies
+      run: python -m pip install pytest==9.2.0
+
     - name: Build patched cdrkit
       run: |
-        pushd vendor
-        tar -xvf cdrkit-1.1.11-fedora40-patched.tar.gz
-        pushd cdrkit-1.1.11
-        mkdir build
-        pushd build
-        cmake ..
-        make
-        popd
-        popd
-        popd
+        tar -xf vendor/cdrkit-1.1.11-fedora40-patched.tar.gz -C vendor
+        # cdrkit predates CMake 3.5; CMake 4 refuses its minimum version and
+        # its request for the OLD CMP0015 behavior.
+        sed -i '/cmake_policy(SET CMP0015 OLD)/d' vendor/cdrkit-1.1.11/CMakeLists.txt
+        cmake -S vendor/cdrkit-1.1.11 -B vendor/cdrkit-1.1.11/build -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        cmake --build vendor/cdrkit-1.1.11/build --parallel
 
     - name: Patch pycdlib-genisoimage for python version
       run: sed -i -e '0,/python3/s//python/' tools/pycdlib-genisoimage
 
     - name: Run tests
-      run: py.test --verbose tests
+      run: pytest --verbose tests
       env:
         PATH: vendor/cdrkit-1.1.11/build/genisoimage
         LD_LIBRARY_PATH: vendor/cdrkit-1.1.11/build/libusal/:vendor/cdrkit-1.1.11/build/librols
