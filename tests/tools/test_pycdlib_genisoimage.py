@@ -1,7 +1,10 @@
 import os
 import subprocess
+import sys
 
 import pytest
+
+import pycdlib
 
 pycdlib_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 pycdlib_exe = os.path.join(pycdlib_root, 'tools', 'pycdlib-genisoimage')
@@ -195,3 +198,37 @@ def test_pycdlib_genisoimage_bootfile_bad(tmpdir):
 
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
+
+
+@pytest.mark.parametrize('bootpath', ['boot.img', 'images/boot.img',
+                                    'images/efi/boot.img'])
+@pytest.mark.parametrize('option', ['-b', '-e'])
+@pytest.mark.parametrize('iso_level', ['1', '3'])
+def test_pycdlib_genisoimage_boot_directory(tmpdir, bootpath, option, iso_level):
+    indir = tmpdir.mkdir('input')
+    bootfile = indir.join(bootpath)
+    bootfile.dirpath().ensure(dir=True)
+    payload = b'boot image' * 512
+    bootfile.write_binary(payload)
+    decoy = indir.join('unrelated', bootpath)
+    decoy.dirpath().ensure(dir=True)
+    decoy.write_binary(b'decoy image' * 512)
+    outfile = str(tmpdir.join('output.iso'))
+
+    subprocess.check_call([sys.executable, pycdlib_exe, '-iso-level', iso_level,
+                           option, bootpath, '-no-emul-boot', '-o', outfile,
+                           str(indir)], env=dict(os.environ, PYTHONPATH=pycdlib_root))
+
+    iso = pycdlib.PyCdlib()
+    iso.open(outfile)
+    try:
+        record = iso.get_record(iso_path='/' + bootpath.upper() + ';1')
+        catalog = iso.eltorito_boot_catalog
+        assert catalog.initial_entry.load_rba == record.extent_location()
+        assert catalog.initial_entry.boot_indicator == 0x88
+        assert catalog.initial_entry.boot_media_type == 0
+        with open(outfile, 'rb') as fp:
+            fp.seek(catalog.initial_entry.load_rba * 2048)
+            assert fp.read(len(payload)) == payload
+    finally:
+        iso.close()
