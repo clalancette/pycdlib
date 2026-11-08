@@ -204,8 +204,10 @@ def test_pycdlib_genisoimage_bootfile_bad(tmpdir):
                                     'images/efi/boot.img'])
 @pytest.mark.parametrize('option', ['-b', '-e'])
 @pytest.mark.parametrize('iso_level', ['1', '3'])
-def test_pycdlib_genisoimage_boot_directory(tmpdir, bootpath, option, iso_level):
-    indir = tmpdir.mkdir('input')
+@pytest.mark.parametrize('input_name', ['input', 'images'])
+def test_pycdlib_genisoimage_boot_directory(tmpdir, bootpath, option, iso_level,
+                                          input_name):
+    indir = tmpdir.mkdir(input_name)
     bootfile = indir.join(bootpath)
     bootfile.dirpath().ensure(dir=True)
     payload = b'boot image' * 512

@@ -789,7 +789,7 @@ def main():
                 if add_dir:
                     parent = DirLevel(iso_path, joliet_path, udf_path)
                 for eltorito_entry in eltorito_entries:
-                    if parent_level == eltorito_entry.dirlevel and len(eltorito_entry.bootfile_parts) > 1 and eltorito_entry.bootfile_parts[0] == basename:
+                    if add_dir and parent_level == eltorito_entry.dirlevel and len(eltorito_entry.bootfile_parts) > 1 and eltorito_entry.bootfile_parts[0] == basename:
                         eltorito_entry.bootfile_iso_path += '/' + pycdlib.utils.mangle_dir_for_iso9660(basename, args.iso_level)
                         eltorito_entry.bootfile_parts.pop(0)
                         eltorito_entry.dirlevel = parent
