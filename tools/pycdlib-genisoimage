@@ -695,6 +695,7 @@ def main():
     for path in path_list:
         check_eltorito_catalog = len(eltorito_catalog_parts) > 0
         root_level = DirLevel('/', '/', '/')
+        eltorito_catalog_dirlevel = root_level
         for eltorito_entry in eltorito_entries:
             eltorito_entry.dirlevel = root_level
         entries = collections.deque([(os.path.normpath(path), root_level, False,
@@ -771,18 +772,20 @@ def main():
                     joliet_path = parent_level.joliet_path
                     udf_path = parent_level.udf_path
 
+                parent = parent_level
+                if add_dir:
+                    parent = DirLevel(iso_path, joliet_path, udf_path)
+
                 on_eltorito_catalog_path = check_eltorito_catalog and not add_dir
                 eltorito_duplicate_check = ''
-                if add_dir and check_eltorito_catalog and len(eltorito_catalog_parts) > 1 and eltorito_catalog_parts[0] == basename:
+                if add_dir and check_eltorito_catalog and parent_level == eltorito_catalog_dirlevel and len(eltorito_catalog_parts) > 1 and eltorito_catalog_parts[0] == basename:
                     eltorito_catalog_path += '/' + pycdlib.utils.mangle_dir_for_iso9660(basename, args.iso_level)
                     eltorito_catalog_parts.pop(0)
+                    eltorito_catalog_dirlevel = parent
                     on_eltorito_catalog_path = True
                     if len(eltorito_catalog_parts) == 1:
                         eltorito_duplicate_check = eltorito_catalog_parts[0]
 
-                parent = parent_level
-                if add_dir:
-                    parent = DirLevel(iso_path, joliet_path, udf_path)
                 for eltorito_entry in eltorito_entries:
                     if add_dir and parent_level == eltorito_entry.dirlevel and len(eltorito_entry.bootfile_parts) > 1 and eltorito_entry.bootfile_parts[0] == basename:
                         eltorito_entry.bootfile_iso_path += '/' + pycdlib.utils.mangle_dir_for_iso9660(basename, args.iso_level)
