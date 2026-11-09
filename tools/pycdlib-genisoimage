@@ -703,11 +703,6 @@ def main():
             localpath, parent_level, add_dir, check_eltorito_catalog = entries.popleft()
             basename = os.path.basename(localpath)
 
-            if check_eltorito_catalog and len(eltorito_catalog_parts) == 1:
-                filename, ext = pycdlib.utils.mangle_file_for_iso9660(eltorito_catalog_parts.pop(),
-                                                                      args.iso_level)
-                eltorito_catalog_path += '/' + filename + '.' + ext
-
             for eltorito_entry in eltorito_entries:
                 if eltorito_entry.dirlevel == parent_level and len(eltorito_entry.bootfile_parts) == 1:
                     filename, ext = pycdlib.utils.mangle_file_for_iso9660(eltorito_entry.bootfile_parts.pop(),
@@ -776,9 +771,9 @@ def main():
                     joliet_path = parent_level.joliet_path
                     udf_path = parent_level.udf_path
 
-                on_eltorito_catalog_path = False
+                on_eltorito_catalog_path = check_eltorito_catalog and not add_dir
                 eltorito_duplicate_check = ''
-                if check_eltorito_catalog and len(eltorito_catalog_parts) > 1 and eltorito_catalog_parts[0] == basename:
+                if add_dir and check_eltorito_catalog and len(eltorito_catalog_parts) > 1 and eltorito_catalog_parts[0] == basename:
                     eltorito_catalog_path += '/' + pycdlib.utils.mangle_dir_for_iso9660(basename, args.iso_level)
                     eltorito_catalog_parts.pop(0)
                     on_eltorito_catalog_path = True
@@ -865,6 +860,11 @@ def main():
             if match_entry_to_list(hidden_patterns, basename):
                 iso.set_hidden(iso_path)
                 print('Hidden ISO9660 attribute: %s' % (localpath), file=logfp)
+
+    if len(eltorito_catalog_parts) == 1:
+        filename, ext = pycdlib.utils.mangle_file_for_iso9660(eltorito_catalog_parts.pop(),
+                                                              args.iso_level)
+        eltorito_catalog_path += '/' + filename + '.' + ext
 
     # Add in El Torito if it was requested
     for entry in eltorito_entries:

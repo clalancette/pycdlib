@@ -1,10 +1,7 @@
 import os
 import subprocess
-import sys
 
 import pytest
-
-import pycdlib
 
 pycdlib_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 pycdlib_exe = os.path.join(pycdlib_root, 'tools', 'pycdlib-genisoimage')
@@ -200,13 +197,19 @@ def test_pycdlib_genisoimage_bootfile_bad(tmpdir):
     _do_test(pycdlib_exe)
 
 
-@pytest.mark.parametrize('bootpath', ['boot.img', 'images/boot.img',
-                                    'images/efi/boot.img'])
-@pytest.mark.parametrize('option', ['-b', '-e'])
-@pytest.mark.parametrize('iso_level', ['1', '3'])
-@pytest.mark.parametrize('input_name', ['input', 'images'])
-def test_pycdlib_genisoimage_boot_directory(tmpdir, bootpath, option, iso_level,
-                                          input_name):
+@pytest.mark.skipif(find_executable('isovfy') is None or
+                    find_executable('isoinfo') is None or
+                    find_executable('iso-read') is None,
+                    reason='ISO verification tools not installed')
+@pytest.mark.parametrize('option,bootpath,iso_path,input_name', [
+    ('-b', 'boot.img', '/BOOT.IMG;1', 'input'),
+    ('-b', 'images/boot.img', '/IMAGES/BOOT.IMG;1', 'input'),
+    ('-b', 'images/efi/boot.img', '/IMAGES/EFI/BOOT.IMG;1', 'input'),
+    ('-e', 'images/efi/boot.img', '/IMAGES/EFI/BOOT.IMG;1', 'input'),
+    ('-b', 'images/boot.img', '/IMAGES/BOOT.IMG;1', 'images'),
+])
+def test_pycdlib_genisoimage_boot_directory(tmpdir, option, bootpath, iso_path,
+                                           input_name):
     indir = tmpdir.mkdir(input_name)
     bootfile = indir.join(bootpath)
     bootfile.dirpath().ensure(dir=True)
@@ -217,20 +220,64 @@ def test_pycdlib_genisoimage_boot_directory(tmpdir, bootpath, option, iso_level,
     decoy.write_binary(b'decoy image' * 512)
     outfile = str(tmpdir.join('output.iso'))
 
-    subprocess.check_call([sys.executable, pycdlib_exe, '-iso-level', iso_level,
-                           option, bootpath, '-no-emul-boot', '-o', outfile,
-                           str(indir)], env=dict(os.environ, PYTHONPATH=pycdlib_root))
-
-    iso = pycdlib.PyCdlib()
-    iso.open(outfile)
-    try:
-        record = iso.get_record(iso_path='/' + bootpath.upper() + ';1')
-        catalog = iso.eltorito_boot_catalog
-        assert catalog.initial_entry.load_rba == record.extent_location()
-        assert catalog.initial_entry.boot_indicator == 0x88
-        assert catalog.initial_entry.boot_media_type == 0
+    def _do_test(binary):
+        run_process([binary, '-iso-level', '1', option, bootpath,
+                     '-no-emul-boot', '-o', outfile, str(indir)])
+        run_process(['isovfy', outfile])
+        bootcheck = str(tmpdir.join('bootcheck'))
+        run_process(['iso-read', '-i', outfile, '-e', iso_path[1:],
+                     '-o', bootcheck])
+        with open(bootcheck, 'rb') as fp:
+            assert fp.read() == payload
+        out, err = run_process(['isoinfo', '-d', '-i', outfile])
+        assert b'Bootid 88 (bootable)' in out
+        assert b'Boot media 0 (No Emulation Boot)' in out
+        boot_sector = int(next(line for line in out.splitlines()
+                               if b'Bootoff ' in line).split()[-1])
         with open(outfile, 'rb') as fp:
-            fp.seek(catalog.initial_entry.load_rba * 2048)
+            fp.seek(boot_sector * 2048)
             assert fp.read(len(payload)) == payload
-    finally:
-        iso.close()
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)
+
+
+@pytest.mark.skipif(find_executable('isovfy') is None or
+                    find_executable('isoinfo') is None or
+                    find_executable('iso-read') is None,
+                    reason='ISO verification tools not installed')
+@pytest.mark.parametrize('catalogpath,iso_path,input_name', [
+    ('boot.cat', '/BOOT.CAT;1', 'input'),
+    ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'input'),
+    ('images/efi/boot.cat', '/IMAGES/EFI/BOOT.CAT;1', 'input'),
+    ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'images'),
+])
+def test_pycdlib_genisoimage_catalog_directory(tmpdir, catalogpath, iso_path,
+                                              input_name):
+    indir = tmpdir.mkdir(input_name)
+    indir.join(catalogpath).dirpath().ensure(dir=True)
+    if '/' in catalogpath:
+        # A preexisting nested catalog must be excluded during traversal.
+        indir.join(catalogpath).write_binary(b'stale catalog')
+    indir.join('boot.img').write_binary(b'boot image' * 512)
+    outfile = str(tmpdir.join('output.iso'))
+
+    def _do_test(binary):
+        run_process([binary, '-iso-level', '1', '-b', 'boot.img',
+                     '-c', catalogpath, '-no-emul-boot', '-o', outfile,
+                     str(indir)])
+        run_process(['isovfy', outfile])
+        catalogcheck = str(tmpdir.join('catalogcheck'))
+        run_process(['iso-read', '-i', outfile, '-e', iso_path[1:],
+                     '-o', catalogcheck])
+        out, err = run_process(['isoinfo', '-d', '-i', outfile])
+        assert b'Key 55 AA' in out
+        assert b'Bootid 88 (bootable)' in out
+        catalog_sector = int(next(line for line in out.splitlines()
+                                  if b'boot catalog is in sector ' in line).split()[-1])
+        with open(outfile, 'rb') as fp, open(catalogcheck, 'rb') as catalogfp:
+            fp.seek(catalog_sector * 2048)
+            assert catalogfp.read() == fp.read(2048)
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)
