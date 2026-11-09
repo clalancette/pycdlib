@@ -792,7 +792,7 @@ def main():
                         eltorito_entry.bootfile_parts.pop(0)
                         eltorito_entry.dirlevel = parent
 
-                for f in os.listdir(localpath):
+                for f in sorted(os.listdir(localpath)):
                     fullpath = os.path.join(localpath, f)
 
                     if match_entry_to_list(exclude_patterns, f) or eltorito_duplicate_check == f:
