@@ -206,7 +206,7 @@ def test_pycdlib_genisoimage_bootfile_bad(tmpdir):
     ('-b', 'images/boot.img', '/IMAGES/BOOT.IMG;1', 'input'),
     ('-b', 'images/efi/boot.img', '/IMAGES/EFI/BOOT.IMG;1', 'input'),
     ('-e', 'images/efi/boot.img', '/IMAGES/EFI/BOOT.IMG;1', 'input'),
-    ('-b', 'images/boot.img', '/IMAGES/BOOT.IMG;1', 'images'),
+    ('-b', 'images/efi/boot.img', '/IMAGES/EFI/BOOT.IMG;1', 'images'),
 ])
 def test_pycdlib_genisoimage_boot_directory(tmpdir, option, bootpath, iso_path,
                                            input_name):
