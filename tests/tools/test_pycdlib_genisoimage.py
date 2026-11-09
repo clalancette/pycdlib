@@ -249,7 +249,7 @@ def test_pycdlib_genisoimage_boot_directory(tmpdir, option, bootpath, iso_path,
 @pytest.mark.parametrize('catalogpath,iso_path,input_name', [
     ('boot.cat', '/BOOT.CAT;1', 'input'),
     ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'input'),
-    ('images/efi/boot.cat', '/IMAGES/EFI/BOOT.CAT;1', 'input'),
+    ('alpha/beta/boot.cat', '/ALPHA/BETA/BOOT.CAT;1', 'input'),
     ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'images'),
 ])
 def test_pycdlib_genisoimage_catalog_directory(tmpdir, catalogpath, iso_path,
@@ -259,6 +259,9 @@ def test_pycdlib_genisoimage_catalog_directory(tmpdir, catalogpath, iso_path,
     if '/' in catalogpath:
         # A preexisting nested catalog must be excluded during traversal.
         indir.join(catalogpath).write_binary(b'stale catalog')
+    if catalogpath == 'alpha/beta/boot.cat':
+        # This sibling must not consume the nested beta path component.
+        indir.mkdir('beta').join('boot.cat').write_binary(b'sibling catalog')
     indir.join('boot.img').write_binary(b'boot image' * 512)
     outfile = str(tmpdir.join('output.iso'))
 
@@ -278,6 +281,12 @@ def test_pycdlib_genisoimage_catalog_directory(tmpdir, catalogpath, iso_path,
         with open(outfile, 'rb') as fp, open(catalogcheck, 'rb') as catalogfp:
             fp.seek(catalog_sector * 2048)
             assert catalogfp.read() == fp.read(2048)
+        if catalogpath == 'alpha/beta/boot.cat':
+            siblingcheck = str(tmpdir.join('siblingcheck'))
+            run_process(['iso-read', '-i', outfile, '-e', 'BETA/BOOT.CAT;1',
+                         '-o', siblingcheck])
+            with open(siblingcheck, 'rb') as fp:
+                assert fp.read() == b'sibling catalog'
 
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
