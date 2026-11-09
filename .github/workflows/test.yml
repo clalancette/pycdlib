@@ -51,7 +51,7 @@ jobs:
     - name: Install apt dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y cmake libbz2-dev libcap-dev libcdio-utils util-linux zlib1g-dev
+        sudo apt-get install -y cmake libbz2-dev libcap-dev libcdio-utils syslinux-utils util-linux zlib1g-dev
 
     # pytest has to come from pip rather than apt because it must be installed
     # into the matrix interpreter, not the system python.
@@ -66,6 +66,10 @@ jobs:
         sed -i '/cmake_policy(SET CMP0015 OLD)/d' vendor/cdrkit-1.1.11/CMakeLists.txt
         cmake -S vendor/cdrkit-1.1.11 -B vendor/cdrkit-1.1.11/build -DCMAKE_POLICY_VERSION_MINIMUM=3.5
         cmake --build vendor/cdrkit-1.1.11/build --parallel
+        # Prepend (rather than replace) PATH so that the vendored genisoimage
+        # and isovfy take precedence, while system tools like iso-read
+        # (libcdio-utils) and isosize (util-linux) in /usr/bin stay visible.
+        echo "$GITHUB_WORKSPACE/vendor/cdrkit-1.1.11/build/genisoimage" >> "$GITHUB_PATH"
 
     - name: Patch pycdlib-genisoimage for python version
       run: sed -i -e '0,/python3/s//python/' tools/pycdlib-genisoimage
@@ -73,6 +77,5 @@ jobs:
     - name: Run tests
       run: pytest --verbose tests
       env:
-        PATH: vendor/cdrkit-1.1.11/build/genisoimage
         LD_LIBRARY_PATH: vendor/cdrkit-1.1.11/build/libusal/:vendor/cdrkit-1.1.11/build/librols
         PYCDLIB_TRACK_WRITES: 1
