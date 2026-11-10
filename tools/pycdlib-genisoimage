@@ -765,12 +765,11 @@ def main():
                         print("genisoimage: Error: '%s' and '%s' have the same Rock Ridge name '%s'." % (localpath, previous_path, basename),
                               file=logfp)
                         sys.exit(1)
-                    elif args.joliet:
+                    elif args.joliet or args.udf or args.UDF:
+                        # genisoimage builds its UDF names from its Joliet
+                        # tree, so it reports UDF clashes as Joliet ones even
+                        # when no Joliet tree is written.
                         print('genisoimage: Error: %s and %s have the same Joliet name' % (previous_path, localpath),
-                              file=logfp)
-                        sys.exit(1)
-                    elif args.udf or args.UDF:
-                        print('genisoimage: Error: %s and %s have the same UDF name' % (previous_path, localpath),
                               file=logfp)
                         sys.exit(1)
                 elif not is_dir:

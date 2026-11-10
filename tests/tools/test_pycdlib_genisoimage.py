@@ -409,7 +409,10 @@ def test_pycdlib_genisoimage_merge_duplicate_file_iso9660(tmpdir):
     ('-J', None, b'have the same Joliet name'),
     ('-R', False, b"have the same Rock Ridge name 'f'"),
     ('-R', True, b"have the same Rock Ridge name 'f'"),
-], ids=['rr-file-file', 'joliet-file-file', 'rr-dir-file', 'rr-file-dir'])
+    ('-udf', None, b'have the same Joliet name'),
+    ('-udf', False, b'have the same Joliet name'),
+], ids=['rr-file-file', 'joliet-file-file', 'rr-dir-file', 'rr-file-dir',
+        'udf-file-file', 'udf-dir-file'])
 def test_pycdlib_genisoimage_merge_name_clash(tmpdir, opt, file_first, message):
     # With an extension that records the original name, a name clash that is
     # not a directory merge is fatal.  file_first None means two files.
