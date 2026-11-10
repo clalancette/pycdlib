@@ -1289,6 +1289,48 @@ def test_new_duplicate_child():
         iso.add_directory('/DIR1')
     assert(str(excinfo.value) == 'Failed adding duplicate name to parent')
 
+def _dup_add_fp_iso(iso):
+    iso.add_fp(io.BytesIO(b'second'), 6, '/FOO.;1', rr_name='bar', joliet_path='/bar')
+
+def _dup_add_fp_joliet(iso):
+    iso.add_fp(io.BytesIO(b'second'), 6, '/BAR.;1', rr_name='bar', joliet_path='/foo')
+
+def _dup_hard_link_iso(iso):
+    iso.add_fp(io.BytesIO(b'second'), 6, '/BAR.;1', rr_name='bar')
+    iso.add_hard_link(iso_old_path='/BAR.;1', iso_new_path='/FOO.;1', rr_name='foo2')
+
+def _dup_hard_link_joliet(iso):
+    iso.add_fp(io.BytesIO(b'second'), 6, '/BAR.;1', rr_name='bar')
+    iso.add_hard_link(iso_old_path='/BAR.;1', joliet_new_path='/foo')
+
+def _dup_symlink_iso(iso):
+    iso.add_symlink('/FOO.;1', 'foo2', 'target')
+
+def _dup_symlink_joliet(iso):
+    iso.add_symlink('/BAR.;1', 'bar', 'target', joliet_path='/foo')
+
+@pytest.mark.parametrize('add_duplicate', [
+    _dup_add_fp_iso,
+    _dup_add_fp_joliet,
+    _dup_hard_link_iso,
+    _dup_hard_link_joliet,
+    _dup_symlink_iso,
+    _dup_symlink_joliet,
+])
+def test_new_duplicate_file_child(add_duplicate):
+    # A file (or symlink) with the same name as an existing file must be
+    # rejected, rather than silently appended to the existing file as if it
+    # were a continuation extent of a multi-extent file.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, rock_ridge='1.09')
+
+    iso.add_fp(io.BytesIO(b'first'), 5, '/FOO.;1', rr_name='foo', joliet_path='/foo')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        add_duplicate(iso)
+    assert(str(excinfo.value) == 'Failed adding duplicate name to parent')
+
+    iso.close()
+
 def test_new_eltorito_multi_boot():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()

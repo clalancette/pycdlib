@@ -2080,7 +2080,8 @@ class PyCdlib:
         # type: (dr.DirectoryRecord) -> int
         """
         An internal method to add a child to a directory record, expanding the
-        space in the Volume Descriptor(s) if necessary.
+        space in the Volume Descriptor(s) if necessary.  A child whose name is
+        already in use raises PyCdlibInvalidInput.
 
         Args:
             child: The new child.
@@ -2090,21 +2091,33 @@ class PyCdlib:
         if child.parent is None:
             raise pycdlibexception.PyCdlibInternalError('Trying to add child without a parent')
 
-        try_long_entry = False
-        try:
-            ret = child.parent.add_child(child, self.logical_block_size)
-        except pycdlibexception.PyCdlibInvalidInput:
-            # dir_record.add_child() may throw a PyCdlibInvalidInput if it was
-            # given a duplicate child.  However, we allow duplicate children if
-            # and only the last child is the same; this represents a very large
-            # file.
-            if not child.is_dir():
-                try_long_entry = True
-            else:
-                raise
+        ret = child.parent.add_child(child, self.logical_block_size)
 
-        if try_long_entry:
-            ret = child.parent.add_child(child, self.logical_block_size, True)
+        # The add_child() method returns True if the parent needs another extent
+        # in order to fit the directory record for this child.
+        if ret:
+            return self.logical_block_size
+
+        return 0
+
+    def _add_continuation_to_dr(self, child):
+        # type: (dr.DirectoryRecord) -> int
+        """
+        An internal method to add the directory record for the second or later
+        extent of a multi-extent file to its parent, expanding the space in the
+        Volume Descriptor(s) if necessary.  The child has the same name as the
+        file's previous directory record, and is linked to it as its
+        continuation.
+
+        Args:
+            child: The new child.
+        Returns:
+            The number of bytes to add for this directory record (this may be zero).
+        """
+        if child.parent is None:
+            raise pycdlibexception.PyCdlibInternalError('Trying to add child without a parent')
+
+        ret = child.parent.add_child(child, self.logical_block_size, True)
 
         # The add_child() method returns True if the parent needs another extent
         # in order to fit the directory record for this child.
@@ -3629,7 +3642,13 @@ class PyCdlib:
                              time.time(), creation_time)
             new_rec.data_extent_offset = data_extent_offset_blocks
 
-            num_bytes_to_add += self._add_child_to_dr(new_rec)
+            # Only the continuation chunks of a multi-extent file share the
+            # name of the record before them; the first chunk of any file
+            # must have a name that is not yet in use.
+            if data_extent_offset_blocks > 0:
+                num_bytes_to_add += self._add_continuation_to_dr(new_rec)
+            else:
+                num_bytes_to_add += self._add_child_to_dr(new_rec)
             num_bytes_to_add += self._update_rr_ce_entry(new_rec)
         else:
             if self.udf_root is None:
