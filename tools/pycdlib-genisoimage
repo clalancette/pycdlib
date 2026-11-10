@@ -155,6 +155,10 @@ def parse_file_list(thelist):
                 yield line.rstrip()
 
 
+# The maximum length of a Joliet name, in characters.
+JOLIET_MAX_NAME_LENGTH = 64
+
+
 def build_joliet_path(root, name):
     """
     A function to build a complete, valid Joliet path based on a root directory
@@ -173,9 +177,9 @@ def build_joliet_path(root, name):
         if not intdir:
             continue
 
-        intermediate += '/' + intdir[:64]
+        intermediate += '/' + intdir[:JOLIET_MAX_NAME_LENGTH]
 
-    return intermediate + '/' + name[:64]
+    return intermediate + '/' + name[:JOLIET_MAX_NAME_LENGTH]
 
 
 def build_udf_path(root, name):
@@ -495,11 +499,12 @@ class DirLevel:
     tuple of source path components relative to its input root, a set of
     mangled maps for mangling filenames as appropriate, and a map from the
     source names already added at this level to a tuple of the local path
-    and, for directories, the child DirLevel (None for anything else).
+    and, for directories, the child DirLevel (None for anything else), and a
+    map from the Joliet names already used at this level to their local path.
     """
 
     __slots__ = ('iso_path', 'joliet_path', 'udf_path', 'relpath',
-                 'mangled_children', 'children')
+                 'mangled_children', 'children', 'joliet_children')
 
     def __init__(self, iso_path, joliet_path, udf_path, relpath):
         self.iso_path = iso_path
@@ -508,6 +513,7 @@ class DirLevel:
         self.relpath = relpath
         self.mangled_children = {}
         self.children = {}
+        self.joliet_children = {}
 
 
 def build_eltorito_dir_path(dir_parts, iso_level):
@@ -774,6 +780,17 @@ def main():
                         sys.exit(1)
                 elif not is_dir:
                     parent_level.children[basename] = (localpath, None)
+
+                # Joliet names are truncated, so different source names can
+                # still clash there; genisoimage treats that as fatal too.
+                if args.joliet and merge_level is None:
+                    joliet_name = basename[:JOLIET_MAX_NAME_LENGTH]
+                    previous_path = parent_level.joliet_children.get(joliet_name)
+                    if previous_path is not None:
+                        print('genisoimage: Error: %s and %s have the same Joliet name' % (previous_path, localpath),
+                              file=logfp)
+                        sys.exit(1)
+                    parent_level.joliet_children[joliet_name] = localpath
 
             rr_name = None
             if args.rational_rock or args.rock:
