@@ -560,7 +560,12 @@ def build_iso_path(parent_dirlevel, nameonly, iso_level, is_dir):
 
     if filemangle in parent_dirlevel.mangled_children:
         currnum = 0
-        prefix = filemangle[:5]
+        # The prefix comes from the name without its extension (which for a
+        # file already carries the ';1' version).
+        if is_dir:
+            prefix = filemangle[:5]
+        else:
+            prefix = filename[:5]
         while True:
             if is_dir:
                 tmp = '%s%.03d' % (prefix, currnum)
