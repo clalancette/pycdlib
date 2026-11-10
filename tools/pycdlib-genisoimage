@@ -783,8 +783,8 @@ def main():
                     eltorito_catalog_parts.pop(0)
                     eltorito_catalog_dirlevel = parent
                     on_eltorito_catalog_path = True
-                    if len(eltorito_catalog_parts) == 1:
-                        eltorito_duplicate_check = eltorito_catalog_parts[0]
+                if on_eltorito_catalog_path and len(eltorito_catalog_parts) == 1:
+                    eltorito_duplicate_check = eltorito_catalog_parts[0]
 
                 for eltorito_entry in eltorito_entries:
                     if add_dir and parent_level == eltorito_entry.dirlevel and len(eltorito_entry.bootfile_parts) > 1 and eltorito_entry.bootfile_parts[0] == basename:

@@ -246,18 +246,19 @@ def test_pycdlib_genisoimage_boot_directory(tmpdir, option, bootpath, iso_path,
                     find_executable('isoinfo') is None or
                     find_executable('iso-read') is None,
                     reason='ISO verification tools not installed')
-@pytest.mark.parametrize('catalogpath,iso_path,input_name', [
-    ('boot.cat', '/BOOT.CAT;1', 'input'),
-    ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'input'),
-    ('alpha/beta/boot.cat', '/ALPHA/BETA/BOOT.CAT;1', 'input'),
-    ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'images'),
+@pytest.mark.parametrize('catalogpath,iso_path,input_name,stale_catalog', [
+    ('boot.cat', '/BOOT.CAT;1', 'input', False),
+    ('boot.cat', '/BOOT.CAT;1', 'input', True),
+    ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'input', True),
+    ('alpha/beta/boot.cat', '/ALPHA/BETA/BOOT.CAT;1', 'input', True),
+    ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'images', True),
 ])
 def test_pycdlib_genisoimage_catalog_directory(tmpdir, catalogpath, iso_path,
-                                              input_name):
+                                              input_name, stale_catalog):
     indir = tmpdir.mkdir(input_name)
     indir.join(catalogpath).dirpath().ensure(dir=True)
-    if '/' in catalogpath:
-        # A preexisting nested catalog must be excluded during traversal.
+    if stale_catalog:
+        # A preexisting catalog must be excluded during traversal.
         indir.join(catalogpath).write_binary(b'stale catalog')
     if catalogpath == 'alpha/beta/boot.cat':
         # This sibling must not consume the nested beta path component.
