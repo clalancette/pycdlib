@@ -492,12 +492,14 @@ class DirLevel:
     """
     A class to hold information about one directory level of the directory
     hierarchy.  Each level has an iso_path, a joliet_path, a udf_path, the
-    tuple of source path components relative to its input root, and a set of
-    mangled maps for mangling filenames as appropriate.
+    tuple of source path components relative to its input root, a set of
+    mangled maps for mangling filenames as appropriate, and a map from the
+    source names already added at this level to a tuple of the local path
+    and, for directories, the child DirLevel (None for anything else).
     """
 
     __slots__ = ('iso_path', 'joliet_path', 'udf_path', 'relpath',
-                 'mangled_children')
+                 'mangled_children', 'children')
 
     def __init__(self, iso_path, joliet_path, udf_path, relpath):
         self.iso_path = iso_path
@@ -505,6 +507,7 @@ class DirLevel:
         self.udf_path = udf_path
         self.relpath = relpath
         self.mangled_children = {}
+        self.children = {}
 
 
 def build_eltorito_dir_path(dir_parts, iso_level):
@@ -735,12 +738,43 @@ def main():
             path_list.append(line.strip())
 
     size_to_name_and_hashes = {}
+    # All inputs are merged into the root of the ISO, so they share a single
+    # root level.
+    root_level = DirLevel('/', '/', '/', ())
     for path in path_list:
-        root_level = DirLevel('/', '/', '/', ())
         entries = collections.deque([(os.path.normpath(path), root_level, False)])
         while entries:
             localpath, parent_level, add_dir = entries.popleft()
             basename = os.path.basename(localpath)
+            is_dir = not os.path.islink(localpath) and os.path.isdir(localpath)
+
+            # Like genisoimage, a directory that an earlier input already
+            # added at this level is merged with this one.  Any other name
+            # clash is fatal when an extension that records the original name
+            # is in use; with plain ISO9660 the new entry is mangled to a
+            # free name instead.  An input root directory is not itself an
+            # entry, so it never clashes.
+            merge_level = None
+            if add_dir or not is_dir:
+                previous = parent_level.children.get(basename)
+                if previous is not None:
+                    previous_path, previous_level = previous
+                    if is_dir and previous_level is not None:
+                        merge_level = previous_level
+                    elif args.rational_rock or args.rock:
+                        print("genisoimage: Error: '%s' and '%s' have the same Rock Ridge name '%s'." % (localpath, previous_path, basename),
+                              file=logfp)
+                        sys.exit(1)
+                    elif args.joliet:
+                        print('genisoimage: Error: %s and %s have the same Joliet name' % (previous_path, localpath),
+                              file=logfp)
+                        sys.exit(1)
+                    elif args.udf or args.UDF:
+                        print('genisoimage: Error: %s and %s have the same UDF name' % (previous_path, localpath),
+                              file=logfp)
+                        sys.exit(1)
+                elif not is_dir:
+                    parent_level.children[basename] = (localpath, None)
 
             rr_name = None
             if args.rational_rock or args.rock:
@@ -779,8 +813,11 @@ def main():
                                     udf_symlink_path=udf_path, udf_target=udf_target,
                                     joliet_path=joliet_path)
 
-            elif os.path.isdir(localpath):
-                if add_dir:
+            elif is_dir:
+                if merge_level is not None:
+                    parent = merge_level
+                    iso_path = parent.iso_path
+                elif add_dir:
                     iso_path = build_iso_path(parent_level, basename,
                                               args.iso_level, True)
                     if iso_path is None:
@@ -796,15 +833,12 @@ def main():
                     iso.add_directory(iso_path, rr_name=rr_name,
                                       joliet_path=joliet_path,
                                       udf_path=udf_path)
-                else:
-                    iso_path = parent_level.iso_path
-                    joliet_path = parent_level.joliet_path
-                    udf_path = parent_level.udf_path
-
-                parent = parent_level
-                if add_dir:
                     parent = DirLevel(iso_path, joliet_path, udf_path,
                                       parent_level.relpath + (basename,))
+                    parent_level.children[basename] = (localpath, parent)
+                else:
+                    parent = parent_level
+                    iso_path = parent_level.iso_path
 
                 # A preexisting file with the boot catalog's name in the
                 # catalog's directory would collide with the generated
