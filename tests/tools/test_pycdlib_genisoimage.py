@@ -472,3 +472,62 @@ def test_pycdlib_genisoimage_catalog_stale_in_merged_inputs(tmpdir):
 
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
+
+
+@pytest.mark.parametrize('opts,is_dir,split_inputs', [
+    (['-J'], False, False),
+    (['-J'], True, False),
+    (['-R', '-J'], False, False),
+    (['-J'], False, True),
+], ids=['files', 'dirs', 'rr-files', 'files-across-inputs'])
+def test_pycdlib_genisoimage_joliet_truncation_clash(tmpdir, opts, is_dir,
+                                                     split_inputs):
+    # Names that differ only after the 64th character have the same Joliet
+    # name once truncated, which is fatal even though the source (and Rock
+    # Ridge) names differ.
+    first = tmpdir.mkdir('first')
+    second = first
+    if split_inputs:
+        second = tmpdir.mkdir('second')
+    prefix = 'a' * 64
+    for indir, name in ((first, prefix + 'one'), (second, prefix + 'two')):
+        if is_dir:
+            indir.mkdir(name)
+        else:
+            indir.join(name).write(name)
+    inputs = [str(first)]
+    if split_inputs:
+        inputs.append(str(second))
+    outfile = str(tmpdir.join('output.iso'))
+
+    def _do_test(binary):
+        with pytest.raises(ProcessException) as excinfo:
+            run_process([binary, '-iso-level', '4'] + opts +
+                        ['-o', outfile] + inputs)
+        assert b'have the same Joliet name' in str(excinfo.value).encode('utf-8')
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)
+
+
+@pytest.mark.skipif(find_executable('isoinfo') is None,
+                    reason='ISO verification tools not installed')
+def test_pycdlib_genisoimage_joliet_truncation_distinct(tmpdir):
+    # Long names that already differ within the first 64 characters keep
+    # distinct (truncated) Joliet names.
+    indir = tmpdir.mkdir('input')
+    for name in ('a' * 63 + 'x' + 'tail', 'a' * 63 + 'y' + 'tail'):
+        indir.join(name).write(name)
+    outfile = str(tmpdir.join('output.iso'))
+
+    listings = []
+
+    def _do_test(binary):
+        run_process([binary, '-iso-level', '4', '-J', '-o', outfile,
+                     str(indir)])
+        listings.append(_iso_listing(outfile, '-J'))
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)
+    assert listings[0] == listings[1]
+    assert listings[1] == [b'/' + b'a' * 63 + b'x', b'/' + b'a' * 63 + b'y']
