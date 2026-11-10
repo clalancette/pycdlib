@@ -329,3 +329,143 @@ def test_pycdlib_genisoimage_mangled_file_collision(tmpdir):
 
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
+
+
+def _iso_listing(outfile, extension_opt=None):
+    cmd = ['isoinfo', '-f', '-i', outfile]
+    if extension_opt is not None:
+        cmd.insert(1, extension_opt)
+    out, err = run_process(cmd)
+    return sorted(out.splitlines())
+
+
+@pytest.mark.skipif(find_executable('isovfy') is None or
+                    find_executable('isoinfo') is None,
+                    reason='ISO verification tools not installed')
+@pytest.mark.parametrize('opts', [[], ['-R'], ['-J'], ['-R', '-J']],
+                         ids=['iso9660', 'rr', 'joliet', 'rr-joliet'])
+def test_pycdlib_genisoimage_merge_directories(tmpdir, opts):
+    # Directories with the same name in different inputs are merged,
+    # recursively, into a single directory on the ISO.
+    first = tmpdir.mkdir('first')
+    first.mkdir('dir').join('one').write('one')
+    first.join('dir').mkdir('sub').join('x').write('x')
+    second = tmpdir.mkdir('second')
+    second.mkdir('dir').join('two').write('two')
+    second.join('dir').mkdir('sub').join('y').write('y')
+    second.mkdir('other').join('z').write('z')
+    outfile = str(tmpdir.join('output.iso'))
+
+    listings = []
+
+    def _do_test(binary):
+        run_process([binary, '-iso-level', '1'] + opts +
+                    ['-o', outfile, str(first), str(second)])
+        run_process(['isovfy', outfile])
+        listing = _iso_listing(outfile)
+        if '-R' in opts:
+            listing += _iso_listing(outfile, '-R')
+        if '-J' in opts:
+            listing += _iso_listing(outfile, '-J')
+        listings.append(listing)
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)
+    assert listings[0] == listings[1]
+    assert b'/DIR/SUB/Y.;1' in listings[1]
+
+
+@pytest.mark.skipif(find_executable('isovfy') is None or
+                    find_executable('isoinfo') is None,
+                    reason='ISO verification tools not installed')
+def test_pycdlib_genisoimage_merge_duplicate_file_iso9660(tmpdir):
+    # With plain ISO9660, a file with the same name in a later input is kept
+    # under a mangled name.
+    first = tmpdir.mkdir('first')
+    second = tmpdir.mkdir('second')
+    for name in ('f', 'longname.txt'):
+        first.join(name).write('first')
+        second.join(name).write('second')
+    outfile = str(tmpdir.join('output.iso'))
+    expected = (('/F.;1', b'first'), ('/F000.;1', b'second'),
+                ('/LONGNAME.TXT;1', b'first'), ('/LONGN000.TXT;1', b'second'))
+
+    def _do_test(binary):
+        run_process([binary, '-iso-level', '1', '-o', outfile, str(first),
+                     str(second)])
+        run_process(['isovfy', outfile])
+        assert _iso_listing(outfile) == sorted(path.encode('utf-8')
+                                               for path, contents in expected)
+        for iso_path, contents in expected:
+            out, err = run_process(['isoinfo', '-x', iso_path, '-i', outfile])
+            assert out == contents
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)
+
+
+@pytest.mark.parametrize('opt,file_first,message', [
+    ('-R', None, b"have the same Rock Ridge name 'f'"),
+    ('-J', None, b'have the same Joliet name'),
+    ('-R', False, b"have the same Rock Ridge name 'f'"),
+    ('-R', True, b"have the same Rock Ridge name 'f'"),
+], ids=['rr-file-file', 'joliet-file-file', 'rr-dir-file', 'rr-file-dir'])
+def test_pycdlib_genisoimage_merge_name_clash(tmpdir, opt, file_first, message):
+    # With an extension that records the original name, a name clash that is
+    # not a directory merge is fatal.  file_first None means two files.
+    first = tmpdir.mkdir('first')
+    second = tmpdir.mkdir('second')
+    if file_first is None or file_first:
+        first.join('f').write('file')
+    else:
+        first.mkdir('f')
+    if file_first is None or not file_first:
+        second.join('f').write('file')
+    else:
+        second.mkdir('f')
+    outfile = str(tmpdir.join('output.iso'))
+
+    def _do_test(binary):
+        with pytest.raises(ProcessException) as excinfo:
+            run_process([binary, '-iso-level', '1', opt, '-o', outfile,
+                         str(first), str(second)])
+        assert message in str(excinfo.value).encode('utf-8')
+
+    # When the file comes first, genisoimage silently writes a broken ISO
+    # rather than failing, so only pycdlib-genisoimage is checked.
+    if not file_first:
+        _do_test('genisoimage')
+    _do_test(pycdlib_exe)
+
+
+@pytest.mark.skipif(find_executable('isovfy') is None or
+                    find_executable('isoinfo') is None or
+                    find_executable('iso-read') is None,
+                    reason='ISO verification tools not installed')
+def test_pycdlib_genisoimage_catalog_stale_in_merged_inputs(tmpdir):
+    # Both inputs provide the catalog's directory, and the preexisting catalog
+    # must be excluded from each of them, not only from the first.
+    first = tmpdir.mkdir('first')
+    first.join('boot.img').write_binary(b'boot image' * 512)
+    first.mkdir('images').join('boot.cat').write_binary(b'stale catalog')
+    second = tmpdir.mkdir('second')
+    second.mkdir('images').join('boot.cat').write_binary(b'stale catalog')
+    outfile = str(tmpdir.join('output.iso'))
+
+    def _do_test(binary):
+        run_process([binary, '-iso-level', '1', '-b', 'boot.img',
+                     '-c', 'images/boot.cat', '-no-emul-boot', '-o', outfile,
+                     str(first), str(second)])
+        run_process(['isovfy', outfile])
+        catalogcheck = str(tmpdir.join('catalogcheck'))
+        run_process(['iso-read', '-i', outfile, '-e', 'IMAGES/BOOT.CAT;1',
+                     '-o', catalogcheck])
+        out, err = run_process(['isoinfo', '-d', '-i', outfile])
+        catalog_sector = int(next(line for line in out.splitlines()
+                                  if b'boot catalog is in sector ' in line).split()[-1])
+        with open(outfile, 'rb') as fp, open(catalogcheck, 'rb') as catalogfp:
+            fp.seek(catalog_sector * 2048)
+            assert catalogfp.read() == fp.read(2048)
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)
