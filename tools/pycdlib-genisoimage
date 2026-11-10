@@ -207,20 +207,17 @@ class EltoritoEntry:
     more than one of these per-ISO, so each one is tracked separately.
     """
 
-    __slots__ = ('bootfile_orig', 'bootfile_parts', 'mediatype', 'boot',
-                 'load_size', 'load_seg', 'boot_info_table',
-                 'bootfile_iso_path', 'dirlevel')
+    __slots__ = ('bootfile_orig', 'mediatype', 'boot', 'load_size', 'load_seg',
+                 'boot_info_table', 'bootfile_iso_path')
 
     def __init__(self):
         self.bootfile_orig = ''
-        self.bootfile_parts = []
         self.mediatype = 'floppy'
         self.boot = True
         self.load_size = 0
         self.load_seg = 0
         self.boot_info_table = False
         self.bootfile_iso_path = ''
-        self.dirlevel = None
 
     def set_bootfile(self, bootfile):
         """
@@ -232,7 +229,6 @@ class EltoritoEntry:
          Nothing.
         """
         self.bootfile_orig = bootfile
-        self.bootfile_parts = bootfile.split('/')
 
 
 def parse_arguments():
@@ -495,17 +491,37 @@ def determine_eltorito_entries(args):
 class DirLevel:
     """
     A class to hold information about one directory level of the directory
-    hierarchy.  Each level has an iso_path, a joliet_path, and a set of
+    hierarchy.  Each level has an iso_path, a joliet_path, a udf_path, the
+    tuple of source path components relative to its input root, and a set of
     mangled maps for mangling filenames as appropriate.
     """
 
-    __slots__ = ('iso_path', 'joliet_path', 'udf_path', 'mangled_children')
+    __slots__ = ('iso_path', 'joliet_path', 'udf_path', 'relpath',
+                 'mangled_children')
 
-    def __init__(self, iso_path, joliet_path, udf_path):
+    def __init__(self, iso_path, joliet_path, udf_path, relpath):
         self.iso_path = iso_path
         self.joliet_path = joliet_path
         self.udf_path = udf_path
+        self.relpath = relpath
         self.mangled_children = {}
+
+
+def build_eltorito_dir_path(dir_parts, iso_level):
+    """
+    A function to build the ISO9660 directory path for an El Torito file
+    (boot image or boot catalog) from the directory components given on the
+    command-line.
+
+    Parameters:
+     dir_parts - The sequence of directory components leading to the file.
+     iso_level - The ISO interchange level to use.
+    Returns:
+     A string representing the absolute ISO directory path, or the empty
+     string for the root directory.
+    """
+    return ''.join('/' + pycdlib.utils.mangle_dir_for_iso9660(part, iso_level)
+                   for part in dir_parts)
 
 
 def build_iso_path(parent_dirlevel, nameonly, iso_level, is_dir):
@@ -656,10 +672,32 @@ def main():
         if args.ucs_level is not None:
             joliet_level = int(args.ucs_level)
 
+    # The El Torito boot catalog and boot images are named by paths relative
+    # to the root of the ISO, so their ISO paths can be determined up front.
+    # The catalog's parent is also kept as a tuple of source components so
+    # that a preexisting file with the catalog's name in that directory of
+    # any input can be excluded during traversal.
     eltorito_catalog_path = ''
-    eltorito_catalog_parts = []
+    eltorito_catalog_parent = None
+    eltorito_catalog_name = None
     if args.eltorito_catalog is not None:
-        eltorito_catalog_parts = args.eltorito_catalog.split('/')
+        catalog_parts = args.eltorito_catalog.split('/')
+        eltorito_catalog_parent = tuple(catalog_parts[:-1])
+        eltorito_catalog_name = catalog_parts[-1]
+        filename, ext = pycdlib.utils.mangle_file_for_iso9660(eltorito_catalog_name,
+                                                              args.iso_level)
+        eltorito_catalog_path = build_eltorito_dir_path(eltorito_catalog_parent,
+                                                        args.iso_level) + '/' + filename + '.' + ext
+
+    for eltorito_entry in eltorito_entries:
+        bootfile_parts = eltorito_entry.bootfile_orig.split('/')
+        filename, ext = pycdlib.utils.mangle_file_for_iso9660(bootfile_parts[-1],
+                                                              args.iso_level)
+        tail = '.' + ext
+        if ext == '':
+            tail = ''
+        eltorito_entry.bootfile_iso_path = build_eltorito_dir_path(bootfile_parts[:-1],
+                                                                   args.iso_level) + '/' + filename + tail
 
     # Create a new PyCdlib object.
     iso = pycdlib.PyCdlib()
@@ -693,25 +731,11 @@ def main():
 
     size_to_name_and_hashes = {}
     for path in path_list:
-        check_eltorito_catalog = len(eltorito_catalog_parts) > 0
-        root_level = DirLevel('/', '/', '/')
-        eltorito_catalog_dirlevel = root_level
-        for eltorito_entry in eltorito_entries:
-            eltorito_entry.dirlevel = root_level
-        entries = collections.deque([(os.path.normpath(path), root_level, False,
-                                      check_eltorito_catalog)])
+        root_level = DirLevel('/', '/', '/', ())
+        entries = collections.deque([(os.path.normpath(path), root_level, False)])
         while entries:
-            localpath, parent_level, add_dir, check_eltorito_catalog = entries.popleft()
+            localpath, parent_level, add_dir = entries.popleft()
             basename = os.path.basename(localpath)
-
-            for eltorito_entry in eltorito_entries:
-                if eltorito_entry.dirlevel == parent_level and len(eltorito_entry.bootfile_parts) == 1:
-                    filename, ext = pycdlib.utils.mangle_file_for_iso9660(eltorito_entry.bootfile_parts.pop(),
-                                                                          args.iso_level)
-                    tail = '.' + ext
-                    if ext == '':
-                        tail = ''
-                    eltorito_entry.bootfile_iso_path += '/' + filename + tail
 
             rr_name = None
             if args.rational_rock or args.rock:
@@ -774,25 +798,15 @@ def main():
 
                 parent = parent_level
                 if add_dir:
-                    parent = DirLevel(iso_path, joliet_path, udf_path)
+                    parent = DirLevel(iso_path, joliet_path, udf_path,
+                                      parent_level.relpath + (basename,))
 
-                on_eltorito_catalog_path = check_eltorito_catalog and not add_dir
-                eltorito_duplicate_check = ''
-                if not add_dir and not eltorito_catalog_path and len(eltorito_catalog_parts) == 1:
-                    eltorito_duplicate_check = eltorito_catalog_parts[0]
-                if add_dir and check_eltorito_catalog and parent_level == eltorito_catalog_dirlevel and len(eltorito_catalog_parts) > 1 and eltorito_catalog_parts[0] == basename:
-                    eltorito_catalog_path += '/' + pycdlib.utils.mangle_dir_for_iso9660(basename, args.iso_level)
-                    eltorito_catalog_parts.pop(0)
-                    eltorito_catalog_dirlevel = parent
-                    on_eltorito_catalog_path = True
-                    if len(eltorito_catalog_parts) == 1:
-                        eltorito_duplicate_check = eltorito_catalog_parts[0]
-
-                for eltorito_entry in eltorito_entries:
-                    if add_dir and parent_level == eltorito_entry.dirlevel and len(eltorito_entry.bootfile_parts) > 1 and eltorito_entry.bootfile_parts[0] == basename:
-                        eltorito_entry.bootfile_iso_path += '/' + pycdlib.utils.mangle_dir_for_iso9660(basename, args.iso_level)
-                        eltorito_entry.bootfile_parts.pop(0)
-                        eltorito_entry.dirlevel = parent
+                # A preexisting file with the boot catalog's name in the
+                # catalog's directory would collide with the generated
+                # catalog, so exclude it.
+                eltorito_duplicate_check = None
+                if parent.relpath == eltorito_catalog_parent:
+                    eltorito_duplicate_check = eltorito_catalog_name
 
                 for f in sorted(os.listdir(localpath)):
                     fullpath = os.path.join(localpath, f)
@@ -808,7 +822,7 @@ def main():
                     if args.verbose:
                         print('Scanning %s' % (fullpath), file=logfp)
 
-                    entries.append((fullpath, parent, True, on_eltorito_catalog_path))
+                    entries.append((fullpath, parent, True))
             else:
                 iso_path = build_iso_path(parent_level, basename,
                                           args.iso_level, False)
@@ -865,11 +879,6 @@ def main():
             if match_entry_to_list(hidden_patterns, basename):
                 iso.set_hidden(iso_path)
                 print('Hidden ISO9660 attribute: %s' % (localpath), file=logfp)
-
-    if len(eltorito_catalog_parts) == 1:
-        filename, ext = pycdlib.utils.mangle_file_for_iso9660(eltorito_catalog_parts.pop(),
-                                                              args.iso_level)
-        eltorito_catalog_path += '/' + filename + '.' + ext
 
     # Add in El Torito if it was requested
     for entry in eltorito_entries:
