@@ -304,3 +304,28 @@ def test_pycdlib_genisoimage_catalog_directory(tmpdir, catalogpath, iso_path,
 
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
+
+
+@pytest.mark.skipif(find_executable('isovfy') is None or
+                    find_executable('isoinfo') is None,
+                    reason='ISO verification tools not installed')
+def test_pycdlib_genisoimage_mangled_file_collision(tmpdir):
+    # Each pair of names mangles to the same ISO9660 name at interchange level
+    # 1, so one of each pair must be renamed to a free name.  The short names
+    # exercise prefixes that are shorter than the 5 characters kept.
+    indir = tmpdir.mkdir('input')
+    for name in ('f', 'F', 'ab.c', 'AB.c', 'longname1.txt', 'longname2.txt'):
+        indir.join(name).write(name)
+    outfile = str(tmpdir.join('output.iso'))
+
+    def _do_test(binary):
+        run_process([binary, '-iso-level', '1', '-o', outfile, str(indir)])
+        run_process(['isovfy', outfile])
+        out, err = run_process(['isoinfo', '-f', '-i', outfile])
+        assert sorted(out.splitlines()) == [b'/AB.C;1', b'/AB000.C;1',
+                                            b'/F.;1', b'/F000.;1',
+                                            b'/LONGN000.TXT;1',
+                                            b'/LONGNAME.TXT;1']
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)
