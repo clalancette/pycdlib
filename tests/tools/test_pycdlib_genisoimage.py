@@ -246,15 +246,16 @@ def test_pycdlib_genisoimage_boot_directory(tmpdir, option, bootpath, iso_path,
                     find_executable('isoinfo') is None or
                     find_executable('iso-read') is None,
                     reason='ISO verification tools not installed')
-@pytest.mark.parametrize('catalogpath,iso_path,input_name,stale_catalog', [
-    ('boot.cat', '/BOOT.CAT;1', 'input', False),
-    ('boot.cat', '/BOOT.CAT;1', 'input', True),
-    ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'input', True),
-    ('alpha/beta/boot.cat', '/ALPHA/BETA/BOOT.CAT;1', 'input', True),
-    ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'images', True),
+@pytest.mark.parametrize('catalogpath,iso_path,input_name,stale_catalog,extra_input', [
+    ('boot.cat', '/BOOT.CAT;1', 'input', False, False),
+    ('boot.cat', '/BOOT.CAT;1', 'input', True, False),
+    ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'input', True, False),
+    ('alpha/beta/boot.cat', '/ALPHA/BETA/BOOT.CAT;1', 'input', True, False),
+    ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'images', True, False),
+    ('images/boot.cat', '/IMAGES/BOOT.CAT;1', 'input', True, True),
 ])
 def test_pycdlib_genisoimage_catalog_directory(tmpdir, catalogpath, iso_path,
-                                              input_name, stale_catalog):
+                                              input_name, stale_catalog, extra_input):
     indir = tmpdir.mkdir(input_name)
     indir.join(catalogpath).dirpath().ensure(dir=True)
     if stale_catalog:
@@ -265,11 +266,17 @@ def test_pycdlib_genisoimage_catalog_directory(tmpdir, catalogpath, iso_path,
         indir.mkdir('beta').join('boot.cat').write_binary(b'sibling catalog')
     indir.join('boot.img').write_binary(b'boot image' * 512)
     outfile = str(tmpdir.join('output.iso'))
+    inputs = [str(indir)]
+    if extra_input:
+        # A later flattened input root is not the nested catalog's parent.
+        extra = tmpdir.mkdir('extra')
+        extra.join('boot.cat').write_binary(b'unrelated root catalog')
+        inputs.append(str(extra))
 
     def _do_test(binary):
         run_process([binary, '-iso-level', '1', '-b', 'boot.img',
                      '-c', catalogpath, '-no-emul-boot', '-o', outfile,
-                     str(indir)])
+                     *inputs])
         run_process(['isovfy', outfile])
         catalogcheck = str(tmpdir.join('catalogcheck'))
         run_process(['iso-read', '-i', outfile, '-e', iso_path[1:],
@@ -288,6 +295,12 @@ def test_pycdlib_genisoimage_catalog_directory(tmpdir, catalogpath, iso_path,
                          '-o', siblingcheck])
             with open(siblingcheck, 'rb') as fp:
                 assert fp.read() == b'sibling catalog'
+        if extra_input:
+            rootcheck = str(tmpdir.join('rootcheck'))
+            run_process(['iso-read', '-i', outfile, '-e', 'BOOT.CAT;1',
+                         '-o', rootcheck])
+            with open(rootcheck, 'rb') as fp:
+                assert fp.read() == b'unrelated root catalog'
 
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
