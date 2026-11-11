@@ -579,3 +579,50 @@ def test_pycdlib_genisoimage_ignored_symlink_name(tmpdir):
 
     _do_test('genisoimage')
     _do_test(pycdlib_exe)
+
+
+@pytest.mark.skipif(find_executable('isoinfo') is None,
+                    reason='ISO verification tools not installed')
+@pytest.mark.parametrize('opts,names', [
+    (['-J', '-joliet-long'], ['a' * 64 + 'one', 'a' * 64 + 'two']),
+    (['-J', '-joliet-long'], ['b' * 110]),
+    (['-J'], ['é' * 70, 'a' * 63 + '\U0001f600' + 'tail']),
+    (['-J', '-joliet-long'], ['é' * 110]),
+], ids=['long-distinct', 'long-truncated', 'non-ascii', 'long-non-ascii'])
+def test_pycdlib_genisoimage_joliet_names(tmpdir, opts, names):
+    # Joliet names are truncated to 64 UCS-2 characters, or 103 with
+    # -joliet-long, the same way genisoimage does.
+    indir = tmpdir.mkdir('input')
+    for name in names:
+        indir.join(name).write('x')
+    outfile = str(tmpdir.join('output.iso'))
+
+    listings = []
+
+    def _do_test(binary):
+        run_process([binary, '-iso-level', '3', '-input-charset', 'utf-8'] +
+                    opts + ['-o', outfile, str(indir)])
+        listings.append(_iso_listing(outfile, '-J'))
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)
+    assert listings[0] == listings[1]
+    assert len(listings[1]) == len(names)
+
+
+def test_pycdlib_genisoimage_joliet_long_truncation_clash(tmpdir):
+    # With -joliet-long, names that differ only after the 103rd character
+    # still clash.
+    indir = tmpdir.mkdir('input')
+    for name in ('c' * 103 + 'one', 'c' * 103 + 'two'):
+        indir.join(name).write(name)
+    outfile = str(tmpdir.join('output.iso'))
+
+    def _do_test(binary):
+        with pytest.raises(ProcessException) as excinfo:
+            run_process([binary, '-iso-level', '4', '-J', '-joliet-long',
+                         '-o', outfile, str(indir)])
+        assert b'have the same Joliet name' in str(excinfo.value).encode('utf-8')
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)
