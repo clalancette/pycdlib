@@ -7109,6 +7109,27 @@ def test_new_udf_symlink():
 
     iso.close()
 
+def test_new_udf_symlink_joliet(tmpdir):
+    # A UDF symlink on an ISO without Rock Ridge gets a single zero-length
+    # Joliet record when a Joliet path is given.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, udf='2.60')
+
+    iso.add_symlink('/BAR.;1', joliet_path='/bar', udf_symlink_path='/bar', udf_target='foo')
+
+    outfile = str(tmpdir.join('udfsymlinkjoliet.iso'))
+    iso.write(outfile)
+    iso.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.open(outfile)
+    joliet_children = [c for c in iso.list_children(joliet_path='/')][2:]
+    assert([c.file_identifier() for c in joliet_children] == ['bar'.encode('utf-16_be')])
+    assert(joliet_children[0].data_length == 0)
+    assert(joliet_children[0].data_continuation is None)
+    assert(iso.get_record(udf_path='/bar').is_symlink())
+    iso.close()
+
 def test_new_udf_symlink_in_dir():
     iso = pycdlib.PyCdlib()
     iso.new(udf='2.60')
