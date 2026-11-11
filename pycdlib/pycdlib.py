@@ -6369,13 +6369,12 @@ class PyCdlib:
 
         if udf_symlink_path is not None and udf_target is not None:
             # If we aren't making a Rock Ridge symlink at the same time, we need
-            # to add a new zero-byte file to the ISO.
+            # to add a new zero-byte file to the ISO.  Any Joliet path is added
+            # below, as it is for a Rock Ridge symlink, so it is not passed
+            # here (the empty paths just satisfy _add_fp's argument check).
             if rr_path is None:
-                tmp_joliet_path = joliet_path
-                if tmp_joliet_path is None:
-                    tmp_joliet_path = ''
                 num_bytes_to_add += self._add_fp(None, 0, False, symlink_path,
-                                                 '', tmp_joliet_path, '', None,
+                                                 '', '', '', None,
                                                  False, creation_time)
 
             udf_symlink_path_bytes = utils.normpath(udf_symlink_path)
