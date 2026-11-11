@@ -531,3 +531,51 @@ def test_pycdlib_genisoimage_joliet_truncation_distinct(tmpdir):
     _do_test(pycdlib_exe)
     assert listings[0] == listings[1]
     assert listings[1] == [b'/' + b'a' * 63 + b'x', b'/' + b'a' * 63 + b'y']
+
+
+@pytest.mark.skipif(find_executable('isoinfo') is None,
+                    reason='ISO verification tools not installed')
+@pytest.mark.parametrize('opts,kept', [
+    ([], False),
+    (['-R'], True),
+    (['-r'], True),
+    (['-J'], False),
+    (['-udf'], False),
+    (['-R', '-udf'], True),
+], ids=['iso9660', 'rock', 'rational-rock', 'joliet', 'udf', 'rock-udf'])
+def test_pycdlib_genisoimage_symlink(tmpdir, opts, kept):
+    # Like genisoimage, symlinks are only kept when Rock Ridge is in use.
+    indir = tmpdir.mkdir('input')
+    indir.join('target').write('target')
+    indir.join('link').mksymlinkto('target')
+    outfile = str(tmpdir.join('output.iso'))
+
+    def _do_test(binary):
+        out, err = run_process([binary, '-iso-level', '1'] + opts +
+                               ['-o', outfile, str(indir)])
+        assert (b'Symlink ' in out + err) != kept
+        assert (b'/LINK.;1' in _iso_listing(outfile)) == kept
+        if kept:
+            out, err = run_process(['isoinfo', '-R', '-l', '-i', outfile])
+            assert b'link -> target' in out
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)
+
+
+def test_pycdlib_genisoimage_ignored_symlink_name(tmpdir):
+    # An ignored symlink takes no name, so a file with the same name in a
+    # later input does not clash with it.
+    first = tmpdir.mkdir('first')
+    first.join('target').write('target')
+    first.join('f').mksymlinkto('target')
+    second = tmpdir.mkdir('second')
+    second.join('f').write('file')
+    outfile = str(tmpdir.join('output.iso'))
+
+    def _do_test(binary):
+        run_process([binary, '-iso-level', '1', '-J', '-o', outfile,
+                     str(first), str(second)])
+
+    _do_test('genisoimage')
+    _do_test(pycdlib_exe)

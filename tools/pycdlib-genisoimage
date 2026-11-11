@@ -754,6 +754,14 @@ def main():
             basename = os.path.basename(localpath)
             is_dir = not os.path.islink(localpath) and os.path.isdir(localpath)
 
+            # Like genisoimage, symlinks are only kept when Rock Ridge is in
+            # use.  An ignored symlink takes no name on the ISO, so it is
+            # skipped before checking for name clashes.
+            if os.path.islink(localpath) and not (args.rational_rock or args.rock):
+                print('Symlink %s ignored - continuing.' % (localpath),
+                      file=logfp)
+                continue
+
             # Like genisoimage, a directory that an earlier input already
             # added at this level is merged with this one.  Any other name
             # clash is fatal when an extension that records the original name
@@ -806,28 +814,22 @@ def main():
                 udf_path = build_udf_path(parent_level.udf_path, basename)
 
             if os.path.islink(localpath):
-                if (not args.rational_rock or args.rock) and (not args.udf or args.UDF):
-                    print('Symlink %s ignored - continuing.' % (localpath),
+                iso_path = build_iso_path(parent_level, basename,
+                                          args.iso_level, False)
+                if iso_path is None:
+                    print('Could not find free ISO9660 name for path %s; skipping' % (localpath),
                           file=logfp)
-                else:
-                    iso_path = build_iso_path(parent_level, basename,
-                                              args.iso_level, False)
-                    if iso_path is None:
-                        print('Could not find free ISO9660 name for path %s; skipping' % (localpath),
-                              file=logfp)
-                        continue
+                    continue
 
-                    rr_target = None
-                    if args.rational_rock or args.rock:
-                        rr_target = os.readlink(localpath)
+                rr_target = os.readlink(localpath)
 
-                    udf_target = None
-                    if args.udf or args.UDF:
-                        udf_target = os.readlink(localpath)
+                udf_target = None
+                if args.udf or args.UDF:
+                    udf_target = rr_target
 
-                    iso.add_symlink(iso_path, rr_symlink_name=rr_name, rr_path=rr_target,
-                                    udf_symlink_path=udf_path, udf_target=udf_target,
-                                    joliet_path=joliet_path)
+                iso.add_symlink(iso_path, rr_symlink_name=rr_name, rr_path=rr_target,
+                                udf_symlink_path=udf_path, udf_target=udf_target,
+                                joliet_path=joliet_path)
 
             elif is_dir:
                 if merge_level is not None:
