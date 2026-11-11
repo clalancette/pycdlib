@@ -40,6 +40,13 @@ if sys.platform == "win32":
 if TYPE_CHECKING:
     from typing import Any, BinaryIO, Generator, IO, List, Optional, Tuple  # noqa: F401
 
+# The maximum length of a Joliet name, in UCS-2 characters.  The Joliet
+# specification allows 64; the 'Joliet long' extension (genisoimage's
+# -joliet-long) allows 103, whose 206 bytes still fit in a single directory
+# record.
+_JOLIET_MAX_NAME_LENGTH = 64
+_JOLIET_LONG_MAX_NAME_LENGTH = 103
+
 
 def swab_32bit(x):
     # type: (int) -> int
@@ -437,6 +444,23 @@ def mangle_dir_for_iso9660(orig, iso_level):
     # sequence starting from 0.
 
     return truncate_basename(orig, iso_level, True)
+
+
+def joliet_max_name_length(joliet_long):
+    # type: (bool) -> int
+    """
+    A function to get the maximum length of a Joliet name, in UCS-2
+    characters.
+
+    Args:
+        joliet_long: Whether Joliet long names (genisoimage's -joliet-long) are
+            allowed.
+    Returns:
+        The maximum number of UCS-2 characters in a Joliet name.
+    """
+    if joliet_long:
+        return _JOLIET_LONG_MAX_NAME_LENGTH
+    return _JOLIET_MAX_NAME_LENGTH
 
 
 class Win32RawDevice:

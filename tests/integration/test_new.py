@@ -1331,6 +1331,58 @@ def test_new_duplicate_file_child(add_duplicate):
 
     iso.close()
 
+def test_new_joliet_long(tmpdir):
+    # With joliet_long, Joliet names of up to 103 characters are allowed.
+    iso = pycdlib.PyCdlib(joliet_long=True)
+    iso.new(joliet=3)
+
+    filename = 'f' * 103
+    dirname = 'd' * 103
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', joliet_path='/' + filename)
+    iso.add_directory('/DIR1', joliet_path='/' + dirname)
+    iso.add_hard_link(iso_old_path='/FOO.;1', joliet_new_path='/' + dirname + '/' + filename)
+
+    outfile = str(tmpdir.join('jolietlong.iso'))
+    iso.write(outfile)
+    iso.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.open(outfile)
+    for joliet_path in ('/' + filename, '/' + dirname + '/' + filename):
+        out = io.BytesIO()
+        iso.get_file_from_iso_fp(out, joliet_path=joliet_path)
+        assert(out.getvalue() == b'foo\n')
+    iso.close()
+
+@pytest.mark.parametrize('joliet_long,length', [(False, 64), (True, 103)])
+def test_new_joliet_long_name_too_long(joliet_long, length):
+    iso = pycdlib.PyCdlib(joliet_long=joliet_long)
+    iso.new(joliet=3)
+
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_directory('/DIR1', joliet_path='/' + 'a' * (length + 1))
+    assert(str(excinfo.value) == 'Joliet names can be a maximum of %d characters' % (length))
+
+    iso.close()
+
+def test_new_joliet_long_no_joliet():
+    # joliet_long has no effect on an ISO without Joliet.
+    iso = pycdlib.PyCdlib(joliet_long=True)
+    iso.new()
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1')
+    iso.close()
+
+def test_new_joliet_long_kept_across_close():
+    # joliet_long belongs to the object, so it still applies to the next ISO
+    # after close().
+    iso = pycdlib.PyCdlib(joliet_long=True)
+    iso.new(joliet=3)
+    iso.close()
+
+    iso.new(joliet=3)
+    iso.add_directory('/DIR1', joliet_path='/' + 'a' * 103)
+    iso.close()
+
 def test_new_eltorito_multi_boot():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()

@@ -626,7 +626,7 @@ class PyCdlib:
                  'udf_boots', 'udf_logical_volume_integrity_terminator',
                  'udf_root', 'udf_file_set', 'udf_file_set_terminator',
                  'logical_block_size', '_dir_alignment_blocks',
-                 '_udf_middle_anchor_blocks')
+                 '_udf_middle_anchor_blocks', '_joliet_long')
 
     def _initialize(self):
         # type: () -> None
@@ -1002,8 +1002,9 @@ class PyCdlib:
 
         # Joliet limits names to a number of 16-bit (UCS-2) characters, so
         # measure the UTF-16 encoding rather than the UTF-8 input.
-        if len(name) // 2 > 64:
-            raise pycdlibexception.PyCdlibInvalidInput('Joliet names can be a maximum of 64 characters')
+        max_length = utils.joliet_max_name_length(self._joliet_long)
+        if len(name) // 2 > max_length:
+            raise pycdlibexception.PyCdlibInvalidInput('Joliet names can be a maximum of %d characters' % (max_length))
         parent = self._find_joliet_record(b'/' + b'/'.join(splitpath))
 
         return (name, parent)
@@ -4308,9 +4309,25 @@ class PyCdlib:
 
     ########################### PUBLIC API #####################################
 
-    def __init__(self, always_consistent=False):
-        # type: (bool) -> None
+    def __init__(self, always_consistent=False, joliet_long=False):
+        # type: (bool, bool) -> None
+        """
+        Create a new PyCdlib object.  These settings apply to every ISO this
+        object creates or opens, and are kept across close().
+
+        Args:
+            always_consistent: Whether to recalculate the layout of the ISO
+                after every change, so that it is always consistent, rather
+                than only when it is written.  The default is False.
+            joliet_long: Whether to allow Joliet names of up to 103 characters
+                to be added, as genisoimage's -joliet-long does, rather than
+                the 64 that the Joliet specification allows.  Long names are
+                not readable by all operating systems.  This has no effect on
+                reading existing names, which may be long regardless, or on an
+                ISO without Joliet.  The default is False.
+        """
         self._always_consistent = always_consistent
+        self._joliet_long = joliet_long
         track_writes = os.getenv('PYCDLIB_TRACK_WRITES')
         self._track_writes = False
         if track_writes is not None:

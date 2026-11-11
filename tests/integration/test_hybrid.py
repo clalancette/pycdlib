@@ -3279,3 +3279,63 @@ def test_hybrid_rm_file_zero_byte_keeps_symlink(tmpdir):
     iso.rm_file(iso_path='/SYM.;1')
     assert _names(iso, iso_path='/') == [b'C.;1']
     iso.close()
+
+
+@pytest.mark.parametrize('use_fp', [False, True], ids=['open', 'open_fp'])
+def test_hybrid_joliet_long(tmpdir, use_fp):
+    # An ISO opened with joliet_long accepts new Joliet names of up to 103
+    # characters, while one opened without it keeps the 64 character limit.
+    indir = tmpdir.mkdir('jolietlong')
+    outfile = str(indir) + '.iso'
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+    iso.write(outfile)
+    iso.close()
+
+    def _open(iso):
+        if use_fp:
+            fp = open(outfile, 'rb')
+            iso.open_fp(fp)
+            return fp
+        iso.open(outfile)
+        return None
+
+    iso = pycdlib.PyCdlib()
+    fp = _open(iso)
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        iso.add_directory('/DIR1', joliet_path='/' + 'a' * 65)
+    assert(str(excinfo.value) == 'Joliet names can be a maximum of 64 characters')
+    iso.close()
+    if fp is not None:
+        fp.close()
+
+    iso = pycdlib.PyCdlib(joliet_long=True)
+    fp = _open(iso)
+    name = 'f' * 103
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', joliet_path='/' + name)
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+    if fp is not None:
+        fp.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(out)
+    data = io.BytesIO()
+    iso.get_file_from_iso_fp(data, joliet_path='/' + name)
+    assert(data.getvalue() == b'foo\n')
+    iso.close()
+
+def test_hybrid_joliet_long_no_joliet(tmpdir):
+    # joliet_long has no effect when the opened ISO has no Joliet tree.
+    indir = tmpdir.mkdir('jolietlongnojoliet')
+    outfile = str(indir) + '.iso'
+    iso = pycdlib.PyCdlib()
+    iso.new()
+    iso.write(outfile)
+    iso.close()
+
+    iso = pycdlib.PyCdlib(joliet_long=True)
+    iso.open(outfile)
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1')
+    iso.close()
