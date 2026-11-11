@@ -998,13 +998,15 @@ class PyCdlib:
         """
 
         splitpath = utils.split_path(joliet_path)
-        name = splitpath.pop()
+        name = splitpath.pop().decode('utf-8').encode('utf-16_be')
 
-        if len(name) > 64:
+        # Joliet limits names to a number of 16-bit (UCS-2) characters, so
+        # measure the UTF-16 encoding rather than the UTF-8 input.
+        if len(name) // 2 > 64:
             raise pycdlibexception.PyCdlibInvalidInput('Joliet names can be a maximum of 64 characters')
         parent = self._find_joliet_record(b'/' + b'/'.join(splitpath))
 
-        return (name.decode('utf-8').encode('utf-16_be'), parent)
+        return (name, parent)
 
     def _new_udf_file_entry(self, parent, creation_time):
         # type: (Optional[udfmod.UDFFileEntry], Optional[float]) -> udfmod.UDFFileEntry
