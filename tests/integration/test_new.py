@@ -1718,6 +1718,36 @@ def test_new_add_dir_joliet_name_too_long():
 
     iso.close()
 
+def test_new_joliet_name_length_counts_ucs2_characters(tmpdir):
+    # The Joliet name limit is in UCS-2 characters, not UTF-8 bytes, so 64
+    # two-byte UTF-8 characters fit, while 65 do not.  A character outside the
+    # BMP takes two UCS-2 units.
+    for too_long in ('é' * 65, 'é' * 63 + '\U0001f600'):
+        iso = pycdlib.PyCdlib()
+        iso.new(joliet=3)
+        with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+            iso.add_fp(io.BytesIO(b'bar\n'), 4, '/BAR.;1', joliet_path='/' + too_long)
+        assert(str(excinfo.value) == 'Joliet names can be a maximum of 64 characters')
+        iso.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3)
+
+    name = 'é' * 64
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', joliet_path='/' + name)
+    iso.add_directory('/DIR1', joliet_path='/' + 'é' * 63 + 'd')
+
+    outfile = str(tmpdir.join('ucs2.iso'))
+    iso.write(outfile)
+    iso.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.open(outfile)
+    out = io.BytesIO()
+    iso.get_file_from_iso_fp(out, joliet_path='/' + name)
+    assert(out.getvalue() == b'foo\n')
+    iso.close()
+
 def test_new_close_not_initialized():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
