@@ -878,6 +878,39 @@ class DirectoryRecord:
 
         return overflowed
 
+    def child_name_in_use(self, file_ident):
+        # type: (bytes) -> bool
+        """
+        Determine whether a new child with the given file identifier would be
+        rejected by add_child() as a duplicate of an existing child.
+
+        Args:
+            file_ident: The file identifier of the prospective child.
+        Returns:
+            True if the name is already in use, False otherwise.
+        """
+        if self.rock_ridge is not None and self.file_identifier() == b'RR_MOVED':
+            return False
+
+        # The children are sorted by _sort_key, which for a real name is the
+        # file identifier prefixed by 0xff; see __lt__.
+        key = b'\xff' + file_ident
+        lo = 0
+        hi = len(self.children)
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if self.children[mid]._sort_key < key:  # pylint: disable=protected-access
+                lo = mid + 1
+            else:
+                hi = mid
+
+        while lo < len(self.children) and self.children[lo].file_ident == file_ident:
+            if not self.children[lo].is_associated_file():
+                return True
+            lo += 1
+
+        return False
+
     def add_child(self, child, logical_block_size, allow_duplicate=False):
         # type: (DirectoryRecord, int, bool) -> bool
         """

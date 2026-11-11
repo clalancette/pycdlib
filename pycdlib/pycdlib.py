@@ -2349,6 +2349,51 @@ class PyCdlib:
 
         return tmp_path
 
+    def _check_new_paths(self, iso_path, joliet_path, udf_path):
+        # type: (Optional[str], Optional[str], Optional[str]) -> None
+        """
+        An internal method to check, before an add changes anything, that each
+        of the given new paths can be added: that its parent exists and is a
+        directory, and that its name is valid and not already in use.  An add
+        that creates entries in more than one of the ISO9660, Joliet, and UDF
+        trees calls this first, so that a failure for one tree cannot leave
+        the entries already created in another tree behind.
+
+        Args:
+            iso_path: The new ISO9660 path, or None (or empty) for none.
+            joliet_path: The new Joliet path, or None (or empty) for none.
+            udf_path: The new UDF path, or None (or empty) for none.
+        Returns:
+            Nothing.
+        """
+        if iso_path:
+            (name, parent) = self._iso_name_and_parent_from_path(utils.normpath(iso_path))
+            if not parent.is_dir():
+                raise pycdlibexception.PyCdlibInvalidInput('Trying to add a child to a record that is not a directory')
+            if parent.child_name_in_use(name):
+                raise pycdlibexception.PyCdlibInvalidInput('Failed adding duplicate name to parent')
+
+        if joliet_path:
+            (name, parent) = self._joliet_name_and_parent_from_path(self._normalize_joliet_path(joliet_path))
+            if not parent.is_dir():
+                raise pycdlibexception.PyCdlibInvalidInput('Trying to add a child to a record that is not a directory')
+            if parent.child_name_in_use(name):
+                raise pycdlibexception.PyCdlibInvalidInput('Failed adding duplicate name to parent')
+
+        if udf_path:
+            if self.udf_root is None:
+                raise pycdlibexception.PyCdlibInvalidInput('Can only specify a UDF path for a UDF ISO')
+            (name, udf_parent) = self._udf_name_and_parent_from_path(utils.normpath(udf_path))
+            if not udf_parent.is_dir():
+                raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF File Identifier to a directory')
+            # Building a File Identifier validates the name and gives the key
+            # that the parent stores its File Identifiers under, without
+            # changing the parent.
+            file_ident = udfmod.UDFFileIdentifierDescriptor()
+            file_ident.new(False, False, name, udf_parent)
+            if file_ident.fi in udf_parent.fi_descs:
+                raise pycdlibexception.PyCdlibInvalidInput('Failed adding duplicate name to parent')
+
     def _link_eltorito(self, extent_to_inode):
         # type: (Dict[int, inode.Inode]) -> None
         """
@@ -3813,6 +3858,8 @@ class PyCdlib:
 
         if length > (2**32) - 1 and self.interchange_level < 3:
             raise pycdlibexception.PyCdlibInvalidInput('File sizes for interchange level < 3 must be less than 4GiB')
+
+        self._check_new_paths(iso_path, joliet_path, udf_path)
 
         # Single Inode covering the whole file.  Every view (ISO9660 chunks,
         # Joliet chunks, and UDF) links to this same Inode; see
@@ -5678,6 +5725,8 @@ class PyCdlib:
         if file_mode is None:
             file_mode = 0o040555
 
+        self._check_new_paths(iso_path, joliet_path, udf_path)
+
         num_bytes_to_add = 0
         if iso_path is not None:
             iso_path_bytes = utils.normpath(iso_path)
@@ -6082,6 +6131,13 @@ class PyCdlib:
             if udf_bootcatfile:
                 raise pycdlibexception.PyCdlibInvalidInput('A UDF path must not be passed when adding El Torito to a non-UDF ISO')
 
+        # The Boot Catalog file is only added along with a new catalog, after
+        # the boot file and Boot Record have been changed, so check its paths
+        # first.
+        if self.eltorito_boot_catalog is None:
+            self._check_new_paths(bootcatfile, joliet_bootcatfile,
+                                  udf_bootcatfile)
+
         # Step 1.
         boot_dirrecord = self._find_iso_record(bootfile_path_bytes)
 
@@ -6343,6 +6399,8 @@ class PyCdlib:
         if joliet_path is not None and self.joliet_vd is None:
             # Rule 9
             raise pycdlibexception.PyCdlibInvalidInput('A Joliet path can only be specified for a Joliet ISO')
+
+        self._check_new_paths(symlink_path, joliet_path, udf_symlink_path)
 
         # Checks complete, we can go on to make the symlink.
 

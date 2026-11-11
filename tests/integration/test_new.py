@@ -1425,6 +1425,88 @@ def test_new_duplicate_udf_child(tmpdir, add_duplicate):
     assert(out.getvalue() == b'first')
     iso.close()
 
+def _no_setup(iso):
+    pass
+
+def _setup_deep_dirs(iso):
+    path = ''
+    for i in range(1, 8):
+        path += '/D%d' % (i)
+        iso.add_directory(path, rr_name='d%d' % (i), joliet_path=path.lower(), udf_path=path.lower())
+    iso.add_fp(io.BytesIO(b'x'), 1, path + '/D8.;1', rr_name='d8file', joliet_path=path.lower() + '/d8file', udf_path=path.lower() + '/d8file')
+
+def _setup_eltorito(iso):
+    iso.add_fp(io.BytesIO(b'boot'), 4, '/BOOT.;1', rr_name='boot', joliet_path='/boot', udf_path='/boot')
+    iso.add_fp(io.BytesIO(b'cat'), 3, '/CAT.;1', rr_name='cat', joliet_path='/boot.cat', udf_path='/cat')
+
+_DEEP = '/D1/D2/D3/D4/D5/D6/D7'
+
+@pytest.mark.parametrize('setup,failing_add', [
+    (_no_setup, lambda iso: iso.add_fp(io.BytesIO(b'x'), 1, '/NEW.;1', rr_name='new', joliet_path='/' + 'n' * 65, udf_path='/new')),
+    (_no_setup, lambda iso: iso.add_fp(io.BytesIO(b'x'), 1, '/NEW.;1', rr_name='new', joliet_path='/nodir/new', udf_path='/new')),
+    (_no_setup, lambda iso: iso.add_fp(io.BytesIO(b'x'), 1, '/NEW.;1', rr_name='new', joliet_path='/foo/new', udf_path='/new')),
+    (_no_setup, lambda iso: iso.add_fp(io.BytesIO(b'x'), 1, '/NEW.;1', rr_name='new', joliet_path='/new', udf_path='/nodir/new')),
+    (_no_setup, lambda iso: iso.add_fp(io.BytesIO(b'x'), 1, '/NEW.;1', rr_name='new', joliet_path='/new', udf_path='/foo')),
+    (_no_setup, lambda iso: iso.add_fp(io.BytesIO(b'x'), 1, '/NEW.;1', rr_name='new', joliet_path='/new', udf_path='/' + 'n' * 254)),
+    (_no_setup, lambda iso: iso.add_directory('/NEWDIR', rr_name='newdir', joliet_path='/foo', udf_path='/newdir')),
+    (_no_setup, lambda iso: iso.add_directory('/NEWDIR', rr_name='newdir', joliet_path='/newdir', udf_path='/nodir/newdir')),
+    # A directory at depth 8 is relocated under RR_MOVED; a later failure
+    # must not leave RR_MOVED or the relocation placeholder behind.
+    (_setup_deep_dirs, lambda iso: iso.add_directory(_DEEP + '/D8', rr_name='d8', joliet_path=_DEEP.lower() + '/d8file', udf_path=_DEEP.lower() + '/d8')),
+    (_no_setup, lambda iso: iso.add_symlink('/LINK.;1', 'link', 'foo', joliet_path='/' + 'n' * 65, udf_symlink_path='/link', udf_target='foo')),
+    (_no_setup, lambda iso: iso.add_symlink('/LINK.;1', 'link', 'foo', joliet_path='/link', udf_symlink_path='/foo', udf_target='foo')),
+    (_setup_eltorito, lambda iso: iso.add_eltorito('/BOOT.;1')),
+], ids=['fp-joliet-too-long', 'fp-joliet-no-parent', 'fp-joliet-parent-file',
+        'fp-udf-no-parent', 'fp-udf-duplicate', 'fp-udf-too-long',
+        'dir-joliet-duplicate', 'dir-udf-no-parent', 'dir-relocated',
+        'symlink-joliet-too-long', 'symlink-udf-duplicate',
+        'eltorito-joliet-catalog-duplicate'])
+def test_new_failed_add_is_atomic(setup, failing_add):
+    # An add that fails for one of the ISO9660, Joliet, or UDF trees must
+    # not leave the entries for the other trees behind, and the ISO must
+    # still be usable afterwards.
+    iso = pycdlib.PyCdlib()
+    iso.new(interchange_level=3, joliet=3, rock_ridge='1.09', udf='2.60')
+    iso.add_fp(io.BytesIO(b'foo\n'), 4, '/FOO.;1', rr_name='foo', joliet_path='/foo', udf_path='/foo')
+    setup(iso)
+
+    def _tree(key, path):
+        names = []
+        for child in iso.list_children(**{key: path}):
+            if child is None or child.is_dot() or child.is_dotdot():
+                continue
+            ident = child.file_identifier()
+            names.append(ident)
+            if child.is_dir():
+                if key == 'joliet_path':
+                    ident = ident.decode('utf-16_be').encode('utf-8')
+                names.extend(_tree(key, path.rstrip('/') + '/' + ident.decode('utf-8')))
+        return names
+
+    def _snapshot():
+        return ([_tree(key, '/') for key in ('iso_path', 'joliet_path', 'udf_path')],
+                len(iso.brs), iso.eltorito_boot_catalog is None,
+                len(iso.inodes))
+
+    before = _snapshot()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
+        failing_add(iso)
+    assert(_snapshot() == before)
+
+    # The ISO must still be writable after another, valid, add.
+    iso.add_fp(io.BytesIO(b'bar\n'), 4, '/BAR.;1', rr_name='bar', joliet_path='/bar', udf_path='/bar')
+    out = io.BytesIO()
+    iso.write_fp(out)
+    iso.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.open_fp(out)
+    for kwargs in ({'iso_path': '/BAR.;1'}, {'joliet_path': '/bar'}, {'udf_path': '/bar'}):
+        data = io.BytesIO()
+        iso.get_file_from_iso_fp(data, **kwargs)
+        assert(data.getvalue() == b'bar\n')
+    iso.close()
+
 def test_new_eltorito_multi_boot():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()
