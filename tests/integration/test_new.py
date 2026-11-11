@@ -1383,6 +1383,48 @@ def test_new_joliet_long_kept_across_close():
     iso.add_directory('/DIR1', joliet_path='/' + 'a' * 103)
     iso.close()
 
+def _udf_dup_add_fp(iso):
+    iso.add_fp(io.BytesIO(b'second'), 6, udf_path='/foo')
+
+def _udf_dup_hard_link(iso):
+    iso.add_fp(io.BytesIO(b'second'), 6, udf_path='/bar')
+    iso.add_hard_link(udf_old_path='/bar', udf_new_path='/foo')
+
+def _udf_dup_directory(iso):
+    iso.add_directory(udf_path='/foo')
+
+def _udf_dup_symlink(iso):
+    iso.add_symlink(udf_symlink_path='/foo', udf_target='target')
+
+@pytest.mark.parametrize('add_duplicate', [
+    _udf_dup_add_fp,
+    _udf_dup_hard_link,
+    _udf_dup_directory,
+    _udf_dup_symlink,
+])
+def test_new_duplicate_udf_child(tmpdir, add_duplicate):
+    # A UDF name that is already in use must be rejected, rather than
+    # silently replacing the existing File Identifier and producing an ISO
+    # that cannot be parsed.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+
+    iso.add_fp(io.BytesIO(b'first'), 5, udf_path='/foo')
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput) as excinfo:
+        add_duplicate(iso)
+    assert(str(excinfo.value) == 'Failed adding duplicate name to parent')
+
+    outfile = str(tmpdir.join('udfdup.iso'))
+    iso.write(outfile)
+    iso.close()
+
+    iso = pycdlib.PyCdlib()
+    iso.open(outfile)
+    out = io.BytesIO()
+    iso.get_file_from_iso_fp(out, udf_path='/foo')
+    assert(out.getvalue() == b'first')
+    iso.close()
+
 def test_new_eltorito_multi_boot():
     # Create a new ISO.
     iso = pycdlib.PyCdlib()

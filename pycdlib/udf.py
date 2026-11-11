@@ -3911,6 +3911,11 @@ class UDFFileEntry:
         if self.icb_tag.file_type != 4:
             raise pycdlibexception.PyCdlibInvalidInput('Can only add a UDF File Identifier to a directory')
 
+        # The File Identifiers are keyed by name, so a duplicate would replace
+        # the existing one while its space was still being accounted for.
+        if new_fi_desc.fi in self.fi_descs:
+            raise pycdlibexception.PyCdlibInvalidInput('Failed adding duplicate name to parent')
+
         self.fi_descs[new_fi_desc.fi] = new_fi_desc
 
         num_bytes_to_add = UDFFileIdentifierDescriptor.length(len(new_fi_desc.fi))
