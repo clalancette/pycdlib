@@ -155,11 +155,25 @@ def parse_file_list(thelist):
                 yield line.rstrip()
 
 
-# The maximum length of a Joliet name, in characters.
-JOLIET_MAX_NAME_LENGTH = 64
+def truncate_joliet_name(name, max_length):
+    """
+    A function to truncate a name to the maximum length of a Joliet name.  Like
+    genisoimage, the length is counted in UCS-2 characters, and a character
+    outside the BMP that would be split by the truncation is dropped.
+
+    Parameters:
+     name - The name to truncate.
+     max_length - The maximum number of UCS-2 characters to keep.
+    Returns:
+     The truncated name.
+    """
+    encoded = name.encode('utf-16_be')
+    if len(encoded) <= max_length * 2:
+        return name
+    return encoded[:max_length * 2].decode('utf-16_be', 'ignore')
 
 
-def build_joliet_path(root, name):
+def build_joliet_path(root, name, max_length):
     """
     A function to build a complete, valid Joliet path based on a root directory
     and a name.
@@ -167,6 +181,7 @@ def build_joliet_path(root, name):
     Parameters:
      root - The root directory name
      name - The name for the Joliet entry
+     max_length - The maximum length of each Joliet name, in UCS-2 characters
     Returns:
      A valid, absolute Joliet filename.
     """
@@ -177,9 +192,9 @@ def build_joliet_path(root, name):
         if not intdir:
             continue
 
-        intermediate += '/' + intdir[:JOLIET_MAX_NAME_LENGTH]
+        intermediate += '/' + truncate_joliet_name(intdir, max_length)
 
-    return intermediate + '/' + name[:JOLIET_MAX_NAME_LENGTH]
+    return intermediate + '/' + truncate_joliet_name(name, max_length)
 
 
 def build_udf_path(root, name):
@@ -686,6 +701,8 @@ def main():
         if args.ucs_level is not None:
             joliet_level = int(args.ucs_level)
 
+    joliet_max_length = pycdlib.utils.joliet_max_name_length(args.joliet_long)
+
     # The El Torito boot catalog and boot images are named by paths relative
     # to the root of the ISO, so their ISO paths can be determined up front.
     # The catalog's parent is also kept as a tuple of source components so
@@ -714,7 +731,7 @@ def main():
                                                                    args.iso_level) + '/' + filename + tail
 
     # Create a new PyCdlib object.
-    iso = pycdlib.PyCdlib()
+    iso = pycdlib.PyCdlib(joliet_long=args.joliet_long)
 
     if args.hide_rr_moved:
         iso.set_relocated_name('_RR_MOVE', '.rr_moved')
@@ -792,7 +809,8 @@ def main():
                 # Joliet names are truncated, so different source names can
                 # still clash there; genisoimage treats that as fatal too.
                 if args.joliet and merge_level is None:
-                    joliet_name = basename[:JOLIET_MAX_NAME_LENGTH]
+                    joliet_name = truncate_joliet_name(basename,
+                                                       joliet_max_length)
                     previous_path = parent_level.joliet_children.get(joliet_name)
                     if previous_path is not None:
                         print('genisoimage: Error: %s and %s have the same Joliet name' % (previous_path, localpath),
@@ -807,7 +825,7 @@ def main():
             joliet_path = None
             if args.joliet:
                 joliet_path = build_joliet_path(parent_level.joliet_path,
-                                                basename)
+                                                basename, joliet_max_length)
 
             udf_path = None
             if args.udf or args.UDF:
