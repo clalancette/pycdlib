@@ -210,6 +210,12 @@ def test_mangle_file_for_iso9660_isolevel4_with_ext():
 def test_mangle_file_for_iso9660_isolevel3_with_empty_ext():
     assert(pycdlib.utils.mangle_file_for_iso9660('foo.', 3) == ('FOO_', ';1'))
 
+def test_joliet_max_name_length():
+    assert(pycdlib.utils.joliet_max_name_length(False) == 64)
+
+def test_joliet_max_name_length_long():
+    assert(pycdlib.utils.joliet_max_name_length(True) == 103)
+
 def test_file_object_supports_binary_real_file(tmpdir):
     testout = tmpdir.join('foo')
     with open(str(testout), 'wb') as outfp:
