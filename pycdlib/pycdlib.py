@@ -6150,15 +6150,8 @@ class PyCdlib:
         if boot_dirrecord.inode is None:
             raise pycdlibexception.PyCdlibInternalError('Tried to add an empty boot dirrecord inode to the El Torito boot catalog')
 
-        if boot_info_table:
-            orig_len = boot_dirrecord.get_data_length()
-            bi_table = eltorito.EltoritoBootInfoTable()
-            with inode.InodeOpenData(boot_dirrecord.inode, self.logical_block_size) as (data_fp, data_len):
-                bi_table.new(self.pvd, boot_dirrecord.inode, orig_len,
-                             self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
-
-            boot_dirrecord.inode.add_boot_info_table(bi_table)
-
+        # The MBR checks can fail, so do them before the boot info table
+        # changes the boot file.
         system_type = 0
         if media_name == 'hdemul':
             with inode.InodeOpenData(boot_dirrecord.inode, self.logical_block_size) as (data_fp, data_len):
@@ -6167,6 +6160,15 @@ class PyCdlib:
                     raise pycdlibexception.PyCdlibInvalidInput('Could not read entire HD MBR, must be at least 512 bytes')
                 system_type = eltorito.hdmbrcheck(disk_mbr, sector_count,
                                                   bootable)
+
+        if boot_info_table:
+            orig_len = boot_dirrecord.get_data_length()
+            bi_table = eltorito.EltoritoBootInfoTable()
+            with inode.InodeOpenData(boot_dirrecord.inode, self.logical_block_size) as (data_fp, data_len):
+                bi_table.new(self.pvd, boot_dirrecord.inode, orig_len,
+                             self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
+
+            boot_dirrecord.inode.add_boot_info_table(bi_table)
 
         num_bytes_to_add = 0
         if self.eltorito_boot_catalog is not None:
