@@ -1439,6 +1439,10 @@ def _setup_eltorito(iso):
     iso.add_fp(io.BytesIO(b'boot'), 4, '/BOOT.;1', rr_name='boot', joliet_path='/boot', udf_path='/boot')
     iso.add_fp(io.BytesIO(b'cat'), 3, '/CAT.;1', rr_name='cat', joliet_path='/boot.cat', udf_path='/cat')
 
+def _setup_eltorito_existing(iso):
+    _setup_eltorito(iso)
+    iso.add_eltorito('/BOOT.;1', joliet_bootcatfile='/newcat', udf_bootcatfile='/newcat')
+
 _DEEP = '/D1/D2/D3/D4/D5/D6/D7'
 
 @pytest.mark.parametrize('setup,failing_add', [
@@ -1456,11 +1460,16 @@ _DEEP = '/D1/D2/D3/D4/D5/D6/D7'
     (_no_setup, lambda iso: iso.add_symlink('/LINK.;1', 'link', 'foo', joliet_path='/' + 'n' * 65, udf_symlink_path='/link', udf_target='foo')),
     (_no_setup, lambda iso: iso.add_symlink('/LINK.;1', 'link', 'foo', joliet_path='/link', udf_symlink_path='/foo', udf_target='foo')),
     (_setup_eltorito, lambda iso: iso.add_eltorito('/BOOT.;1')),
+    # The boot file is too short to hold an MBR; the boot info table must not
+    # be left attached to it.
+    (_setup_eltorito, lambda iso: iso.add_eltorito('/BOOT.;1', joliet_bootcatfile='/newcat', udf_bootcatfile='/newcat', media_name='hdemul', boot_info_table=True)),
+    (_setup_eltorito_existing, lambda iso: iso.add_eltorito('/CAT.;1', media_name='hdemul', boot_info_table=True)),
 ], ids=['fp-joliet-too-long', 'fp-joliet-no-parent', 'fp-joliet-parent-file',
         'fp-udf-no-parent', 'fp-udf-duplicate', 'fp-udf-too-long',
         'dir-joliet-duplicate', 'dir-udf-no-parent', 'dir-relocated',
         'symlink-joliet-too-long', 'symlink-udf-duplicate',
-        'eltorito-joliet-catalog-duplicate'])
+        'eltorito-joliet-catalog-duplicate', 'eltorito-short-mbr',
+        'eltorito-section-short-mbr'])
 def test_new_failed_add_is_atomic(setup, failing_add):
     # An add that fails for one of the ISO9660, Joliet, or UDF trees must
     # not leave the entries for the other trees behind, and the ISO must
@@ -1486,7 +1495,8 @@ def test_new_failed_add_is_atomic(setup, failing_add):
     def _snapshot():
         return ([_tree(key, '/') for key in ('iso_path', 'joliet_path', 'udf_path')],
                 len(iso.brs), iso.eltorito_boot_catalog is None,
-                len(iso.inodes))
+                len(iso.inodes),
+                [ino.boot_info_table is None for ino in iso.inodes])
 
     before = _snapshot()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):
