@@ -1464,12 +1464,21 @@ _DEEP = '/D1/D2/D3/D4/D5/D6/D7'
     # be left attached to it.
     (_setup_eltorito, lambda iso: iso.add_eltorito('/BOOT.;1', joliet_bootcatfile='/newcat', udf_bootcatfile='/newcat', media_name='hdemul', boot_info_table=True)),
     (_setup_eltorito_existing, lambda iso: iso.add_eltorito('/CAT.;1', media_name='hdemul', boot_info_table=True)),
+    # Bad input that the Boot Catalog rejects must not leave a Boot Record,
+    # a half-built Boot Catalog, or a boot info table behind.
+    (_setup_eltorito, lambda iso: iso.add_eltorito('/BOOT.;1', joliet_bootcatfile='/newcat', udf_bootcatfile='/newcat', media_name='bogus', boot_info_table=True)),
+    (_setup_eltorito, lambda iso: iso.add_eltorito('/BOOT.;1', joliet_bootcatfile='/newcat', udf_bootcatfile='/newcat', media_name='floppy', boot_info_table=True)),
+    (_setup_eltorito, lambda iso: iso.add_eltorito('/BOOT.;1', joliet_bootcatfile='/newcat', udf_bootcatfile='/newcat', platform_id=3, boot_info_table=True)),
+    (_setup_eltorito_existing, lambda iso: iso.add_eltorito('/CAT.;1', media_name='bogus', boot_info_table=True)),
+    (_setup_eltorito_existing, lambda iso: iso.add_eltorito('/CAT.;1', media_name='floppy', boot_info_table=True)),
 ], ids=['fp-joliet-too-long', 'fp-joliet-no-parent', 'fp-joliet-parent-file',
         'fp-udf-no-parent', 'fp-udf-duplicate', 'fp-udf-too-long',
         'dir-joliet-duplicate', 'dir-udf-no-parent', 'dir-relocated',
         'symlink-joliet-too-long', 'symlink-udf-duplicate',
         'eltorito-joliet-catalog-duplicate', 'eltorito-short-mbr',
-        'eltorito-section-short-mbr'])
+        'eltorito-section-short-mbr', 'eltorito-bad-media',
+        'eltorito-bad-floppy-size', 'eltorito-bad-platform',
+        'eltorito-section-bad-media', 'eltorito-section-bad-floppy-size'])
 def test_new_failed_add_is_atomic(setup, failing_add):
     # An add that fails for one of the ISO9660, Joliet, or UDF trees must
     # not leave the entries for the other trees behind, and the ISO must
@@ -1496,7 +1505,8 @@ def test_new_failed_add_is_atomic(setup, failing_add):
         return ([_tree(key, '/') for key in ('iso_path', 'joliet_path', 'udf_path')],
                 len(iso.brs), iso.eltorito_boot_catalog is None,
                 len(iso.inodes),
-                [ino.boot_info_table is None for ino in iso.inodes])
+                [(ino.boot_info_table is None, len(ino.linked_records))
+                 for ino in iso.inodes])
 
     before = _snapshot()
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidInput):

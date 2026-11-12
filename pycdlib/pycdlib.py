@@ -6150,8 +6150,10 @@ class PyCdlib:
         if boot_dirrecord.inode is None:
             raise pycdlibexception.PyCdlibInternalError('Tried to add an empty boot dirrecord inode to the El Torito boot catalog')
 
-        # The MBR checks can fail, so do them before the boot info table
-        # changes the boot file.
+        # Everything that can fail with bad input (the MBR checks, and the
+        # media and platform checks in the Boot Catalog) has to happen before
+        # anything about the ISO changes, so that a failed add leaves the ISO
+        # as it was.
         system_type = 0
         if media_name == 'hdemul':
             with inode.InodeOpenData(boot_dirrecord.inode, self.logical_block_size) as (data_fp, data_len):
@@ -6161,6 +6163,7 @@ class PyCdlib:
                 system_type = eltorito.hdmbrcheck(disk_mbr, sector_count,
                                                   bootable)
 
+        bi_table = None
         if boot_info_table:
             orig_len = boot_dirrecord.get_data_length()
             bi_table = eltorito.EltoritoBootInfoTable()
@@ -6168,11 +6171,10 @@ class PyCdlib:
                 bi_table.new(self.pvd, boot_dirrecord.inode, orig_len,
                              self._calculate_eltorito_boot_info_table_csum(data_fp, data_len))
 
-            boot_dirrecord.inode.add_boot_info_table(bi_table)
-
         num_bytes_to_add = 0
         if self.eltorito_boot_catalog is not None:
             # An El Torito Boot Catalog already exists; add a new section.
+            # add_section() checks its input before changing anything.
             self.eltorito_boot_catalog.add_section(boot_dirrecord.inode,
                                                    sector_count, boot_load_seg,
                                                    media_name, system_type, efi,
@@ -6196,18 +6198,20 @@ class PyCdlib:
             # Step 2.
             br = headervd.BootRecord()
             br.new(b'EL TORITO SPECIFICATION')
+
+            # Step 3.  Build the Boot Catalog before adding it or the Boot
+            # Record to the ISO, since new() can fail on bad input.
+            boot_catalog = eltorito.EltoritoBootCatalog(br)
+            boot_catalog.new(br, boot_dirrecord.inode, sector_count,
+                             boot_load_seg, media_name, system_type,
+                             platform_id, bootable)
+
             self.brs.append(br)
             # On a UDF ISO, adding a new Boot Record doesn't actually increase
             # the size, since there are a bunch of gaps at the beginning.
             if not self._has_udf:
                 num_bytes_to_add += _LOGICAL_SECTOR_SIZE
-
-            # Step 3.
-            self.eltorito_boot_catalog = eltorito.EltoritoBootCatalog(br)
-            self.eltorito_boot_catalog.new(br, boot_dirrecord.inode,
-                                           sector_count, boot_load_seg,
-                                           media_name, system_type, platform_id,
-                                           bootable)
+            self.eltorito_boot_catalog = boot_catalog
 
             # Step 4.
             rrname = ''
@@ -6221,6 +6225,9 @@ class PyCdlib:
                                              False, bootcatfile, rrname,
                                              joliet_bootcatfile,
                                              udf_bootcatfile, None, True, None)
+
+        if bi_table is not None:
+            boot_dirrecord.inode.add_boot_info_table(bi_table)
 
         self._finish_add(0, num_bytes_to_add)
 
