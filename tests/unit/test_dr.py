@@ -480,11 +480,11 @@ def test_dr_add_child_multi_extent_chain():
         chunks.append(chunk)
 
     # The first chunk uses add_child (raises on duplicate); subsequent chunks
-    # need allow_duplicate=True, mirroring the parser's behavior for very
-    # large files.
+    # use add_continuation, mirroring the parser's behavior for very large
+    # files.
     root_dr.add_child(chunks[0], 2048)
     for chunk in chunks[1:]:
-        root_dr.add_child(chunk, 2048, True)
+        root_dr.add_continuation(chunk, 2048)
 
     # Children must remain in insertion order.
     big_children = [c for c in root_dr.children if c.file_ident == b'BIG.TAR;1']

@@ -911,17 +911,16 @@ class DirectoryRecord:
 
         return False
 
-    def add_child(self, child, logical_block_size, allow_duplicate=False):
-        # type: (DirectoryRecord, int, bool) -> bool
+    def add_child(self, child, logical_block_size):
+        # type: (DirectoryRecord, int) -> bool
         """
-        Add a new child to this directory record.
+        Add a new child to this directory record.  A child whose name is
+        already in use raises PyCdlibInvalidInput.
 
         Args:
             child: The child directory record object to add.
             logical_block_size: The size of a logical block for this volume
                 descriptor.
-            allow_duplicate: Whether to allow duplicate names, as there are
-                situations where duplicate children are allowed.
         Returns:
             True if adding this child caused the directory to overflow into another
             extent, False otherwise.
@@ -929,26 +928,67 @@ class DirectoryRecord:
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
-        return self._add_child(child, logical_block_size, allow_duplicate, True)
+        return self._add_child(child, logical_block_size, False, True)
 
-    def track_child(self, child, logical_block_size, allow_duplicate=False):
-        # type: (DirectoryRecord, int, bool) -> None
+    def add_continuation(self, child, logical_block_size):
+        # type: (DirectoryRecord, int) -> bool
         """
-        Track an existing child of this directory record.
+        Add the directory record for the second or later extent of a
+        multi-extent file to this directory record.  The child has the same
+        name as the file's previous directory record, and is linked to it as
+        its continuation; if there is no child with that name, it is added as
+        an ordinary child.
 
         Args:
             child: The child directory record object to add.
             logical_block_size: The size of a logical block for this volume
                 descriptor.
-            allow_duplicate: Whether to allow duplicate names, as there are
-                situations where duplicate children are allowed.
+        Returns:
+            True if adding this child caused the directory to overflow into another
+            extent, False otherwise.
+        """
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
+
+        return self._add_child(child, logical_block_size, True, True)
+
+    def track_child(self, child, logical_block_size):
+        # type: (DirectoryRecord, int) -> None
+        """
+        Track an existing child of this directory record.  A child whose name
+        is already in use raises PyCdlibInvalidInput.
+
+        Args:
+            child: The child directory record object to add.
+            logical_block_size: The size of a logical block for this volume
+                descriptor.
         Returns:
             Nothing.
         """
         if not self.initialized:
             raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
 
-        self._add_child(child, logical_block_size, allow_duplicate, False)
+        self._add_child(child, logical_block_size, False, False)
+
+    def track_continuation(self, child, logical_block_size):
+        # type: (DirectoryRecord, int) -> None
+        """
+        Track the existing directory record for the second or later extent of
+        a multi-extent file.  The child has the same name as the file's
+        previous directory record, and is linked to it as its continuation; if
+        there is no child with that name, it is tracked as an ordinary child.
+
+        Args:
+            child: The child directory record object to add.
+            logical_block_size: The size of a logical block for this volume
+                descriptor.
+        Returns:
+            Nothing.
+        """
+        if not self.initialized:
+            raise pycdlibexception.PyCdlibInternalError('Directory Record not initialized')
+
+        self._add_child(child, logical_block_size, True, False)
 
     def remove_child(self, child, index, logical_block_size):
         # type: (DirectoryRecord, int, int) -> bool

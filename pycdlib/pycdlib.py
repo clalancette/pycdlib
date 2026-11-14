@@ -1435,24 +1435,15 @@ class PyCdlib:
                         parent_links.append(new_record)
                 if new_record.parent is None:
                     raise pycdlibexception.PyCdlibInternalError('Trying to track child with no parent')
-                try_long_entry = False
-                try:
+                # A file with the same name as the record before it is the
+                # next extent of a multi-extent file.  Any other duplicate
+                # name makes track_child() raise PyCdlibInvalidInput.
+                if not new_record.is_dir() and last_record is not None and last_record.file_identifier() == new_record.file_identifier():
+                    new_record.parent.track_continuation(new_record,
+                                                         self.logical_block_size)
+                else:
                     new_record.parent.track_child(new_record,
                                                   self.logical_block_size)
-                except pycdlibexception.PyCdlibInvalidInput:
-                    # dir_record.track_child() may throw a PyCdlibInvalidInput
-                    # if it was given a duplicate child.  However, we allow
-                    # duplicate children if and only if this record is a file
-                    # and the last file has the same name; this represents a
-                    # very large file.
-                    if new_record.is_dir() or last_record is None or last_record.file_identifier() != new_record.file_identifier():
-                        raise
-
-                    try_long_entry = True
-
-                if try_long_entry:
-                    new_record.parent.track_child(new_record,
-                                                  self.logical_block_size, True)
 
                 # Enqueue after the duplicate-name check above, so a
                 # duplicate directory keeps its specific error; a repeated
@@ -2120,7 +2111,7 @@ class PyCdlib:
         if child.parent is None:
             raise pycdlibexception.PyCdlibInternalError('Trying to add child without a parent')
 
-        ret = child.parent.add_child(child, self.logical_block_size, True)
+        ret = child.parent.add_continuation(child, self.logical_block_size)
 
         # The add_child() method returns True if the parent needs another extent
         # in order to fit the directory record for this child.
