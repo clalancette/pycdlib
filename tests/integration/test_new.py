@@ -10822,26 +10822,32 @@ def test_new_get_file_from_iso_blocksize_kwarg(tmpdir):
 
 def test_new_write_fp_without_write_tracking():
     # The test suite runs with PYCDLIB_TRACK_WRITES set; make sure the
-    # plain write path produces the same output.
-    def make():
-        iso = pycdlib.PyCdlib()
-        iso.new(joliet=3, rock_ridge='1.09')
-        iso.add_directory('/DIR', rr_name='dir', joliet_path='/dir')
-        iso.add_fp(io.BytesIO(b'a\n'), 2, '/DIR/A.;1', rr_name='a', joliet_path='/dir/a')
-        return iso
+    # plain write path produces the same output.  Build the ISO once, so
+    # that its record dates are the same in both writes.
+    iso = pycdlib.PyCdlib()
+    iso.new(joliet=3, rock_ridge='1.09')
+    iso.add_directory('/DIR', rr_name='dir', joliet_path='/dir')
+    iso.add_fp(io.BytesIO(b'a\n'), 2, '/DIR/A.;1', rr_name='a', joliet_path='/dir/a')
 
-    iso = make()
     tracked = io.BytesIO()
     iso.write_fp(tracked)
-    iso.close()
 
-    iso = make()
     iso._track_writes = False
     untracked = io.BytesIO()
     iso.write_fp(untracked)
     iso.close()
 
-    assert(tracked.getvalue() == untracked.getvalue())
+    # Each write stamps the Volume Modification Date (17 bytes at offset 830)
+    # of the PVD (extent 16) and Joliet SVD (extent 17) with the current
+    # time, so blank it out; the two writes may straddle a second boundary.
+    def without_mod_dates(data):
+        data = bytearray(data)
+        for extent in (16, 17):
+            start = extent * 2048 + 830
+            data[start:start + 17] = b'\x00' * 17
+        return bytes(data)
+
+    assert(without_mod_dates(tracked.getvalue()) == without_mod_dates(untracked.getvalue()))
 
 def test_new_write_range_overlap_detection():
     WriteRange = pycdlib.PyCdlib._WriteRange
