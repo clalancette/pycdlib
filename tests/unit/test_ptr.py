@@ -22,6 +22,18 @@ def test_path_table_record_parse_initialized_twice():
         ptr.parse(b'\x00\x00\x00\x00\x00\x00\x00\x00')
     assert(str(excinfo.value) == 'Path Table Record already initialized')
 
+def test_path_table_record_parse_too_short():
+    ptr = pycdlib.path_table_record.PathTableRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ptr.parse(b'\x00\x00\x00')
+    assert(str(excinfo.value) == 'Not enough bytes for Path Table Record')
+
+def test_path_table_record_parse_empty():
+    ptr = pycdlib.path_table_record.PathTableRecord()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        ptr.parse(b'')
+    assert(str(excinfo.value) == 'Not enough bytes for Path Table Record')
+
 def test_path_table_record_record_little_endian_not_initialized():
     ptr = pycdlib.path_table_record.PathTableRecord()
 

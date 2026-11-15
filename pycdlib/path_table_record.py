@@ -52,6 +52,9 @@ class PathTableRecord:
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('Path Table Record already initialized')
 
+        if len(data) < self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for Path Table Record')
+
         (self.len_di, self.xattr_length, self.extent_location,
          self.parent_directory_num) = struct.unpack_from(self.FMT, data, 0)
 
