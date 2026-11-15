@@ -2239,15 +2239,6 @@ def test_file_ident_equals_both_parent():
 
     assert(fi == fi2)
 
-def test_file_ident_equals_both_parent():
-    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
-    fi.new(False, True, b'foo', None)
-
-    fi2 = pycdlib.udf.UDFFileIdentifierDescriptor()
-    fi2.new(False, True, b'foo', None)
-
-    assert(fi == fi2)
-
 def test_file_ident_equals_other_parent():
     fi = pycdlib.udf.UDFFileIdentifierDescriptor()
     fi.new(False, False, b'foo', None)
@@ -2257,7 +2248,7 @@ def test_file_ident_equals_other_parent():
 
     assert(fi != fi2)
 
-def test_file_ident_equals_other_parent():
+def test_file_ident_equals_other_parent_and_name():
     fi = pycdlib.udf.UDFFileIdentifierDescriptor()
     fi.new(False, True, b'foo', None)
 

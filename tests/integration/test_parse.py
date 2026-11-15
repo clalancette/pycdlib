@@ -3162,17 +3162,6 @@ def test_parse_unicode_name_two_byte(tmpdir):
 
     do_a_test(tmpdir, outfile, check_unicode_name_two_byte)
 
-def test_parse_unicode_name_two_byte(tmpdir):
-    indir = tmpdir.mkdir('unicode')
-    outfile = str(indir)+'.iso'
-    with open(os.path.join(str(indir), 'fᴔo'), 'wb') as outfp:
-        outfp.write(b'foo\n')
-
-    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
-                     '-o', str(outfile), str(indir)])
-
-    do_a_test(tmpdir, outfile, check_unicode_name_two_byte)
-
 def test_parse_unicode_name_two_byte_isolevel4(tmpdir):
     indir = tmpdir.mkdir('unicodeisolevel4')
     outfile = str(indir)+'.iso'

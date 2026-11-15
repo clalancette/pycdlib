@@ -505,7 +505,7 @@ def test_rrsl_component_length_dotdot():
 def test_rrsl_component_length_root():
     assert(pycdlib.rockridge.RRSLRecord.Component.length(b'/') == 2)
 
-def test_rrsl_component_length_root():
+def test_rrsl_component_length_name():
     assert(pycdlib.rockridge.RRSLRecord.Component.length(b'foo') == 5)
 
 def test_rrsl_component_factory_dot():
