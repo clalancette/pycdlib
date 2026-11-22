@@ -2438,7 +2438,8 @@ class PyCdlib:
             The UDFDescriptorSequence object that stores parsed objects.
         """
         self._seek_to_extent(udf_extent_ad.extent_location)
-        vd_data = self._cdfp.read(udf_extent_ad.extent_length)
+        vd_data = self._read_clamped(udf_extent_ad.extent_length,
+                                     self._get_iso_size())
 
         return udfmod.parse_udf_vol_descs(vd_data, udf_extent_ad.extent_location,
                                           self.logical_block_size)
@@ -2500,7 +2501,8 @@ class PyCdlib:
         if self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_length > 0:
             # Parse the Logical Volume Integrity Sequence.
             self._seek_to_extent(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location)
-            integrity_data = self._cdfp.read(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_length)
+            integrity_data = self._read_clamped(self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_length,
+                                                self._get_iso_size())
 
             ulvi, ulvi_term = udfmod.parse_logical_volume_integrity(integrity_data,
                                                                     self.udf_main_descs.logical_volumes[0].integrity_sequence.extent_location,
@@ -2530,10 +2532,19 @@ class PyCdlib:
             Nothing.
         """
         part_start = self.udf_main_descs.partitions[0].part_start_location
+        iso_file_length = self._get_iso_size()
 
         abs_file_entry_extent = part_start + self.udf_file_set.root_dir_icb.log_block_num
         self._seek_to_extent(abs_file_entry_extent)
-        icbdata = self._cdfp.read(self.udf_file_set.root_dir_icb.extent_length)
+        # The length of an ICB extent comes straight off of the disk, so it
+        # cannot be trusted.  A File Entry always fits within one logical
+        # block (ECMA-167, Part 4, 14.9), so never read more than that.  A
+        # longer extent is not an error by itself (a strategy 4096 ICB is a
+        # File Entry followed by a Terminal Entry), but only the first block
+        # is ever used.
+        icbdata = self._read_clamped(min(self.udf_file_set.root_dir_icb.extent_length,
+                                         self.logical_block_size),
+                                     iso_file_length)
         self.udf_root = udfmod.parse_file_entry(icbdata,
                                                 abs_file_entry_extent,
                                                 self.udf_file_set.root_dir_icb.log_block_num,
@@ -2557,7 +2568,7 @@ class PyCdlib:
                 abs_file_ident_extent = part_start + desc.log_block_num
                 self._seek_to_extent(abs_file_ident_extent)
                 self._cdfp.seek(desc.offset, 1)
-                data = self._cdfp.read(desc.extent_length)
+                data = self._read_clamped(desc.extent_length, iso_file_length)
                 offset = 0
                 while offset < len(data):
                     current_extent = (abs_file_ident_extent * self.logical_block_size + offset) // self.logical_block_size
@@ -2575,7 +2586,10 @@ class PyCdlib:
 
                     abs_file_entry_extent = part_start + file_ident.icb.log_block_num
                     self._seek_to_extent(abs_file_entry_extent)
-                    icbdata = self._cdfp.read(file_ident.icb.extent_length)
+                    # As above, a File Entry is at most one logical block.
+                    icbdata = self._read_clamped(min(file_ident.icb.extent_length,
+                                                     self.logical_block_size),
+                                                 iso_file_length)
                     next_entry = udfmod.parse_file_entry(icbdata,
                                                          abs_file_entry_extent,
                                                          file_ident.icb.log_block_num,

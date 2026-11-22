@@ -10857,3 +10857,133 @@ def test_new_write_range_overlap_detection():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
         WriteRange(0, 10) < WriteRange(5, 30)
     assert(str(excinfo.value) == 'Overlapping write WriteRange: 0 10, WriteRange: 5 30')
+
+
+# The tests below are the UDF half of the unbounded-allocation tests; they use
+# BOGUS_LENGTH, MAX_ALLOWED_PEAK, and open_measuring_peak() from test_common.py.
+# Each one builds a small UDF ISO, patches one of the extent lengths that
+# pycdlib reads during open() to be enormous, and checks that opening the ISO
+# never allocates anything close to the claimed length.
+UDF_MAX_EXTENT_AD_LENGTH = 0x3ffffffe
+
+def _make_udf_iso(tmpdir, name):
+    # Build a UDF ISO with a directory and a file in it and write it out to a
+    # real file, returning its path along with the extents needed to find the
+    # structures that the tests patch.  As with the isohybrid tests above, the
+    # ISO has to be a real file for the allocation peak to be meaningful.
+    iso = pycdlib.PyCdlib()
+    iso.new(udf='2.60')
+    iso.add_directory('/DIR1', udf_path='/dir1')
+    foostr = b'foo\n'
+    iso.add_fp(io.BytesIO(foostr), len(foostr), '/DIR1/FOO.;1', udf_path='/dir1/foo')
+
+    outfile = os.path.join(str(tmpdir), name)
+    with open(outfile, 'wb') as outfp:
+        iso.write_fp(outfp)
+
+    part_start = iso.udf_main_descs.partitions[0].part_start_location
+    extents = {
+        'lvd': iso.udf_main_descs.logical_volumes[0].extent_location(),
+        'file_set': part_start,
+        'root_file_entry': iso.udf_root.extent_location(),
+        'root_file_idents': part_start + iso.udf_root.alloc_descs[0].log_block_num,
+        'root_len_extended_attrs': iso.udf_root.len_extended_attrs,
+    }
+    iso.close()
+
+    return outfile, extents
+
+def _patch_udf_descriptor(path, desc_offset, field_offset, value):
+    # Overwrite a 32-bit little-endian field within a UDF descriptor, and then
+    # recompute the CRC and checksum in the descriptor tag (ECMA-167, Part 3,
+    # 7.2) so that the descriptor still parses.
+    with open(path, 'r+b') as fp:
+        fp.seek(desc_offset + field_offset)
+        fp.write(struct.pack('<L', value))
+
+        fp.seek(desc_offset)
+        tag = bytearray(fp.read(16))
+        crc_len, = struct.unpack_from('<H', tag, 10)
+        struct.pack_into('<H', tag, 8, pycdlib.udf.crc_ccitt(fp.read(crc_len)))
+        tag[4] = (sum(tag[:4]) + sum(tag[5:])) % 256
+        fp.seek(desc_offset)
+        fp.write(bytes(tag))
+
+def test_new_udf_anchor_main_vd_length_larger_than_iso(tmpdir):
+    outfile, extents = _make_udf_iso(tmpdir, 'udfanchortoobig.iso')
+
+    # The Main Volume Descriptor Sequence extent is at offset 16 of the Anchor
+    # Volume Descriptor Pointer, which lives at extent 256.
+    _patch_udf_descriptor(outfile, 256*2048, 16, UDF_MAX_EXTENT_AD_LENGTH)
+
+    err, peak = open_measuring_peak(outfile)
+
+    # The Volume Descriptor Sequence is ended by its Terminating Descriptor
+    # no matter how long the extent claims to be, so the ISO still opens.
+    assert(err is None)
+    assert(peak < MAX_ALLOWED_PEAK)
+
+def test_new_udf_integrity_sequence_length_larger_than_iso(tmpdir):
+    outfile, extents = _make_udf_iso(tmpdir, 'udfintegritytoobig.iso')
+
+    # The Integrity Sequence extent is at offset 432 of the Logical Volume
+    # Descriptor.
+    _patch_udf_descriptor(outfile, extents['lvd']*2048, 432,
+                          UDF_MAX_EXTENT_AD_LENGTH)
+
+    err, peak = open_measuring_peak(outfile)
+
+    assert(err is None)
+    assert(peak < MAX_ALLOWED_PEAK)
+
+def test_new_udf_root_dir_icb_length_larger_than_iso(tmpdir):
+    outfile, extents = _make_udf_iso(tmpdir, 'udfrooticbtoobig.iso')
+
+    # The Root Directory ICB is at offset 400 of the File Set Descriptor.
+    _patch_udf_descriptor(outfile, extents['file_set']*2048, 400, BOGUS_LENGTH)
+
+    err, peak = open_measuring_peak(outfile)
+
+    # A File Entry never spans more than one logical block, so the rest of
+    # the claimed extent is ignored and the ISO still opens.
+    assert(err is None)
+    assert(peak < MAX_ALLOWED_PEAK)
+
+def test_new_udf_dir_alloc_desc_length_larger_than_iso(tmpdir):
+    outfile, extents = _make_udf_iso(tmpdir, 'udfallocdesctoobig.iso')
+
+    # The allocation descriptors of a File Entry start at offset 176, after
+    # the extended attributes; the length is the first field of a short_ad.
+    _patch_udf_descriptor(outfile, extents['root_file_entry']*2048,
+                          176 + extents['root_len_extended_attrs'],
+                          BOGUS_LENGTH)
+
+    err, peak = open_measuring_peak(outfile)
+
+    # Exactly which error comes out depends on what the data past the end of
+    # the real File Identifiers happens to look like, so just check that the
+    # ISO is rejected rather than pinning the message.
+    assert(isinstance(err, pycdlib.pycdlibexception.PyCdlibInvalidISO))
+    assert(peak < MAX_ALLOWED_PEAK)
+
+def test_new_udf_file_ident_icb_length_larger_than_iso(tmpdir):
+    outfile, extents = _make_udf_iso(tmpdir, 'udffidicbtoobig.iso')
+
+    # The first File Identifier Descriptor in a directory is the parent; skip
+    # over it to get to the one for dir1.  A File Identifier Descriptor is 38
+    # bytes plus the implementation use (length at offset 36) and the file
+    # identifier (length at offset 19), padded to a multiple of 4.  The ICB is
+    # at offset 20.
+    fid_offset = extents['root_file_idents']*2048
+    with open(outfile, 'rb') as fp:
+        fp.seek(fid_offset)
+        parent = fp.read(38)
+    parent_len = 38 + parent[19] + struct.unpack_from('<H', parent, 36)[0]
+    parent_len += (4 - parent_len % 4) % 4
+
+    _patch_udf_descriptor(outfile, fid_offset + parent_len, 20, BOGUS_LENGTH)
+
+    err, peak = open_measuring_peak(outfile)
+
+    assert(err is None)
+    assert(peak < MAX_ALLOWED_PEAK)
