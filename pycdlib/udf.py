@@ -2269,8 +2269,11 @@ class UDFShortAD:
         (self.extent_length,
          self.log_block_num) = struct.unpack_from(self.FMT, data, 0)
 
-        self.extent_length = self.extent_length & 0x3FFFFFFF
+        # ECMA-167, Part 4, 14.14.1.1 says that the top 2 bits of the extent
+        # length are the type of the extent, and the bottom 30 bits are the
+        # length.  The type has to be pulled out before the length is masked.
         self.extent_type = (self.extent_length & 0xc0000000) >> 30
+        self.extent_length = self.extent_length & 0x3FFFFFFF
 
         self._initialized = True
 
@@ -2350,7 +2353,7 @@ class UDFLongAD:
     14.14.2).
     """
     __slots__ = ('_initialized', 'extent_length', 'log_block_num',
-                 'part_ref_num', 'impl_use', 'offset')
+                 'part_ref_num', 'impl_use', 'offset', 'extent_type')
 
     FMT = '<LLH6s'
 
@@ -2374,6 +2377,13 @@ class UDFLongAD:
         (self.extent_length, self.log_block_num, self.part_ref_num,
          self.impl_use) = struct.unpack_from(self.FMT, data, 0)
 
+        # ECMA-167, Part 4, 14.14.2.1 says that the extent length of a
+        # long_ad is interpreted the same way as that of a short_ad
+        # (14.14.1.1); the top 2 bits are the type of the extent, and the
+        # bottom 30 bits are the length.
+        self.extent_type = (self.extent_length & 0xc0000000) >> 30
+        self.extent_length = self.extent_length & 0x3FFFFFFF
+
         self._initialized = True
 
     def record(self):
@@ -2387,7 +2397,8 @@ class UDFLongAD:
         if not self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Long AD not initialized')
 
-        return struct.pack(self.FMT, self.extent_length, self.log_block_num,
+        length = self.extent_length | (self.extent_type << 30)
+        return struct.pack(self.FMT, length, self.log_block_num,
                            self.part_ref_num, self.impl_use)
 
     def new(self, length, blocknum):
@@ -2404,7 +2415,11 @@ class UDFLongAD:
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Long AD already initialized')
 
+        if length > 0x3fffffff:
+            raise pycdlibexception.PyCdlibInternalError('UDF Long AD length must be less than or equal to 0x3fffffff')
+
         self.extent_length = length
+        self.extent_type = 0  # FIXME: let the user set this
         self.log_block_num = blocknum
         self.part_ref_num = 0  # FIXME: let the user set this
         self.impl_use = b'\x00' * 6

@@ -1277,6 +1277,17 @@ def test_shortad_eq_not_same_object_type():
 
     assert(ad != not_an_ad)
 
+def test_shortad_parse_extent_type():
+    # The top 2 bits of the extent length are the extent type, and the bottom
+    # 30 bits are the length (ECMA-167, Part 4, 14.14.1.1).
+    data = struct.pack('<LL', (1 << 30) | 2048, 5)
+    ad = pycdlib.udf.UDFShortAD()
+    ad.parse(data)
+    assert(ad.extent_type == 1)
+    assert(ad.extent_length == 2048)
+    assert(ad.log_block_num == 5)
+    assert(ad.record() == data)
+
 # Long AD
 def test_longad_parse_initialized_twice():
     ad = pycdlib.udf.UDFLongAD()
@@ -1324,6 +1335,24 @@ def test_longad_eq_not_same_object_type():
     not_an_ad = object()
 
     assert(ad != not_an_ad)
+
+def test_longad_new_bad_length():
+    ad = pycdlib.udf.UDFLongAD()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInternalError) as excinfo:
+        ad.new(0x40000000, 0)
+    assert(str(excinfo.value) == 'UDF Long AD length must be less than or equal to 0x3fffffff')
+
+def test_longad_parse_extent_type():
+    # The extent length of a long_ad is interpreted the same way as that of a
+    # short_ad (ECMA-167, Part 4, 14.14.2.1); the top 2 bits are the extent
+    # type, and the bottom 30 bits are the length.
+    data = struct.pack('<LLH6s', (1 << 30) | 2048, 5, 0, b'\x00'*6)
+    ad = pycdlib.udf.UDFLongAD()
+    ad.parse(data)
+    assert(ad.extent_type == 1)
+    assert(ad.extent_length == 2048)
+    assert(ad.log_block_num == 5)
+    assert(ad.record() == data)
 
 # Inline AD
 def test_inlinead_parse_initialized_twice():
