@@ -4267,8 +4267,20 @@ class UDFFileIdentifierDescriptor:
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor already initialized')
 
+        if len(data) < self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF File Identifier Descriptor')
+
         (tag_unused, file_version_num, self.file_characteristics,
          self.len_fi, icb, self.len_impl_use) = struct.unpack_from(self.FMT, data, 0)
+
+        needed = self._FMT_SIZE + self.len_impl_use + self.len_fi
+        if not self.file_characteristics & 0x8:
+            # A non-parent File Identifier is preceded by a one-byte compression
+            # ID (the encoding marker) that is indexed individually below, so at
+            # least that byte must be present even when len_fi is zero.
+            needed = max(needed, self._FMT_SIZE + self.len_impl_use + 1)
+        if len(data) < needed:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF File Identifier Descriptor')
 
         self.desc_tag = desc_tag
 
@@ -5326,9 +5338,17 @@ def _parse_allocation_descriptors(flags, data, length, start_offset, extent):
     Returns:
         The list of allocation descriptors.
     """
+    if length > len(data):
+        raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF allocation descriptors')
+
     alloc_descs = []  # type: List[Union[UDFShortAD, UDFLongAD, UDFInlineAD]]
 
     offset = 0
+
+    def _ensure(size):
+        # type: (int) -> None
+        if offset + size > len(data):
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF allocation descriptors')
 
     # Now we need to create the allocation descriptors.  How they are
     # represented changes depending on bits 0-2 of the icb_tag.flags field:
@@ -5339,12 +5359,14 @@ def _parse_allocation_descriptors(flags, data, length, start_offset, extent):
     # Descriptors field of this File Entry.
     if (flags & 0x7) == 0:
         while offset < length:
+            _ensure(struct.calcsize(UDFShortAD.FMT))
             short_ad = UDFShortAD()
             short_ad.parse(data[offset:])
             alloc_descs.append(short_ad)
             offset += short_ad.length()
     elif (flags & 0x7) == 1:
         while offset < length:
+            _ensure(struct.calcsize(UDFLongAD.FMT))
             long_ad = UDFLongAD()
             long_ad.parse(data[offset:])
             alloc_descs.append(long_ad)
