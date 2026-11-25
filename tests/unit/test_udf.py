@@ -2129,6 +2129,21 @@ def test_file_ident_parse_impl_use_too_large():
         fi.parse(data, 0, tag, entry)
     assert(str(excinfo.value) == 'Not enough bytes for UDF File Identifier Descriptor')
 
+def test_file_ident_parse_file_ident_too_large():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+
+    entry = pycdlib.udf.UDFFileEntry()
+    entry.new(0, 'dir', None, 2048)
+
+    fi = pycdlib.udf.UDFFileIdentifierDescriptor()
+    # len_fi is 8 but only 4 bytes of File Identifier are present; this must
+    # raise a PyCdlibInvalidISO rather than silently returning a short name.
+    data = b'\x00'*16 + b'\x01\x00\x00\x08' + b'\x00'*16 + b'\x00\x00' + b'\x08foo'
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        fi.parse(data, 0, tag, entry)
+    assert(str(excinfo.value) == 'Not enough bytes for UDF File Identifier Descriptor')
+
 def test_file_ident_parse_nonparent_missing_encoding_byte():
     tag = pycdlib.udf.UDFTag()
     tag.new(0, 0)
@@ -2137,13 +2152,13 @@ def test_file_ident_parse_nonparent_missing_encoding_byte():
     entry.new(0, 'dir', None, 2048)
 
     fi = pycdlib.udf.UDFFileIdentifierDescriptor()
-    # Non-parent descriptor with len_fi=0 and the buffer ending exactly after
-    # len_impl_use: the 1-byte encoding marker is absent, so this must raise a
-    # PyCdlibInvalidISO rather than an unhandled IndexError.
+    # Non-parent descriptor with len_fi=0: the 1-byte encoding marker is
+    # absent, so this must raise a PyCdlibInvalidISO rather than an unhandled
+    # IndexError.
     data = b'\x00'*16 + b'\x01\x00\x00\x00' + b'\x00'*16 + b'\x04\x00' + b'\x00'*4
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         fi.parse(data, 0, tag, entry)
-    assert(str(excinfo.value) == 'Not enough bytes for UDF File Identifier Descriptor')
+    assert(str(excinfo.value) == 'UDF File Identifier Descriptor has an empty File Identifier')
 
 def test_file_ident_parse_truncated_header():
     tag = pycdlib.udf.UDFTag()
@@ -2165,6 +2180,37 @@ def test_parse_allocation_descriptors_length_too_large():
     with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
         pycdlib.udf._parse_allocation_descriptors(0, b'', 0xffffffff, 0, 0)
     assert(str(excinfo.value) == 'Not enough bytes for UDF allocation descriptors')
+
+def test_parse_allocation_descriptors_inline_longer_than_data():
+    # An inline allocation descriptor only records where the data lives, so a
+    # length beyond the bytes passed in is not an error at parse time.
+    alloc_descs = pycdlib.udf._parse_allocation_descriptors(3, b'', 100, 0, 0)
+    assert(len(alloc_descs) == 1)
+    assert(isinstance(alloc_descs[0], pycdlib.udf.UDFInlineAD))
+
+def test_file_entry_parse_truncated_header():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    entry = pycdlib.udf.UDFFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        entry.parse(b'\x00'*36, 0, None, tag)
+    assert(str(excinfo.value) == 'Not enough bytes for UDF File Entry')
+
+def test_extended_file_entry_parse_truncated_header():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    entry = pycdlib.udf.UDFExtendedFileEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        entry.parse(b'\x00'*36, 0, None, tag)
+    assert(str(excinfo.value) == 'Not enough bytes for UDF Extended File Entry')
+
+def test_unalloc_space_parse_truncated_header():
+    tag = pycdlib.udf.UDFTag()
+    tag.new(0, 0)
+    unalloc = pycdlib.udf.UDFUnallocatedSpaceEntry()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        unalloc.parse(b'\x00'*20, 0, tag)
+    assert(str(excinfo.value) == 'Not enough bytes for UDF Unallocated Space Entry')
 
 def test_parse_allocation_descriptors_descriptor_straddles_end():
     # length (20) is not a whole number of 16-byte long_ads; the second

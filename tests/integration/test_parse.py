@@ -3271,6 +3271,41 @@ def test_parse_udf_truncated_before_second_anchor(tmpdir, extra):
         iso.open(str(outfile))
     assert(str(excinfo.value) == 'Expected at least 2 UDF Anchors')
 
+def test_parse_udf_file_ident_impl_use_too_large(tmpdir):
+    # First set things up, and generate the ISO with genisoimage.
+    indir = tmpdir.mkdir('udffileidentimpluse')
+    outfile = str(indir)+'.iso'
+    with open(os.path.join(str(indir), 'foo'), 'wb') as outfp:
+        outfp.write(b'foo\n')
+    subprocess.call(['genisoimage', '-v', '-v', '-iso-level', '1', '-no-pad',
+                     '-udf', '-o', str(outfile), str(indir)])
+
+    # Find the first File Identifier Descriptor of the root directory.
+    iso = pycdlib.PyCdlib()
+    iso.open(str(outfile))
+    part_start = iso.udf_main_descs.partitions[0].part_start_location
+    fid_extent = part_start + iso.udf_root.alloc_descs[0].log_block_num
+    iso.close()
+
+    # Now claim far more Implementation Use bytes than the directory holds;
+    # this must be reported as an invalid ISO rather than escaping as an
+    # IndexError.  Fix up the Descriptor Tag CRC and checksum so that the
+    # descriptor is otherwise well-formed.
+    with open(str(outfile), 'r+b') as fp:
+        fp.seek(fid_extent*2048)
+        desc = bytearray(fp.read(2048))
+        desc[36:38] = b'\xff\xff'
+        (crc_len,) = struct.unpack_from('<H', desc, 10)
+        struct.pack_into('<H', desc, 8, pycdlib.udf.crc_ccitt(bytes(desc[16:16 + crc_len])))
+        desc[4] = pycdlib.udf._compute_csum(bytes(desc[:16]))
+        fp.seek(fid_extent*2048)
+        fp.write(desc)
+
+    iso = pycdlib.PyCdlib()
+    with pytest.raises(pycdlib.pycdlibexception.PyCdlibInvalidISO) as excinfo:
+        iso.open(str(outfile))
+    assert(str(excinfo.value) == 'Not enough bytes for UDF File Identifier Descriptor')
+
 def test_parse_udf_bea_without_tea(tmpdir):
     # First set things up, and generate the ISO with genisoimage.
     indir = tmpdir.mkdir('udfbeawithouttea')
