@@ -8550,6 +8550,63 @@ def test_new_open_file_from_iso_readall_half_past_eof():
 
     iso.close()
 
+class _ShortReadBytesIO(io.BytesIO):
+    def read(self, size=-1):
+        return super().read(2 if size is None or size < 0 else min(size, 2))
+
+def test_new_open_file_from_iso_short_read():
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'abcdef'
+    source = _ShortReadBytesIO(foostr)
+    iso.add_fp(source, len(foostr), '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        assert(infp.read(0) == b'')
+        assert(infp.tell() == 0)
+        assert(infp.read(4) == b'ab')
+        assert(infp.tell() == 2)
+        assert(infp.read(4) == b'cd')
+        assert(infp.tell() == 4)
+
+        assert(infp.seek(1) == 1)
+        assert(infp.read(4) == b'bc')
+        assert(infp.tell() == 3)
+        assert(infp.read(4) == b'de')
+        assert(infp.tell() == 5)
+        assert(infp.read(4) == b'f')
+        assert(infp.tell() == 6)
+        assert(infp.read(4) == b'')
+        assert(infp.tell() == 6)
+
+    assert(not source.closed)
+    iso.close()
+
+@pytest.mark.parametrize('length', [4, 6, 8])
+@pytest.mark.parametrize('method, args', [
+    ('readall', ()),
+    ('read', ()),
+    ('read', (-1,)),
+])
+def test_new_open_file_from_iso_short_readall(length, method, args):
+    iso = pycdlib.PyCdlib()
+    iso.new()
+
+    foostr = b'abcdef'
+    source = _ShortReadBytesIO(foostr)
+    iso.add_fp(source, length, '/FOO.;1')
+
+    with iso.open_file_from_iso(iso_path='/FOO.;1') as infp:
+        infp.seek(1)
+        assert(getattr(infp, method)(*args) == foostr[1:length])
+        assert(infp.tell() == min(length, len(foostr)))
+        assert(infp.readall() == b'')
+        assert(infp.tell() == min(length, len(foostr)))
+
+    assert(not source.closed)
+    iso.close()
+
 def test_new_open_file_from_iso_seek_invalid_offset():
     iso = pycdlib.PyCdlib()
     iso.new()

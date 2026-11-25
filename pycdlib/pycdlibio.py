@@ -91,7 +91,7 @@ class PyCdlibIO(io.RawIOBase):
             # every read rather than trust accumulated state.
             self._fp.seek(self._startpos + self._offset)
             data = self._fp.read(readsize)
-            self._offset += readsize
+            self._offset += len(data)
 
         return data
 
@@ -107,16 +107,14 @@ class PyCdlibIO(io.RawIOBase):
         if not self._open:
             raise pycdlibexception.PyCdlibInvalidInput('I/O operation on closed file.')
 
-        readsize = self._length - self._offset
-        if readsize > 0:
-            # See read() for why the seek is here.
-            self._fp.seek(self._startpos + self._offset)
-            data = self._fp.read(readsize)
-            self._offset += readsize
-        else:
-            data = b''
+        chunks = []
+        while self._offset < self._length:
+            data = self.read(self._length - self._offset)
+            if not data:
+                break
+            chunks.append(data)
 
-        return data
+        return b''.join(chunks)
 
     def readinto(self, b):  # type: ignore[override]
         # type: (Buffer) -> int
