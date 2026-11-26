@@ -3708,6 +3708,9 @@ class UDFFileEntry:
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Entry already initialized')
 
+        if len(data) < self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF File Entry')
+
         (tag_unused, icb_tag, self.uid, self.gid, self.perms, self.file_link_count,
          record_format, record_display_attrs, record_len, self.info_len,
          self.log_block_recorded, access_time, mod_time, attr_time, checkpoint,
@@ -4267,8 +4270,19 @@ class UDFFileIdentifierDescriptor:
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF File Identifier Descriptor already initialized')
 
+        if len(data) < self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF File Identifier Descriptor')
+
         (tag_unused, file_version_num, self.file_characteristics,
          self.len_fi, icb, self.len_impl_use) = struct.unpack_from(self.FMT, data, 0)
+
+        if len(data) < self._FMT_SIZE + self.len_impl_use + self.len_fi:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF File Identifier Descriptor')
+
+        if not self.file_characteristics & 0x8 and self.len_fi < 1:
+            # The File Identifier of a non-parent starts with a one-byte
+            # compression ID, so it can never be empty.
+            raise pycdlibexception.PyCdlibInvalidISO('UDF File Identifier Descriptor has an empty File Identifier')
 
         self.desc_tag = desc_tag
 
@@ -4957,6 +4971,9 @@ class UDFUnallocatedSpaceEntry:
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Unallocated Space Entry already initialized')
 
+        if len(data) < struct.calcsize(self.FMT):
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF Unallocated Space Entry')
+
         (tag_unused, icb_tag,
          len_alloc_descs) = struct.unpack_from(self.FMT, data, 0)
 
@@ -5151,6 +5168,9 @@ class UDFExtendedFileEntry(UDFFileEntry):
         if self._initialized:
             raise pycdlibexception.PyCdlibInternalError('UDF Extended File Entry already initialized')
 
+        if len(data) < self._FMT_SIZE:
+            raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF Extended File Entry')
+
         (tag_unused, icb_tag, self.uid, self.gid, self.perms,
          self.file_link_count, record_format, record_display_attrs,
          record_len, self.info_len, self.obj_size, self.log_block_recorded,
@@ -5339,12 +5359,16 @@ def _parse_allocation_descriptors(flags, data, length, start_offset, extent):
     # Descriptors field of this File Entry.
     if (flags & 0x7) == 0:
         while offset < length:
+            if len(data) - offset < struct.calcsize(UDFShortAD.FMT):
+                raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF allocation descriptors')
             short_ad = UDFShortAD()
             short_ad.parse(data[offset:])
             alloc_descs.append(short_ad)
             offset += short_ad.length()
     elif (flags & 0x7) == 1:
         while offset < length:
+            if len(data) - offset < struct.calcsize(UDFLongAD.FMT):
+                raise pycdlibexception.PyCdlibInvalidISO('Not enough bytes for UDF allocation descriptors')
             long_ad = UDFLongAD()
             long_ad.parse(data[offset:])
             alloc_descs.append(long_ad)
