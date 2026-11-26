@@ -97,36 +97,17 @@ def test_normpath_with_dotdot_after_slash():
 def test_normpath_empty():
     assert(pycdlib.utils.normpath('') == b'.')
 
-def save_and_set_tz(newtz):
-    if 'TZ' in os.environ:
-        oldtz = os.environ['TZ']
-    else:
-        oldtz = None
-
-    os.environ['TZ'] = newtz
-    time.tzset()
-
-    return oldtz
-
-def restore_tz(oldtz):
-    if oldtz is not None:
-        os.environ['TZ'] = oldtz
-    else:
-        del os.environ['TZ']
-    time.tzset()
-
-def test_gmtoffset_from_tm():
-    oldtz = save_and_set_tz('America/New_York')
+def test_gmtoffset_from_tm(set_tz):
+    set_tz('America/New_York')
     now = 1546914300
     # America/New_York is GMT-5 hours, which is 5*60 = 300 minutes behind.  Since
     # the gmtoffset in ISO 9660 is in 15 minute intervals, this is 300/15 = 20
     # behind.
     assert(pycdlib.utils.gmtoffset_from_tm(now, time.localtime(now)) == -20)
-    restore_tz(oldtz)
 
-def test_gmtoffset_from_tm_day_rollover():
+def test_gmtoffset_from_tm_day_rollover(set_tz):
     # Setup the timezone to Tokyo
-    oldtz = save_and_set_tz('Asia/Tokyo')
+    set_tz('Asia/Tokyo')
 
     # Asia/Tokyo is GMT+9 hours, which is 9*60 = 540 minutes ahead.  Since the
     # gmtoffset in ISO 9660 is in 15 minute intervals, this is 540/15 = 36
@@ -136,10 +117,9 @@ def test_gmtoffset_from_tm_day_rollover():
     # in the Tokyo region.
     now = 1550417871
     assert(pycdlib.utils.gmtoffset_from_tm(now, time.localtime(now)) == 36)
-    restore_tz(oldtz)
 
-def test_gmtoffset_from_tm_2023_rollover():
-    oldtz = save_and_set_tz('Australia/Sydney')
+def test_gmtoffset_from_tm_2023_rollover(set_tz):
+    set_tz('Australia/Sydney')
 
     # Australia/Sydney is GMT+11 hours, which is 11*60 = 660 minutes ahead.
     # Since the gmtoffset in ISO 9660 is in 15 minute intervals, this is
@@ -148,7 +128,6 @@ def test_gmtoffset_from_tm_2023_rollover():
     now = 1672530300
     assert(pycdlib.utils.gmtoffset_from_tm(now, time.localtime(now)) == 44)
 
-    restore_tz(oldtz)
 
 def test_zero_pad():
     fp = io.BytesIO()

@@ -197,26 +197,8 @@ def test_volumedescdate_record_after_parse():
     rec = voldate.record()
     assert(rec == b'2019010721250000\x00')
 
-def save_and_set_tz(newtz):
-    if 'TZ' in os.environ:
-        oldtz = os.environ['TZ']
-    else:
-        oldtz = None
-
-    os.environ['TZ'] = newtz
-    time.tzset()
-
-    return oldtz
-
-def restore_tz(oldtz):
-    if oldtz is not None:
-        os.environ['TZ'] = oldtz
-    else:
-        del os.environ['TZ']
-    time.tzset()
-
-def test_volumedescdate_new_nonzero():
-    oldtz = save_and_set_tz('America/New_York')
+def test_volumedescdate_new_nonzero(set_tz):
+    set_tz('America/New_York')
 
     test_seconds_since_epoch = 1546914300.0
     voldate = pycdlib.dates.VolumeDescriptorDate()
@@ -228,7 +210,6 @@ def test_volumedescdate_new_nonzero():
     assert(voldate.minute == 25)
     assert(voldate.second == 0)
     assert(voldate.hundredthsofsecond == 0)
-    restore_tz(oldtz)
 
 def test_volumedescdate_test_equal():
     voldate = pycdlib.dates.VolumeDescriptorDate()

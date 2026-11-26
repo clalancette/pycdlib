@@ -1,4 +1,6 @@
+import os
 import re
+import time
 
 import pytest
 
@@ -15,6 +17,29 @@ def uses_deprecated(*api_names):
     return pytest.mark.filterwarnings(
         rf'ignore:.*({pattern}) is deprecated:DeprecationWarning'
     )
+
+
+@pytest.fixture
+def set_tz():
+    """Return a function that sets the process timezone for this test.
+
+    pycdlib records local time, so any test that asserts on specific
+    date fields has to pin the timezone to get the same answer everywhere.
+    The original timezone is restored when the test finishes, pass or fail.
+    """
+    oldtz = os.environ.get('TZ')
+
+    def _set(newtz):
+        os.environ['TZ'] = newtz
+        time.tzset()
+
+    yield _set
+
+    if oldtz is None:
+        os.environ.pop('TZ', None)
+    else:
+        os.environ['TZ'] = oldtz
+    time.tzset()
 
 
 def pytest_addoption(parser):

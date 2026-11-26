@@ -2885,7 +2885,9 @@ def test_extended_file_entry_record_round_trip():
     out = ef.record()
     assert(out[16:] == body[16:])
 
-def test_extended_file_entry_new_creation_seconds():
+def test_extended_file_entry_new_creation_seconds(set_tz):
+    # 1234567890 is 2009-02-13 23:31:30 UTC, so the day depends on the zone.
+    set_tz('UTC')
     ef = pycdlib.udf.UDFExtendedFileEntry()
     ef.new(0, 'dir', None, 2048, creation_seconds=1234567890.0)
     assert(ef.desc_tag.tag_ident == 266)
