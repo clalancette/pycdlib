@@ -4453,7 +4453,9 @@ def test_new_udf_boot_descriptor_parsed():
     assert(len(iso2.udf_boots) == 1)
     iso2.close()
 
-def test_new_udf_creation_time_forces_efe_round_trip():
+def test_new_udf_creation_time_forces_efe_round_trip(set_tz):
+    # 1234567890 is 2009-02-13 23:31:30 UTC, so the day depends on the zone.
+    set_tz('UTC')
     # Regression test for https://github.com/clalancette/pycdlib/issues/94.
     # When the user supplies creation_time on add_directory/add_file for a
     # UDF path, pycdlib must emit an Extended File Entry (tag 266) for that
@@ -4532,7 +4534,9 @@ def test_new_creation_time_no_compatible_storage_errors():
     assert('creation_time' in str(excinfo.value))
     iso.close()
 
-def test_new_rock_ridge_creation_time_round_trip():
+def test_new_rock_ridge_creation_time_round_trip(set_tz):
+    # 1234567890 is 2009-02-13 23:31:30 UTC, so the day depends on the zone.
+    set_tz('UTC')
     # On a Rock Ridge ISO, creation_time should land in the TF record's
     # CREATION timestamp (bit 0).  Verify by re-opening and inspecting
     # the parsed RRTFRecord.
@@ -10772,7 +10776,9 @@ def test_new_get_and_write_fp_joliet_directory():
     assert(str(excinfo.value) == 'Cannot write out a directory')
     iso.close()
 
-def test_new_vol_expire_date():
+def test_new_vol_expire_date(set_tz):
+    # 1234567890 is 2009-02-13 23:31:30 UTC, so the day depends on the zone.
+    set_tz('UTC')
     iso = pycdlib.PyCdlib()
     iso.new(vol_expire_date=1234567890.0)
     out = io.BytesIO()

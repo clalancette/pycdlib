@@ -897,7 +897,9 @@ def test_rrtfrecord_record_not_initialized():
 def test_rrtfrecord_length_use_vol_desc_dates():
     assert(pycdlib.rockridge.RRTFRecord.length(0x81) == 0x16)
 
-def test_rrtfrecord_new_creation_seconds_forces_creation_bit():
+def test_rrtfrecord_new_creation_seconds_forces_creation_bit(set_tz):
+    # 1234567890 is 2009-02-13 23:31:30 UTC, so the day depends on the zone.
+    set_tz('UTC')
     # Passing creation_seconds adds the creation_time bit (0x01) on top of
     # whatever flags were requested, and the field is populated from the
     # creation_seconds value rather than from date_seconds.
@@ -993,7 +995,9 @@ def test_rrtfrecord_parse_backup_expiration_effective_only_short_form():
     assert(tf.expiration_time.day_of_month == 6)
     assert(tf.effective_time.day_of_month == 7)
 
-def test_rrtfrecord_new_all_fields_short_form():
+def test_rrtfrecord_new_all_fields_short_form(set_tz):
+    # 1234567890 is 2009-02-13 23:31:30 UTC, so the day depends on the zone.
+    set_tz('UTC')
     tf = pycdlib.rockridge.RRTFRecord()
     tf.new(0x7F, 1234567890.0)
 
@@ -1004,7 +1008,9 @@ def test_rrtfrecord_new_all_fields_short_form():
         assert(field.month == 2)
         assert(field.day_of_month == 13)
 
-def test_rrtfrecord_new_all_fields_long_form():
+def test_rrtfrecord_new_all_fields_long_form(set_tz):
+    # 1234567890 is 2009-02-13 23:31:30 UTC, so the day depends on the zone.
+    set_tz('UTC')
     tf = pycdlib.rockridge.RRTFRecord()
     tf.new(0xFF, 1234567890.0)
 
